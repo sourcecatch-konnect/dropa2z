@@ -1,0 +1,39 @@
+# Environment and secret configuration
+**/.env
+**/.env.*
+!**/.env.example
+
+# Installed dependencies
+**/node_modules/
+**/vendor/
+
+# Generated application and mobile build output
+**/build/
+**/dist/
+**/android/app/build/
+**/ios/build/
+**/*.apk
+**/*.aab
+
+# Local Android SDK settings and signing material
+**/local.properties
+**/*.jks
+**/*.keystore
+
+# Local runtime files
+**/*.log
+**/.DS_Store
+
+# Installation database dumps contain private service credentials
+Taxido_laravel/public/db.sql
+Taxido_laravel/public/db/
+
+# Locally provisioned payment and social-login credentials
+Taxido_laravel/Modules/FlutterWave/config/payment.php
+Taxido_laravel/Modules/Stripe/config/payment.php
+Taxido_laravel/Modules/Paystack/config/payment.php
+Taxido_laravel/database/seeders/SettingSeeder.php
+**/.xcode.env.local
+
+# Source-package update archives are retained locally, not versioned
+Changed-files/*.zip
