@@ -203,8 +203,10 @@ class AuthController extends Controller
 
     private function sendEmailToken($email)
     {
-        $token = $this->generateToken(null, null, $email);
-        if (!isDemoMode()) {
+        $isScopedTestLogin = isDropa2zScopedTestLogin($email);
+        $token = $this->generateToken(null, null, $email, $isScopedTestLogin);
+
+        if (! $isScopedTestLogin && !isDemoMode()) {
             try {
 
                 Mail::to($email)->send(new VerifyEmail($token));
@@ -215,9 +217,15 @@ class AuthController extends Controller
             }
         }
 
+        if ($isScopedTestLogin) {
+            Log::notice('Scoped test login issued.', ['email' => $email, 'role' => RoleEnum::RIDER]);
+        }
+
         return response()->json([
             'message' => __('OTP sent successfully to your email!'),
-            'success' => true
+            'success' => true,
+            'test_bypass' => $isScopedTestLogin,
+            'test_token' => $isScopedTestLogin ? $token : null,
         ], 200);
     }
 
@@ -235,11 +243,11 @@ class AuthController extends Controller
         return response()->json(['message' => __('OTP sent successfully to your phone!'), 'success' => true], 200);
     }
 
-    public function generateToken($country_code = null, $phone = null, $email = null)
+    public function generateToken($country_code = null, $phone = null, $email = null, $isScopedTestLogin = false)
     {
-        $token = rand(111111, 999999);
+        $token = $isScopedTestLogin ? bin2hex(random_bytes(32)) : random_int(111111, 999999);
 
-        if (isDemoMode()) {
+        if (! $isScopedTestLogin && isDemoMode()) {
             $token = 123456;
         }
 
@@ -711,3 +719,4 @@ class AuthController extends Controller
         }
     }
 }
+
