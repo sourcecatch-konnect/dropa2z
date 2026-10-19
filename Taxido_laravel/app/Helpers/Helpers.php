@@ -422,6 +422,46 @@ if (! function_exists('isDemoMode')) {
     }
 }
 
+if (! function_exists('isDropa2zScopedTestLogin')) {
+    /**
+     * Allow a short-lived, server-controlled login bypass for named test accounts.
+     *
+     * This is deliberately email-only. It is disabled unless every environment
+     * control is present and valid, so it cannot become a public demo-mode switch.
+     */
+    function isDropa2zScopedTestLogin(?string $email): bool
+    {
+        if (! filter_var(env('DROPA2Z_TEST_AUTH_ENABLED', false), FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+
+        $normalizedEmail = strtolower(trim((string) $email));
+        if (! filter_var($normalizedEmail, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $expiresAt = env('DROPA2Z_TEST_AUTH_EXPIRES_AT');
+        if (! $expiresAt) {
+            return false;
+        }
+
+        try {
+            if (Carbon::now()->greaterThan(Carbon::parse($expiresAt))) {
+                return false;
+            }
+        } catch (Exception $exception) {
+            return false;
+        }
+
+        $allowedEmails = array_filter(array_map(
+            static fn (string $allowedEmail): string => strtolower(trim($allowedEmail)),
+            explode(',', (string) env('DROPA2Z_TEST_AUTH_EMAILS', '')),
+        ));
+
+        return in_array($normalizedEmail, $allowedEmails, true);
+    }
+}
+
 if (! function_exists('getLanguageByLocale')) {
     function getLanguageByLocale($locale)
     {
@@ -1228,3 +1268,4 @@ if (! function_exists('add_menu')) {
         }
     }
 }
+
