@@ -1,6 +1,7 @@
 import { zoneUpdate, zoneRental, zoneCurrent, driverStatus } from '../endpoints/zoneEndPoint'
 import { POST_API, GET_API } from '../methods'
 import { ZoneUpdatePayload } from '../interface/zoneInterface'
+import {requireApiSuccess} from '../responseError'
 
 export const zone = async (data: ZoneUpdatePayload) => {
   return POST_API(data, zoneUpdate)
@@ -34,13 +35,7 @@ export const rentalZone = async (vehicle_type_id: number) => {
 }
 
 export const driversStatus = async (data: ZoneUpdatePayload) => {
-  return POST_API(data, driverStatus)
-    .then(res => {
-      return res
-    })
-    .catch(e => {
-      return e?.response
-    })
+  return requireApiSuccess(await POST_API(data, driverStatus, {timeout:12000}), 'Unable to change your availability. Please try again.')
 }
 
 const zoneService = {

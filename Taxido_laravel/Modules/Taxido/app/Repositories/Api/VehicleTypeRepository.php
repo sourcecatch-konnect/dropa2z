@@ -57,6 +57,18 @@ class VehicleTypeRepository extends BaseRepository
             $serviceId = $request->service_id;
 
             $serviceCategoryId = $request->service_category_id;
+            if ($serviceCategoryId) {
+                $category = getServiceCategoryById($serviceCategoryId);
+                if (! $category || ! $category->status || ($serviceId && (int) $category->service_id !== (int) $serviceId)) {
+                    throw new Exception('This delivery service is unavailable.', 422);
+                }
+            }
+            if (count($locations) < 2) {
+                throw new Exception('Choose a pickup and delivery destination.', 422);
+            }
+            if (in_array(getServiceById($serviceId)?->type, ['parcel', 'freight'], true)) {
+                app(\Modules\Taxido\Services\IndiaLocalDeliveryPolicy::class)->assertLocalRoute($locations);
+            }
             foreach ($locations as $location) {
                 $zones = getZoneByPoint($location['lat'], $location['lng']);
                 if (!$zones->isEmpty()) {
@@ -80,6 +92,12 @@ class VehicleTypeRepository extends BaseRepository
                             });
                     });
             });
+
+            if ($request->filled('weight')) {
+                $weight=(float)$request->weight;
+                if ($weight > 20) $vehicleTypes->where('slug','!=','bike');
+                if ($weight > 90) $vehicleTypes->where('slug','!=','auto-rickshaw');
+            }
 
             if ($serviceId) {
                 $vehicleTypes = $vehicleTypes->whereHas('services', function (Builder $service) use ($serviceId) {

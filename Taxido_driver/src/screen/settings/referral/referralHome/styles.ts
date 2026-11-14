@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import appColors from "../../../../theme/appColors";
 import appFonts from "../../../../theme/appFonts";
 import { fontSizes, windowHeight, windowWidth } from "../../../../theme/appConstant";
@@ -24,7 +25,7 @@ const styles = StyleSheet.create({
         fontFamily: appFonts.medium,
         fontSize: fontSizes.FONT4HALF,
         width: windowWidth(60),
-        color: "#BADFD6",
+        color: "#DFC8BA",
     },
     button: {
         height: windowHeight(5),
@@ -50,7 +51,9 @@ const styles = StyleSheet.create({
         borderRadius: windowWidth(0.8),
         paddingHorizontal: windowWidth(5),
 
-    },
+    
+    ...referenceSurfaces.card,
+  },
     que: {
         fontFamily: appFonts.bold,
         fontSize: fontSizes.FONT4,

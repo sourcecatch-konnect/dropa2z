@@ -21,6 +21,7 @@ class VehicleTypeZone extends Model
         'zone_id',
         'base_fare_charge',
         'base_distance',
+        'goods_included_minutes',
         'tax_id',
         'is_allow_tax',
         'per_distance_charge',
@@ -42,6 +43,7 @@ class VehicleTypeZone extends Model
     protected $casts = [
         'vehicle_type_id' => 'integer',
         'zone_id' => 'integer',
+        'goods_included_minutes' => 'integer',
         'is_allow_preference' => 'boolean'
     ];
 

@@ -7,6 +7,23 @@ let lastCoords: any = null;
 let totalDistanceCovered = 0;
 let apiUpdateCount = 0;
 let isTracking = false;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let heartbeatPending = false;
+
+// The server presence entry expires after ten minutes. A stationary online
+// driver must refresh it even when the 100-metre movement threshold is not met.
+const refreshPresence = () => {
+    if (!isTracking || heartbeatPending) return;
+    heartbeatPending = true;
+    Geolocation.getCurrentPosition(async position => {
+        try {
+            if (!isTracking) return;
+            await driversStatus({location: {lat: position.coords.latitude, lng: position.coords.longitude}} as any);
+        } catch (error) {
+            console.warn('[DriverPresence] Refresh failed; next heartbeat will retry.');
+        } finally { heartbeatPending = false; }
+    }, () => {heartbeatPending = false;}, {enableHighAccuracy: false, timeout: 10000, maximumAge: 30000});
+};
 
 const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const toRad = (x: number) => (x * Math.PI) / 180;
@@ -21,6 +38,7 @@ const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 };
 
 export const startLiveLocation = async (driverId: number, selfDriver: any) => {
+    if (heartbeatTimer !== null) {clearInterval(heartbeatTimer);heartbeatTimer = null;}
     // Prevent multiple watchers
     if (locationWatchId !== null) {
         Geolocation.clearWatch(locationWatchId);
@@ -78,6 +96,7 @@ export const startLiveLocation = async (driverId: number, selfDriver: any) => {
     }
 
     if (!isTracking) return false;
+    heartbeatTimer = setInterval(refreshPresence, 60000);
     locationWatchId = Geolocation.watchPosition(
         async (position) => {
             if (!isTracking) return;
@@ -143,6 +162,7 @@ export const startLiveLocation = async (driverId: number, selfDriver: any) => {
 
 export const stopLiveLocation = () => {
     isTracking = false;
+    if (heartbeatTimer !== null) {clearInterval(heartbeatTimer);heartbeatTimer = null;}
     if (locationWatchId !== null) {
         Geolocation.clearWatch(locationWatchId);
         locationWatchId = null;

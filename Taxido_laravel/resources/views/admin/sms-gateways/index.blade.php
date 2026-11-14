@@ -39,7 +39,8 @@
                             <ul class="payment-keys">
                                 @foreach ($smsGateway['fields'] as $fieldKey => $field)
                                 @php
-                                $fieldValue = env(strtoupper($fieldKey));
+                                $fieldValue = $smsGateway['slug'] === 'authkey'
+                                    ? config('authkey.'.substr($fieldKey, 8)) : env(strtoupper($fieldKey));
                                 @endphp
                                 @if ($field['type'] === 'password')
                                 <li>
@@ -105,7 +106,8 @@
                                 @method('POST')
                                 @foreach ($smsGateway['fields'] as $fieldKey => $field)
                                 @php
-                                $fieldValue = env(strtoupper($fieldKey));
+                                $fieldValue = $smsGateway['slug'] === 'authkey'
+                                    ? config('authkey.'.substr($fieldKey, 8)) : env(strtoupper($fieldKey));
                                 @endphp
                                 <div class="form-group row">
                                     <label class="col-xxl-4" for="{{ $fieldKey }}">{{ $field['label'] }}</label>
@@ -126,11 +128,11 @@
                                         @elseif ($field['type'] === 'password')
                                         <input class="form-control" type="password" name="{{ $fieldKey }}"
                                             id="{{ $fieldKey }}" placeholder="{{ $field['label'] }}"
-                                            value="{{ encryptKey($fieldValue) }}">
+                                            value="{{ $smsGateway['slug'] === 'authkey' ? '' : encryptKey($fieldValue) }}" autocomplete="new-password">
                                         @elseif ($field['type'] === 'text')
                                         <input class="form-control" type="text" name="{{ $fieldKey }}"
                                             id="{{ $fieldKey }}" placeholder="{{ $field['label'] }}"
-                                            value="{{ @$smsGateway['title'] }}">
+                                            value="{{ $smsGateway['slug'] === 'authkey' ? old($fieldKey, $fieldValue) : @$smsGateway['title'] }}">
                                         @elseif ($field['type'] === 'number')
                                         <input class="form-control" type="number" name="{{ $fieldKey }}"
                                             id="{{ $fieldKey }}" placeholder="{{ $field['label'] }}"
@@ -190,10 +192,12 @@
                         toastr.success(data.message);
                     } else {
                         toastr.error(data.error);
+                        window.location.reload();
                     }
                 })
                 .catch(error => {
                     toastr.error(error.message || "An error occurred");
+                    window.location.reload();
                 });
         }
 

@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import {View, ScrollView, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useRef, useState } from 'react'
 import { Add, Back, Location, Swap } from '@src/utils/icons'
 import { appColors } from '@src/themes'

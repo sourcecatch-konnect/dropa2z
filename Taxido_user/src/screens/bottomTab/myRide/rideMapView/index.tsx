@@ -119,7 +119,7 @@ export function RideMapView() {
               directionsRenderer = new google.maps.DirectionsRenderer({
                 suppressMarkers: true,
                 polylineOptions: { 
-                  strokeColor: '#199675', 
+                  strokeColor: '#195594', 
                   strokeWeight: 5 
                 }
               });
@@ -130,7 +130,7 @@ export function RideMapView() {
               // Add custom markers
               allPoints.forEach((p, index) => {
                 const label = index === 0 ? 'P' : index === allPoints.length - 1 ? 'D' : String(index);
-                const color = index === 0 ? '#199675' : index === allPoints.length - 1 ? '#FF5252' : '#FFA726';
+                const color = index === 0 ? '#195594' : index === allPoints.length - 1 ? '#FF5252' : '#26FFA8';
                 
                 markers.push(new google.maps.Marker({ 
                   position: p, 
@@ -223,7 +223,7 @@ export function RideMapView() {
             // Draw custom markers
             waypoints.forEach((wp, i) => {
               var text = i === 0 ? 'Pickup' : i === waypoints.length - 1 ? 'Destination' : 'Stop ' + i;
-              var color = i === 0 ? '#199675' : i === waypoints.length - 1 ? '#FF5252' : '#FFA726';
+              var color = i === 0 ? '#195594' : i === waypoints.length - 1 ? '#FF5252' : '#26FFA8';
               
               var customIcon = L.divIcon({
                 html: '<div style="background-color:' + color + '; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">' + (i === 0 ? 'P' : i === waypoints.length - 1 ? 'D' : i) + '</div>',
@@ -240,7 +240,7 @@ export function RideMapView() {
               routeWhileDragging: false,
               createMarker: function() { return null; },
               lineOptions: { 
-                styles: [{ color: '#199675', weight: 5 }] 
+                styles: [{ color: '#195594', weight: 5 }] 
               },
               addWaypoints: false,
               draggableWaypoints: false,

@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: windowWidth(3.5),
     overflow: 'hidden',
-    borderRadius: windowWidth(1.5),
+    borderRadius: 14,
   },
   input: {
     flex: 1,

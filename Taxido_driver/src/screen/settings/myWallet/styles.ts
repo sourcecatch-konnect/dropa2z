@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: windowHeight(2),
     marginBottom: windowHeight(2),
-    borderRadius: windowHeight(0.8),
+    borderRadius: 16,
     borderWidth: windowHeight(0.1),
   },
   leftSection: {
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(8),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: windowHeight(1),
+    borderRadius: 16,
     bottom: '8%'
   },
   refreshText: {

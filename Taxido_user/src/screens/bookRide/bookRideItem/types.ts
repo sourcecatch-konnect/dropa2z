@@ -8,6 +8,8 @@ export interface BookRideItemType {
     charges?: any;
     id?: number;
     name?: string;
+    description?: string;
+    max_seat?: number;
     vehicle_image_url?: any,
     currency_symbol?: string | number
   };
@@ -15,6 +17,7 @@ export interface BookRideItemType {
   onPressAlternate: any;
   isSelected: boolean;
   isDisabled: boolean;
+  showSeats?: boolean;
   couponsData?: any;
   onPriceCalculated?: any;
   selectedPrefsValue?: any;

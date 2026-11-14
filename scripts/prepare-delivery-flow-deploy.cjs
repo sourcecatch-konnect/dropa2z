@@ -1,0 +1,12 @@
+const fs=require('fs');
+const root='Taxido_laravel/';
+const read=p=>fs.readFileSync(root+p,'utf8').replace(/\r\n/g,'\n');
+const repo='Modules/Taxido/app/Repositories/Api/RideRepository.php';
+const source=read(repo),start=source.indexOf('    public function updateParcelStop('),end=source.indexOf('    public function update($request, $id)',start);
+if(start<0||end<0)throw Error('Repository deployment anchors missing');
+const controller='Modules/Taxido/app/Http/Controllers/Api/RideController.php',c=read(controller),ca=c.indexOf('    public function confirmPickupVehicle('),cb=c.indexOf('\n    }',ca)+6;
+const admin='Modules/Taxido/resources/views/admin/ride/details.blade.php',a=read(admin);
+const card=a.slice(a.indexOf('    <div class="card mb-3" id="delivery-progress-card">'),a.indexOf('    <div class="row ride-dashboard">'));
+const js=a.slice(a.indexOf('        function renderDeliveryProgress('),a.indexOf('        // Safe element updater'));
+const newPaths=['Modules/Taxido/app/Services/DeliveryProgress.php','tests/Unit/DeliveryProgressTest.php'];
+console.log(JSON.stringify({repo,repoChunk:source.slice(start,end),controller,confirmMethod:c.slice(ca,cb),admin,card,js,newFiles:newPaths.map(path=>({path,content:read(path)}))}));

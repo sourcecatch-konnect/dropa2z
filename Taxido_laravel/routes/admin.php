@@ -26,23 +26,23 @@ Route::group(['middleware' => ['localization']], function () {
 
         // Role
         Route::put('role/status/{id}', 'RoleController@status')->name('role.status')->middleware('can:role.edit');
-        Route::get('role/force-delete/{id}', 'RoleController@forceDelete')->name('role.forceDelete')->middleware('can:role.destroy');
+        Route::delete('role/force-delete/{id}', 'RoleController@forceDelete')->name('role.forceDelete')->middleware('can:role.destroy');
 
         // Media
-        Route::get('media/force-delete/{id}', 'MediaController@forceDelete')->name('media.forceDelete');
+        Route::delete('media/force-delete/{id}', 'MediaController@forceDelete')->name('media.forceDelete');
         Route::post('media/deleteAll', 'MediaController@deleteAll')->name('media.deleteAll')->middleware('can:attachment.destroy');
         Route::get('media/export', 'MediaController@export')->name('media.export');
 
         // Language
         Route::put('language/status/{id}', 'LanguageController@status')->name('language.status')->middleware('can:language.edit');
         Route::put('language/rtl/{id}', 'LanguageController@rtl')->name('language.rtl');
-        Route::get('language/force-delete/{id}', 'LanguageController@forceDelete')->name('language.forceDelete')->middleware('can:language.forceDelete');
-        Route::get('language/destroy/{language}', 'LanguageController@destroy')->name('language.destroy')->middleware('can:language.destroy');
+        Route::delete('language/force-delete/{id}', 'LanguageController@forceDelete')->name('language.forceDelete')->middleware('can:language.forceDelete');
+        Route::delete('language/destroy/{language}', 'LanguageController@destroy')->name('language.destroy')->middleware('can:language.destroy');
 
         // Currency
-        Route::get('currency/destroy/{currency}', 'CurrencyController@destroy')->name('currency.destroy')->middleware('can:currency.destroy');
-        Route::get('currency/restore/{id}', 'CurrencyController@restore')->name('currency.restore')->middleware('can:currency.restore');
-        Route::get('currency/force-delete/{id}', 'CurrencyController@forceDelete')->name('currency.forceDelete')->middleware('can:currency.forceDelete');
+        Route::delete('currency/destroy/{currency}', 'CurrencyController@destroy')->name('currency.destroy')->middleware('can:currency.destroy');
+        Route::patch('currency/restore/{id}', 'CurrencyController@restore')->name('currency.restore')->middleware('can:currency.restore');
+        Route::delete('currency/force-delete/{id}', 'CurrencyController@forceDelete')->name('currency.forceDelete')->middleware('can:currency.forceDelete');
 
         // Menu
         Route::post('menu/delete-item-menu', 'MenuController@deleteItemMenu')->name('deleteItemMenu');
@@ -62,9 +62,9 @@ Route::group(['middleware' => ['localization']], function () {
         // Users
         Route::resource('user', 'UserController', ['except' => ['show', 'destroy']]);
         Route::put('user/status/{id}', 'UserController@status')->name('user.status')->middleware('can:user.edit');
-        Route::get('user/destroy/{user}', 'UserController@destroy')->name('user.destroy')->middleware('can:user.destroy');
-        Route::get('user/restore/{id}', 'UserController@restore')->name('user.restore')->middleware('can:user.restore');
-        Route::get('user/force-delete/{id}', 'UserController@forceDelete')->name('user.forceDelete')->middleware('can:user.forceDelete');
+        Route::delete('user/destroy/{user}', 'UserController@destroy')->name('user.destroy')->middleware('can:user.destroy');
+        Route::patch('user/restore/{id}', 'UserController@restore')->name('user.restore')->middleware('can:user.restore');
+        Route::delete('user/force-delete/{id}', 'UserController@forceDelete')->name('user.forceDelete')->middleware('can:user.forceDelete');
         Route::put('user/{id}/password/update', 'UserController@updatePassword')->name('user.password.update');
         Route::get('user/export', 'UserController@export')->name('user.export')->middleware('can:user.index');
         Route::post('user/import/csv', 'UserController@import')->name('user.import.csv')->middleware('can:user.create');
@@ -81,9 +81,9 @@ Route::group(['middleware' => ['localization']], function () {
         Route::resource('blog', 'BlogController', ['except' => ['show', 'destroy']]);
         Route::get('blog/slug', 'BlogController@slug')->name('blog.slug');
         Route::put('blog/status/{id}', 'BlogController@status')->name('blog.status')->middleware('can:blog.edit');
-        Route::get('blog/destroy/{blog}', 'BlogController@destroy')->name('blog.destroy')->middleware('can:blog.destroy');
-        Route::get('blog/restore/{id}', 'BlogController@restore')->name('blog.restore')->middleware('can:blog.restore');
-        Route::get('blog/force-delete/{id}', 'BlogController@forceDelete')->name('blog.forceDelete')->middleware('can:blog.forceDelete');
+        Route::delete('blog/destroy/{blog}', 'BlogController@destroy')->name('blog.destroy')->middleware('can:blog.destroy');
+        Route::patch('blog/restore/{id}', 'BlogController@restore')->name('blog.restore')->middleware('can:blog.restore');
+        Route::delete('blog/force-delete/{id}', 'BlogController@forceDelete')->name('blog.forceDelete')->middleware('can:blog.forceDelete');
         Route::get('blog/export', 'BlogController@export')->name('blog.export')->middleware('can:blog.index');
         Route::post('blog/import/csv', 'BlogController@import')->name('blog.import.csv')->middleware('can:blog.create');
 
@@ -95,32 +95,32 @@ Route::group(['middleware' => ['localization']], function () {
         // Tags
         Route::resource('tag', 'TagController', ['except' => ['show', 'destroy']]);
         Route::put('tag/status/{id}', 'TagController@status')->name('tag.status')->middleware('can:tag.edit');
-        Route::get('tag/destroy/{tag}', 'TagController@destroy')->name('tag.destroy')->middleware('can:tag.destroy');
-        Route::get('tag/restore/{id}', 'TagController@restore')->name('tag.restore')->middleware('can:tag.restore');
-        Route::get('tag/force-delete/{id}', 'TagController@forceDelete')->name('tag.forceDelete')->middleware('can:tag.forceDelete');
+        Route::delete('tag/destroy/{tag}', 'TagController@destroy')->name('tag.destroy')->middleware('can:tag.destroy');
+        Route::patch('tag/restore/{id}', 'TagController@restore')->name('tag.restore')->middleware('can:tag.restore');
+        Route::delete('tag/force-delete/{id}', 'TagController@forceDelete')->name('tag.forceDelete')->middleware('can:tag.forceDelete');
 
         // Pages
         Route::resource('page', 'PageController', ['except' => ['show', 'destroy']]);
         Route::get('page/slug', 'PageController@slug')->name('page.slug');
         Route::put('page/status/{id}', 'PageController@status')->name('page.status');
-        Route::get('page/destroy/{page}', 'PageController@destroy')->name('page.destroy')->middleware('can:page.destroy');
-        Route::get('page/restore/{id}', 'PageController@restore')->name('page.restore')->middleware('can:page.restore');
-        Route::get('page/force-delete/{id}', 'PageController@forceDelete')->name('page.forceDelete')->middleware('can:page.forceDelete');
+        Route::delete('page/destroy/{page}', 'PageController@destroy')->name('page.destroy')->middleware('can:page.destroy');
+        Route::patch('page/restore/{id}', 'PageController@restore')->name('page.restore')->middleware('can:page.restore');
+        Route::delete('page/force-delete/{id}', 'PageController@forceDelete')->name('page.forceDelete')->middleware('can:page.forceDelete');
         Route::get('page/export', 'PageController@export')->name('page.export')->middleware('can:page.index');
         Route::post('page/import/csv', 'PageController@import')->name('page.import.csv')->middleware('can:page.create');
 
         // Testimonials
         Route::resource('testimonial', 'TestimonialController', ['except' => ['show', 'destroy']]);
         Route::put('testimonial/status/{id}', 'TestimonialController@status')->name('testimonial.status')->middleware('can:testimonial.edit');
-        Route::get('testimonial/destroy/{testimonial}', 'TestimonialController@destroy')->name('testimonial.destroy')->middleware('can:testimonial.destroy');
-        Route::get('testimonial/restore/{id}', 'TestimonialController@restore')->name('testimonial.restore')->middleware('can:testimonial.restore');
-        Route::get('testimonial/force-delete/{id}', 'TestimonialController@forceDelete')->name('testimonial.forceDelete')->middleware('can:testimonial.forceDelete');
+        Route::delete('testimonial/destroy/{testimonial}', 'TestimonialController@destroy')->name('testimonial.destroy')->middleware('can:testimonial.destroy');
+        Route::patch('testimonial/restore/{id}', 'TestimonialController@restore')->name('testimonial.restore')->middleware('can:testimonial.restore');
+        Route::delete('testimonial/force-delete/{id}', 'TestimonialController@forceDelete')->name('testimonial.forceDelete')->middleware('can:testimonial.forceDelete');
 
         // Faqs
         Route::resource('faq', 'FaqController', ['except' => ['show', 'destroy']]);
-        Route::get('faq/destroy/{faq}', 'FaqController@destroy')->name('faq.destroy')->middleware('can:faq.destroy');
-        Route::get('faq/restore/{id}', 'FaqController@restore')->name('faq.restore')->middleware('can:faq.restore');
-        Route::get('faq/force-delete/{id}', 'FaqController@forceDelete')->name('faq.forceDelete')->middleware('can:faq.forceDelete');
+        Route::delete('faq/destroy/{faq}', 'FaqController@destroy')->name('faq.destroy')->middleware('can:faq.destroy');
+        Route::patch('faq/restore/{id}', 'FaqController@restore')->name('faq.restore')->middleware('can:faq.restore');
+        Route::delete('faq/force-delete/{id}', 'FaqController@forceDelete')->name('faq.forceDelete')->middleware('can:faq.forceDelete');
 
         // Languages
         Route::resource('language', 'LanguageController', ['except' => ['show', 'destroy']]);
@@ -130,7 +130,7 @@ Route::group(['middleware' => ['localization']], function () {
         // Plugins
         Route::resource('plugin', 'PluginController');
         Route::put('plugin/status/{id}', 'PluginController@status')->name('plugin.status');
-        Route::get('module/delete/{id}', 'PluginController@delete')->name('plugin.delete');
+        Route::delete('module/delete/{id}', 'PluginController@delete')->name('plugin.delete');
 
         // Settings
         Route::resource('setting', 'SettingController');
@@ -150,9 +150,9 @@ Route::group(['middleware' => ['localization']], function () {
         // Taxes
         Route::resource('tax', 'TaxController', ['except' => ['show', 'destroy']]);
         Route::put('tax/status/{id}', 'TaxController@status')->name('tax.status')->middleware('can:tax.edit');
-        Route::get('tax/destroy/{tax}', 'TaxController@destroy')->name('tax.destroy')->middleware('can:tax.destroy');
-        Route::get('tax/restore/{id}', 'TaxController@restore')->name('tax.restore')->middleware('can:tax.restore');
-        Route::get('tax/force-delete/{id}', 'TaxController@forceDelete')->name('tax.forceDelete')->middleware('can:tax.forceDelete');
+        Route::delete('tax/destroy/{tax}', 'TaxController@destroy')->name('tax.destroy')->middleware('can:tax.destroy');
+        Route::patch('tax/restore/{id}', 'TaxController@restore')->name('tax.restore')->middleware('can:tax.restore');
+        Route::delete('tax/force-delete/{id}', 'TaxController@forceDelete')->name('tax.forceDelete')->middleware('can:tax.forceDelete');
 
         // Currencies
         Route::resource('currency', 'CurrencyController', ['except' => ['show', 'destroy']]);
@@ -174,14 +174,15 @@ Route::group(['middleware' => ['localization']], function () {
 
         // Notification
         Route::get('notification', 'NotificationController@index')->name('notification.index');
+        Route::get('notifications/poll', 'NotificationController@poll')->name('notifications.poll');
         Route::post('notifications/markAsRead', 'NotificationController@markAsRead')->name('notifications.markAsRead');
         Route::post('notifications/clearAll', 'NotificationController@clearAll')->name('notifications.clearAll');
-        Route::get('notification/destroy/{id}', 'NotificationController@destroy')->name('notification.destroy');
+        Route::delete('notification/destroy/{id}', 'NotificationController@destroy')->name('notification.destroy');
 
         // Chat
         Route::get('chat', 'ChatController@index')->name('chat.index')->middleware('can:chat.index');
-        Route::get('chat/users', 'ChatController@getUsersByRole')->name('chat.users');
-        Route::get('chat/recent', 'ChatController@recent')->name('chat.recent');
+        Route::get('chat/users', 'ChatController@getUsersByRole')->name('chat.users')->middleware('can:chat.index');
+        Route::get('chat/recent', 'ChatController@recent')->name('chat.recent')->middleware('can:chat.index');
 
         // Landing Page
         Route::resource('landing-page', 'LandingPageController');
@@ -217,7 +218,7 @@ Route::group(['middleware' => ['localization']], function () {
 
         // Activity Logs
         Route::get('activity-logs', 'ActivityLogController@index')->name('activity-logs.index')->middleware('can:system-tool.index');
-        Route::get('activity-logs/destroy/{id}', 'ActivityLogController@destroy')->name('activity-log.destroy')->middleware('can:system-tool.destroy');
+        Route::delete('activity-logs/destroy/{id}', 'ActivityLogController@destroy')->name('activity-log.destroy')->middleware('can:system-tool.destroy');
         Route::delete('activity-logs/delete-all', 'ActivityLogController@deleteAll')->name('activity-log.deleteAll')->middleware('can:system-tool.destroy');
 
         // Cleanup Database

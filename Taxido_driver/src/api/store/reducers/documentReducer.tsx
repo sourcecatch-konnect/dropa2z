@@ -15,6 +15,7 @@ const documentSlice = createSlice({
   extraReducers: builder => {
     builder.addCase(documentGet.pending, state => {
       state.loading = true
+      state.success = false
     })
     builder.addCase(
       documentGet.fulfilled,

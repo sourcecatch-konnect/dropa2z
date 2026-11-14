@@ -4,14 +4,8 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import {
-  Pressable,
-  Text,
-  View,
-  Share,
-  TouchableOpacity,
-  Linking,
-} from "react-native";
+import {Pressable, View, Share, TouchableOpacity, Linking} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import { external } from "../../../../../../styles/externalStyle";
 import {
   useProfileData,
@@ -31,7 +25,6 @@ import {
 } from "@src/api/store/actions";
 import { appColors, windowHeight } from "@src/themes";
 import { useAppNavigation } from "@src/utils/navigation";
-import { accountDelete } from "@src/api/store/actions";
 import useStoredLocation from "@src/components/helper/useStoredLocation";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -84,7 +77,6 @@ export const ProfileContainer = forwardRef(
     useImperativeHandle(ref, () => ({
       gotoLogout,
       gotoLoginWithoutNotification,
-      deleteAccounts,
     }));
 
     let isSharing = false;
@@ -114,14 +106,8 @@ export const ProfileContainer = forwardRef(
       } else if (screenName === "Share") {
         safeShare({
           message:
-            "https://play.google.com/store/apps/details?id=com.taxidouser&hl=en-IN",
+            "https://play.google.com/store/apps/details?id=com.dropa2z.rider&hl=en-IN",
         });
-      } else if (screenName === "PrivacyPolicy") {
-        const url =
-          taxidoSettingData?.cabbooking_values?.setting?.rider_privacy_policy;
-        Linking.openURL(url).catch(err =>
-          console.error("Failed to open URL:", err),
-        );
       } else {
         navigate(screenName as any);
       }
@@ -149,29 +135,13 @@ export const ProfileContainer = forwardRef(
       reset({ index: 0, routes: [{ name: "SignIn" }] });
     };
 
-    const deleteAccounts = () => {
-      dispatch(accountDelete());
-      notificationHelper("", translateData.accountDelete, "error");
-      reset({ index: 0, routes: [{ name: "SignIn" }] });
-      dispatch(homeScreenPrimary());
-      dispatch(userZone({ lat: latitude, lng: longitude }));
-    };
-
-
-
     return (
       <View style={[external.mh_20]}>
         {loading ? (
           <SkeletonProfileSection hasAlertZone={!!token} />
         ) : (
           (token ? profileData : guestData)?.map((section, index) => {
-            const filteredData = section.data?.filter(item => {
-              if (item.screenName === "PrivacyPolicy") {
-                return !!taxidoSettingData?.cabbooking_values?.setting
-                  ?.rider_privacy_policy;
-              }
-              return true;
-            });
+            const filteredData = section.data;
 
             if (!filteredData || filteredData?.length === 0) return null;
 

@@ -57,10 +57,10 @@ export const CommonProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const Google_Map_Key =
         Platform.OS === "android"
-            ? "Enter Your Google Map Key Here"
-            : "Enter Your Google Map Key Here";
+            ? "AIzaSyDEZolwWXk44dACgtOotiXOuej0AIW-B5g"
+            : "AIzaSyC30DhY_gvaQCb7fK-cXXwi6yCy7CXS988";
 
-    const Google_Sign_Key = "Enter Your Google Sign Key Here";
+    const Google_Sign_Key = "1008715010172-3emflha9cni0pt5j69oninv037ostmjr.apps.googleusercontent.com";
 
     useEffect(() => {
         const loadSettings = async () => {

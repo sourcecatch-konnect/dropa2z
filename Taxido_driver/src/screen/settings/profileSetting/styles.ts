@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appColors from '../../../theme/appColors'
 import {
@@ -14,7 +15,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: windowHeight(6),
     paddingHorizontal: windowWidth(1.5),
-    borderRadius: windowWidth(1.5),
+    borderRadius: 14,
   },
   codeText: {
     fontSize: fontSizes.FONT3SMALL,
@@ -28,16 +29,13 @@ const styles = StyleSheet.create({
   },
   profileView: {
     marginHorizontal: windowWidth(4),
-    marginTop: windowHeight(10),
+    marginTop: 20,
     borderWidth: windowHeight(0.1),
-    borderRadius: windowHeight(1),
-    height: '80%',
+    borderRadius: 22,
+    overflow: "hidden",
   },
   profileImageView: {
-    position: 'absolute',
-    top: windowHeight(-7),
-    left: '48%',
-    marginLeft: windowWidth(-12),
+    position: "relative",
     width: windowHeight(14),
     height: windowHeight(14),
     borderRadius: windowHeight(15),
@@ -68,14 +66,17 @@ const styles = StyleSheet.create({
   },
   fieldView: {
     marginHorizontal: windowWidth(4),
-    marginTop: windowHeight(8.9),
+    marginTop: 20,
     paddingBottom: windowHeight(3.3),
+  
   },
   updateBtn: {
     marginBottom: windowHeight(1.5),
   },
   codeComponent: {
     marginRight: windowWidth(2.5),
+  
+    ...referenceSurfaces.control,
   },
   countryCode: {
     height: windowHeight(6),
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.graybackground,
     paddingHorizontal: windowWidth(1.5),
     paddingVertical: windowHeight(1),
-    borderRadius: windowWidth(1.5),
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: windowHeight(0.1),
@@ -98,8 +99,8 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(19),
   },
   editIconContainer: {
-    width: windowHeight(4),
-    height: windowHeight(4),
+    width: 44,
+    height: 44,
     borderRadius: windowHeight(24),
     position: 'absolute',
     alignSelf: 'flex-end',
@@ -121,9 +122,13 @@ const styles = StyleSheet.create({
   },
   emailContainer: {
     top: windowHeight(0.2),
+  
+    ...referenceSurfaces.control,
   },
   countryContainer: {
     marginVertical: windowHeight(1),
+  
+    ...referenceSurfaces.control,
   },
   mobileNumber: {
     marginTop: windowHeight(0.3),

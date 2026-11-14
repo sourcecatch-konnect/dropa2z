@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import {StyleSheet} from 'react-native';
 import { appColors } from '@src/themes'; 
 import {external} from '../../../styles/externalStyle';
@@ -16,6 +17,8 @@ const style = StyleSheet.create({
     borderColor: appColors.primaryGray,
     paddingVertical: windowHeight(6.5),
     elevation: 1,
+  
+    ...riderCardFinish,
   },
 });
 

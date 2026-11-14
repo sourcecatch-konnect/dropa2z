@@ -1,5 +1,8 @@
+import {ReferenceScreen,referenceSurfaces} from '../../design/ReferenceChrome';
 import React from "react";
-import {View, Text, Image, FlatList, StyleSheet} from "react-native";
+import {CardHeading} from "../../design/CardHeading";
+import {View, Image, FlatList, StyleSheet} from 'react-native';
+import {Text} from '../../design/Typography';
 import {Header} from "@src/commonComponent";
 import Images from "@src/utils/images";
 import {
@@ -22,8 +25,8 @@ export function ReferralList() {
     const referredUser = item?.referred || {};
     const status = item?.status?.toLowerCase() || "";
     const isPending = status === "pending";
-    const statusColor = isPending ? "#FFB400" : "#28A745";
-    const bgColor = isPending ? "#FFF7E5" : "#E8F4F1";
+    const statusColor = isPending ? "#A64B00" : "#157A52";
+    const bgColor = isPending ? "#FFF2DF" : "#E5F4EC";
 
     return (
       <View
@@ -92,13 +95,14 @@ export function ReferralList() {
   };
 
   return (
-    <View
-      style={{
+    <ReferenceScreen><View
+      style={[{
         flex: 1,
         backgroundColor: isDark ? appColors.primaryText : appColors.lightGray,
-      }}>
+      }, {backgroundColor:'transparent'}]}>
       <Header value={translateData?.referralsList} />
       <FlatList
+        ListHeaderComponent={<CardHeading icon="user-round" title={translateData?.referralsList || "Referrals"}/>}
         data={referralData}
         keyExtractor={item => item.id?.toString()}
         renderItem={renderItem}
@@ -143,12 +147,13 @@ export function ReferralList() {
           </View>
         }
       />
-    </View>
+    </View></ReferenceScreen>
   );
 }
 
 const styles = StyleSheet.create({
   itemContainer: {
+    ...referenceSurfaces.card,
     flexDirection: "row",
     alignItems: "center",
     padding: windowHeight(15),

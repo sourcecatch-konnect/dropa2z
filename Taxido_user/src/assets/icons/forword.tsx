@@ -4,7 +4,7 @@ export function Forword() {
     return (
         <Svg width={20} height={20} fill="none">
             <Path
-                stroke="#199675"
+                stroke="#FC9F03"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeMiterlimit={10}

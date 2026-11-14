@@ -33,7 +33,26 @@ const CustomSlider = ({ buttonText = 'Slide to Start', onSwipeSuccess = () => { 
     }, [translateX, textTranslateX, textOpacity]);
 
     const handleSwipeSuccess = () => {
-        onSwipeSuccess();
+        let result;
+        try {
+            result = onSwipeSuccess();
+        } catch (error) {
+            resetButton();
+            return;
+        }
+
+        const resetOnFailure = (success) => {
+            if (success === false) {
+                resetButton();
+            }
+        };
+
+        if (result && typeof result.then === 'function') {
+            result.then(resetOnFailure).catch(() => resetButton());
+        } else {
+            resetOnFailure(result);
+        }
+
         Animated.timing(translateX, {
             toValue: maxSlide,
             duration: 200,

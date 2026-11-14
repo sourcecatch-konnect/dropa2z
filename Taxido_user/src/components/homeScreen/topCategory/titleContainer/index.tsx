@@ -1,4 +1,5 @@
-import { Image, Text, View } from 'react-native';
+import {Image, View} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from 'react';
 import { RightSmallArrow } from '@utils/icons';
 import { styles } from '../styles';

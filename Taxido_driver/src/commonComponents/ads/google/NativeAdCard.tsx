@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Image, Platform } from "react-native";
+import {View, StyleSheet, Image, Platform} from 'react-native';
+import {Text} from '../../../design/Typography';
 import {
     NativeAd,
     NativeAdView,

@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, Share, Linking } from "react-native";
+import {View, Image, TouchableOpacity, Share, Linking} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useState, useEffect } from "react";
 import styles from "../../styles";
 import { useValues } from "@src/utils/context/index";
@@ -47,7 +48,7 @@ export function DriverData({ driverDetails, duration }) {
   const handleShare = async () => {
     try {
       const message =
-        `🚖 Taxido Ride Details
+        `🚖 DropA2Z Ride Details
 
 🕒 Expected Arrival : ${endTime ?? "N/A"}
 📍 Pickup           : ${driverDetails?.locations?.[0] ?? "N/A"}
@@ -147,28 +148,6 @@ export function DriverData({ driverDetails, duration }) {
       </View>
       <View style={{ borderBottomWidth: 1, borderColor: isDark ? appColors.darkBorder : appColors.border, marginTop: windowHeight(4) }} />
 
-      {driverDetails?.service?.service_type === 'parcel' &&
-        <>
-          <View style={{ borderBottomWidth: 1, borderColor: isDark ? appColors.darkBorder : appColors.border }} />
-          <View style={{ flexDirection: viewRTLStyle, alignItems: "center", justifyContent: 'space-between', marginTop: windowHeight(15), marginBottom: windowHeight(-5) }}>
-            <Text style={[
-              styles.number1,
-              { color: textColorStyle, textAlign: textRTLStyle },
-            ]}>{translateData?.deliveryOtp}</Text>
-            <View style={{ flexDirection: "row", justifyContent: "center" }}>
-              {driverDetails?.parcel_delivered_otp
-                ?.toString()
-                .padStart(4, "0")
-                .split("")
-                .map((digit, index) => (
-                  <View key={index} style={styles.pinBox}>
-                    <Text style={styles.pin}>{digit}</Text>
-                  </View>
-                ))}
-            </View>
-          </View>
-        </>
-      }
     </View >
   );
 }

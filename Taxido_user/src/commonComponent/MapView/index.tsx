@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import {BrandLoader} from '../../design/BrandLogo';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import getEchoInstance from '@src/utils/echo';
@@ -9,8 +10,15 @@ import { MapViewProps } from '../type';
 import { styles } from './style';
 import { useSelector } from 'react-redux';
 
+// Live GPS updates rerender the parent map component. Keep the native WebView
+// mounted unless the actual HTML source changes.
+const StableMapWebView = React.memo(
+  WebView,
+  (previous, next) => previous.source === next.source,
+);
 
-export function Map({
+
+function MapComponent({
   userLocation,
   driverId,
   markerImage,
@@ -27,6 +35,8 @@ export function Map({
   const [_isLoading, setIsLoading] = useState<boolean>(true);
   const webviewRef = useRef<any>(null);
   const lastPosition = useRef<any>(null);
+  const lastRouteFetchAt = useRef<number>(0);
+  const lastRouteWaypoints = useRef<string>("");
   const { isDark, Google_Map_Key } = useValues();
   const [mapType] = useState(taxidoSettingData?.cabbooking_values?.location?.map_provider);
 
@@ -34,7 +44,16 @@ export function Map({
     latitude: parseFloat(coordinate.lat),
     longitude: parseFloat(coordinate.lng),
   });
-
+  // A live ride can refresh its location object frequently. Keep the WebView's
+  // initial map center fixed to the pickup so those updates never reload tiles.
+  const initialMapCenterRef = useRef({
+    latitude: userLocation ? parseCoordinate(userLocation).latitude : 37.78825,
+    longitude: userLocation ? parseCoordinate(userLocation).longitude : -122.4324,
+  });
+  const initialLat = initialMapCenterRef.current?.latitude ?? 37.78825;
+  const initialLng = initialMapCenterRef.current?.longitude ?? -122.4324;
+  const latestMapDataRef = useRef<any>(null);
+  latestMapDataRef.current = { userLocation, driverLocation, rotation, routeCoordinates };
 
   useEffect(() => {
     setIsLoading(true);
@@ -45,7 +64,9 @@ export function Map({
     lastPosition.current = null;
     let isActive = true;
 
-    if (markerImage) {
+    if (markerImage?.startsWith("data:")) {
+      setMarkerIconDataUri(markerImage);
+    } else if (markerImage) {
       fetch(markerImage)
         .then(res => res.text())
         .then(svgContent => {
@@ -130,21 +151,24 @@ export function Map({
     }
 
     const now = Date.now();
-    const timeSinceLastUpdate = now - (lastPosition.current?.timestamp || 0);
-    const isWaypointChange = JSON.stringify(waypoints) !== JSON.stringify(lastPosition.current?.lastWaypoints || []);
+    const waypointsKey = JSON.stringify(waypoints || []);
+    const isWaypointChange = waypointsKey !== lastRouteWaypoints.current;
 
-    if (!isWaypointChange && timeSinceLastUpdate < 10000) {
+    // GPS events arrive much more often than the route meaningfully changes.
+    // Throttle Directions requests independently from the last driver position.
+    if (!isWaypointChange && now - lastRouteFetchAt.current < 10000) {
       return;
     }
 
-    lastPosition.current = { ...lastPosition.current, timestamp: now, lastWaypoints: waypoints };
+    lastRouteFetchAt.current = now;
+    lastRouteWaypoints.current = waypointsKey;
 
     const origin = driverLocation;
     const destination = parseCoordinate(userLocation);
     const waypointsParam = waypoints && waypoints?.length > 0
       ? `&waypoints=optimize:false|${waypoints.map((wp: any) => `${wp.lat},${wp.lng}`).join('|')}`
       : '';
-    const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin?.latitude},${origin?.longitude}&destination=${destination?.latitude},${destination?.longitude}${waypointsParam}&key=${Google_Map_Key}`;
+    const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin?.latitude},${origin?.longitude}&destination=${destination?.latitude},${destination?.longitude}${waypointsParam}&mode=driving&departure_time=now&traffic_model=best_guess&key=${Google_Map_Key}`;
 
 
     fetch(directionsUrl)
@@ -157,20 +181,21 @@ export function Map({
             setRouteCoordinates(points);
           } else {
             console.error('Invalid coordinates in route:', points);
-            setRouteCoordinates([]);
           }
           if (onDurationChange && json.routes[0].legs) {
-            const totalDuration = json.routes[0].legs.reduce((sum: number, leg: any) => sum + (leg.duration?.value || 0), 0);
+            const totalDuration = json.routes[0].legs.reduce((sum: number, leg: any) => sum + (leg.duration_in_traffic?.value ?? leg.duration?.value ?? 0), 0);
             onDurationChange(totalDuration);
           }
         } else {
           console.error('Directions API error:', json.status, json.error_message || 'No routes found');
-          setRouteCoordinates([]);
+          onDurationChange?.(null);
+          // Keep the last good road line visible during temporary API failures.
         }
       })
       .catch(error => {
         console.error('Error fetching route:', error);
-        setRouteCoordinates([]);
+        onDurationChange?.(null);
+        // Keep the last good road line visible during temporary API failures.
       });
   }, [driverLocation, userLocation, Google_Map_Key, JSON.stringify(waypoints)]);
 
@@ -294,9 +319,6 @@ export function Map({
 
 
   const mapHtml = useMemo(() => {
-    const initialLat = userLocation ? parseCoordinate(userLocation).latitude : 37.78825;
-    const initialLng = userLocation ? parseCoordinate(userLocation).longitude : -122.4324;
-
     if (mapType === 'google_map') {
       //  GOOGLE MAP VERSION
       return `
@@ -312,6 +334,7 @@ export function Map({
           <div id="map"></div>
           <script>
             let map, driverMarker, userMarker, routePath, waypointMarkers = [];
+            let driverMoveFrame = null;
             let driverMarkerIconUrl = null;
             const provisionalDash = [{ icon: { path: 'M 0,-1 l 0,1' }, strokeOpacity: 1, scale: 4 }];
 
@@ -338,17 +361,7 @@ export function Map({
             }
             function updateDriverLocation(lat, lng, rot) {
               const pos = new google.maps.LatLng(lat, lng);
-              if (driverMarker) {
-                driverMarker.setPosition(pos);
-                if (driverMarkerIconUrl) {
-                  driverMarker.setIcon({
-                    url: driverMarkerIconUrl,
-                    anchor: new google.maps.Point(25, 25),
-                    scaledSize: new google.maps.Size(50, 50),
-                    rotation: rot
-                  });
-                }
-              } else {
+              if (!driverMarker) {
                 driverMarker = new google.maps.Marker({
                   position: pos,
                   map: map,
@@ -360,7 +373,26 @@ export function Map({
                   } : null
                 });
               }
-              map.panTo(pos);
+              if (driverMoveFrame !== null) cancelAnimationFrame(driverMoveFrame);
+              const start = driverMarker.getPosition() || pos;
+              const startedAt = performance.now();
+              const duration = 500;
+              const animate = () => {
+                const progress = Math.min((performance.now() - startedAt) / duration, 1);
+                const eased = progress * (2 - progress);
+                driverMarker.setPosition(new google.maps.LatLng(
+                  start.lat() + (pos.lat() - start.lat()) * eased,
+                  start.lng() + (pos.lng() - start.lng()) * eased
+                ));
+                if (progress < 1) driverMoveFrame = requestAnimationFrame(animate);
+                else driverMoveFrame = null;
+              };
+              driverMoveFrame = requestAnimationFrame(animate);
+
+              const bounds = map.getBounds();
+              if (!bounds || !bounds.contains(pos)) {
+                map.panTo(pos);
+              }
             }
 
             function updateUserLocation(lat, lng) {
@@ -393,7 +425,7 @@ export function Map({
                     icon: {
                       path: google.maps.SymbolPath.CIRCLE,
                       scale: 10,
-                      fillColor: '#199675',
+                      fillColor: '#195594',
                       fillOpacity: 1,
                       strokeColor: 'white',
                       strokeWeight: 2
@@ -421,7 +453,7 @@ export function Map({
                 routePath = new google.maps.Polyline({
                   path,
                   geodesic: true,
-                  strokeColor: '#199675',
+                  strokeColor: '#195594',
                   strokeWeight: 4,
                   icons: isProvisional ? provisionalDash : null,
                   map: map
@@ -486,7 +518,9 @@ export function Map({
                   : undefined;
                 driverMarker = L.marker(pos, { icon }).addTo(map);
               }
-              map.panTo(pos);
+              if (!map.getBounds().contains(pos)) {
+                map.panTo(pos);
+              }
             }
 
             function updateUserLocation(lat, lng) {
@@ -512,7 +546,7 @@ export function Map({
                 routeLine.setLatLngs(path);
               } else {
                 routeLine = L.polyline(path, {
-                  color: '#199675',
+                  color: '#195594',
                   weight: 4,
                   opacity: isProvisional ? 0.4 : 0.9,
                   dashArray: isProvisional ? '5, 10' : null
@@ -525,53 +559,61 @@ export function Map({
       </html>
     `;
     }
-  }, [mapType, isDark, Google_Map_Key, userLocation]);
+  }, [mapType, isDark, Google_Map_Key, initialLat, initialLng]);
 
+  // Keep the native WebView source object stable as live location state
+  // updates. A new source object can make Android reload the whole map.
+  const webViewSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
 
-  const onMessage = (event: any) => {
+  const onMessage = useCallback((event: any) => {
     if (event.nativeEvent.data === "map_loaded") {
       setIsMapReady(true);
       setTimeout(() => {
-        if (userLocation && webviewRef.current) {
-          const { latitude, longitude } = parseCoordinate(userLocation);
+        const latest = latestMapDataRef.current;
+        if (latest.userLocation && webviewRef.current) {
+          const { latitude, longitude } = parseCoordinate(latest.userLocation);
           const script = `
             updateUserLocation(${latitude}, ${longitude});
           `;
           webviewRef.current.injectJavaScript(script);
         }
-        if (driverLocation && webviewRef.current) {
-          const { latitude, longitude } = driverLocation;
+        if (latest.driverLocation && webviewRef.current) {
+          const { latitude, longitude } = latest.driverLocation;
           const script = `
-            updateDriverLocation(${latitude}, ${longitude}, ${rotation});
+            updateDriverLocation(${latitude}, ${longitude}, ${latest.rotation});
           `;
           webviewRef.current.injectJavaScript(script);
         }
-        if (driverLocation && userLocation && webviewRef.current) {
-          const coords = routeCoordinates?.length > 0 ? routeCoordinates : [driverLocation, parseCoordinate(userLocation)];
+        if (latest.driverLocation && latest.userLocation && webviewRef.current) {
+          const coords = latest.routeCoordinates?.length > 0
+            ? latest.routeCoordinates
+            : [latest.driverLocation, parseCoordinate(latest.userLocation)];
           const script = `
             if (typeof google !== 'undefined' && google.maps && google.maps.Polyline) {
-              updateRoute(${JSON.stringify(coords)}, ${routeCoordinates?.length === 0});
+              updateRoute(${JSON.stringify(coords)}, ${latest.routeCoordinates?.length === 0});
             }
           `;
           webviewRef.current.injectJavaScript(script);
         }
       }, 2000);
     }
-  };
+  }, []);
 
   return (
     <View style={styles.container}>
-      <WebView
+      <StableMapWebView
         ref={webviewRef}
         style={styles.webview}
         originWhitelist={['*']}
-        source={{ html: mapHtml }}
+        source={webViewSource}
         javaScriptEnabled={true}
         onMessage={onMessage}
         startInLoadingState={true}
-        renderLoading={() => <ActivityIndicator style={styles.loadingIndicator} size="large" color={appColors.primary} />}
+        renderLoading={() => <BrandLoader style={styles.loadingIndicator} size="large" color={appColors.primary} />}
       />
     </View>
   );
 }
+
+export const Map = React.memo(MapComponent)
 

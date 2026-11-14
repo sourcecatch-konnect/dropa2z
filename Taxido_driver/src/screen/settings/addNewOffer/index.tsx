@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { View, Text, TextInput, ScrollView } from 'react-native'
+import {View, ScrollView} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import appColors from '../../../theme/appColors'
 import { Switch } from '../appSettings/component/'
 import { personValue, totalKM, vehicalType } from './data'

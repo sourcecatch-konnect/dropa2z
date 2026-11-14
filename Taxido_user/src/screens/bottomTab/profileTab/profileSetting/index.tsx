@@ -1,3 +1,4 @@
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
 import React, {
   useEffect,
   useRef,
@@ -5,14 +6,8 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import {
-  BackHandler,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import {BackHandler, Image, SafeAreaView, ScrollView, View} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import { Button, HeaderTab, notificationHelper } from "@src/commonComponent";
 import { external } from "../../../../styles/externalStyle";
 import { commonStyles } from "../../../../styles/commonStyle";
@@ -21,7 +16,7 @@ import { ProfileContainer } from "./profileComponent/profileScreen/ProfileContai
 import { styles } from "./style";
 import { useValues } from "@src/utils/context/index";
 import { appColors, appFonts, fontSizes, windowHeight } from "@src/themes";
-import { clearValue, deleteValue, getValue } from "@src/utils/localstorage";
+import { clearValue, getValue } from "@src/utils/localstorage";
 import { useDispatch, useSelector } from "react-redux";
 import DeviceInfo from "react-native-device-info";
 import {
@@ -47,7 +42,7 @@ import useStoredLocation from "@src/components/helper/useStoredLocation";
 import { useAppNavigation } from "@src/utils/navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { resetState } from "@src/api/store/reducers";
-import LottieView from "lottie-react-native";
+import {AccountDeletionDialog} from '../../../../design/AccountDeletionDialog';
 
 export function ProfileSetting() {
   const {
@@ -66,9 +61,11 @@ export function ProfileSetting() {
   const dispatch = useDispatch();
   const [versionCode, setVersionCode] = useState("");
   const logoutSheetRef = useRef<BottomSheetModal>(null);
-  const deleteSheetRef = useRef<BottomSheetModal>(null);
+  const [deleteVisible, setDeleteVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const deletingRef = useRef(false);
   const snapPoints = useMemo(() => ["35%"], []);
-  const snapPoints1 = useMemo(() => ["47%"], []);
   const { self } = useSelector(state => state.account);
   const { latitude, longitude } = useStoredLocation();
   const navigation = useNavigation();
@@ -132,7 +129,7 @@ export function ProfileSetting() {
   }, []);
 
   const openLogoutSheet = () => logoutSheetRef.current?.present();
-  const openDeleteSheet = () => deleteSheetRef.current?.present();
+  const openDeleteSheet = () => {setDeleteError(""); setDeleteVisible(true);};
 
   const handleSignIn = async () => {
     await dispatch(homeScreenPrimary());
@@ -144,9 +141,25 @@ export function ProfileSetting() {
     logoutAccount();
   };
 
-  const handleDeleteAccount = async () => {
-    messaging().unsubscribeFromTopic(`user_${self?.id}`);
-    deleteAccounts();
+  const handleDeleteAccount = async (confirmation: {confirmation: string; acknowledged: boolean}) => {
+    if (deletingRef.current) return;
+    deletingRef.current = true; setDeleting(true); setDeleteError("");
+    try {
+      await dispatch(accountDelete(confirmation)).unwrap();
+      await messaging().unsubscribeFromTopic(`user_${self?.id}`).catch(() => {});
+      const darkThemeValue = await AsyncStorage.getItem("darkTheme");
+      const rtlValue = await AsyncStorage.getItem("rtl");
+      await clearValue();
+      if (darkThemeValue !== null) setIsDark(JSON.parse(darkThemeValue));
+      if (rtlValue !== null) setIsRTL(JSON.parse(rtlValue));
+      dispatch(resetState()); dispatch(settingDataGet());
+      setDeleteVisible(false);
+      reset({index: 0, routes: [{name: "SignIn"}]});
+      dispatch(homeScreenPrimary());
+      dispatch(userZone({lat: latitude, lng: longitude}));
+    } catch (error: any) {
+      setDeleteError(error?.message || (typeof error === 'string' ? error : 'Could not delete your account. Please try again.'));
+    } finally {deletingRef.current = false; setDeleting(false);}
   };
 
   const logoutAccount = async () => {
@@ -167,23 +180,8 @@ export function ProfileSetting() {
     }
   };
 
-  const deleteAccounts = () => {
-    dispatch(accountDelete())
-      .unwrap()
-      .then(res => {
-        deleteValue("token");
-      })
-      .catch(err => {
-        console.error("❌ Account delete error:", err);
-      });
-    notificationHelper("", translateData.accountDelete, "error");
-    reset({ index: 0, routes: [{ name: "SignIn" }] });
-    dispatch(homeScreenPrimary());
-    dispatch(userZone({ lat: latitude, lng: longitude }));
-  };
-
   return (
-    <GestureHandlerRootView>
+    <ReferenceScreen><GestureHandlerRootView>
       <View style={styles.main}>
         <SafeAreaView
           style={[styles.container, { backgroundColor: bgFullStyle }]}
@@ -238,7 +236,7 @@ export function ProfileSetting() {
             <BottomSheetBackdrop {...props} pressBehavior="close" />
           )}
           backgroundStyle={{ backgroundColor: bgFullStyle }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={{ padding: windowHeight(15) }}>
             <View style={{ alignSelf: "center" }}>
               <Image
@@ -286,75 +284,9 @@ export function ProfileSetting() {
         </BottomSheetModal>
       </BottomSheetModalProvider>
 
-      <BottomSheetModalProvider>
-        <BottomSheetModal
-          ref={deleteSheetRef}
-          index={1}
-          snapPoints={snapPoints1}
-          enablePanDownToClose
-          handleIndicatorStyle={{
-            backgroundColor: appColors.primary,
-            width: "13%",
-          }}
-          backdropComponent={props => (
-            <BottomSheetBackdrop {...props} pressBehavior="close" />
-          )}
-          backgroundStyle={{ backgroundColor: bgFullStyle }}
-        >
-          <BottomSheetView style={{ padding: windowHeight(15) }}>
-            <LottieView
-              source={require("../../../../assets/images/payment/delete.json")}
-              style={{
-                height: windowHeight(90),
-                width: windowHeight(100),
-                alignSelf: "center",
-                bottom: windowHeight(10),
-              }}
-              resizeMode="contain"
-              autoPlay
-              loop
-            />
-            <Text
-              style={{
-                color: isDark ? appColors.whiteColor : appColors.blackColor,
-                fontFamily: appFonts.medium,
-                fontSize: fontSizes.FONT22,
-                top: windowHeight(1),
-                alignSelf: "center",
-              }}
-            >
-              {translateData.wantDeleteAccount}
-            </Text>
-            <Text
-              style={{
-                color: appColors.gray,
-                textAlign: "center",
-                fontFamily: appFonts.regular,
-                fontSize: fontSizes.FONT16,
-                width: "92%",
-                top: windowHeight(8),
-                alignSelf: "center",
-              }}
-            >
-              {translateData.deleteAccountMsg}
-            </Text>
-            <View
-              style={{
-                width: "96%",
-                top: windowHeight(29),
-                alignSelf: "center",
-              }}
-            >
-              <Button
-                title={translateData.proceed}
-                backgroundColor={appColors.primary}
-                color={appColors.whiteColor}
-                onPress={handleDeleteAccount}
-              />
-            </View>
-          </BottomSheetView>
-        </BottomSheetModal>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+      <AccountDeletionDialog visible={deleteVisible} busy={deleting} error={deleteError}
+        onClose={() => setDeleteVisible(false)} onConfirm={handleDeleteAccount}/>
+
+    </GestureHandlerRootView></ReferenceScreen>
   );
 }

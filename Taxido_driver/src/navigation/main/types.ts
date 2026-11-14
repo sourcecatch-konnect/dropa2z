@@ -7,6 +7,7 @@ export type OtpScreen = {
   userType?: string;
   confirmation?: any;
   smsGateway?: string
+  email_or_phone?: string
 }
 
 
@@ -27,6 +28,11 @@ export type CreateAccountScreen = {
   userType?: string;
   confirmation?: any;
   smsGateway?: string
+  email?: string
+  name?: string
+  verifiedChannel?: 'email' | 'phone' | 'google'
+  registrationProof?: { type: 'email' | 'phone'; contact: string; country_code?: string; token: string }
+  googleIdToken?: string
 }
 
 export type OtpRide = {
@@ -78,6 +84,7 @@ export type DocumentDetail = {
 
 
 export type RootStackParamList = {
+  DriverTraining: undefined
   Splash: undefined
   OnBoarding: undefined
   Login: undefined
@@ -99,7 +106,8 @@ export type RootStackParamList = {
   ProfileSetting: undefined
   EndRide: undefined
   RentalDetails: undefined
-  DocumentDetail: DocumentDetail
+  LegalDocuments: undefined
+  DocumentDetail: DocumentDetail | undefined
   BankDetails: undefined
   VehicleDetail: undefined
   Notification: undefined
@@ -141,6 +149,7 @@ export type RootStackParamList = {
   TotalEarnings: undefined
   DashBoard: undefined
   MapWebView: any
+  DeliveryNavigation: {title?: string; destinations: Array<{lat:number|string;lng:number|string;title?:string}>}
   PdfViewer: undefined
   AddVehicleDetails: undefined
   AddDocument: AddDocument

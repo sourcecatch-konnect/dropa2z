@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useRef, useCallback } from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet";
+import React, {useEffect} from "react";
+import {View, TouchableOpacity, Image, Alert, Modal, Pressable, ScrollView} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {CardHeading} from '../../../../../../design/CardHeading';
+import {Text} from '../../../../../../design/Typography';
 import { useSelector, useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useValues } from "@src/utils/context/index";;
@@ -23,89 +25,53 @@ export function LanguageBottomSheet({ isVisible, onClose, selectedLanguage, setS
     const { languageData, translateData } = useSelector((state: any) => state.setting);
     const dispatch = useDispatch<AppDispatch>();
     const { isDark, textRTLStyle, viewRTLStyle, bgFullStyle, textColorStyle, setIsRTL } = useValues();
-    const snapPoints = useMemo(() => ["60%"], []);
-    const sheetRef = useRef<BottomSheetModal>(null);
+    const insets = useSafeAreaInsets();
     const [tempSelectedLanguage, setTempSelectedLanguage] = React.useState(selectedLanguage);
 
     useEffect(() => {
-        if (isVisible) {
-            setTempSelectedLanguage(selectedLanguage);
-            sheetRef.current?.present();
-        } else {
-            sheetRef.current?.dismiss();
-        }
-    }, [isVisible]);
+        if (isVisible) setTempSelectedLanguage(selectedLanguage);
+    }, [isVisible, selectedLanguage]);
 
+    const [saving, setSaving] = React.useState(false);
     const closeLanguage = async () => {
+        if (saving || !tempSelectedLanguage) return;
+        setSaving(true);
         try {
+            await AsyncStorage.setItem("selectedLanguage", tempSelectedLanguage);
+            await dispatch(translateDataGet()).unwrap();
+            await dispatch(serviceDataGet()).unwrap();
             setSelectedLanguage(tempSelectedLanguage);
             setSelectedLang(tempSelectedLanguage);
-
-            if (tempSelectedLanguage === "ar") {
-                setIsRTL(true);
-            } else {
-                setIsRTL(false);
-            }
-
-            await AsyncStorage.setItem("selectedLanguage", tempSelectedLanguage);
-            dispatch(translateDataGet());
-            await dispatch(serviceDataGet());
-
-            await sheetRef.current?.dismiss();
+            setIsRTL(tempSelectedLanguage === "ar");
+            await AsyncStorage.setItem("rtl", JSON.stringify(tempSelectedLanguage === "ar"));
             onClose();
-        } catch (e) {
-            console.error(e);
-        }
+        } catch (error: any) {
+            await AsyncStorage.setItem("selectedLanguage", selectedLanguage);
+            await dispatch(translateDataGet());
+            Alert.alert("Language not changed", error?.message || "Please try again.");
+        } finally { setSaving(false); }
     };
 
-    const renderBackdrop = useCallback(
-        (props: any) => (
-            <BottomSheetBackdrop
-                {...props}
-                pressBehavior="close"
-                appearsOnIndex={0}
-                disappearsOnIndex={-1}
-            />
-        ),
-        []
-    );
-
     return (
-        <BottomSheetModalProvider>
-            <BottomSheetModal
-                ref={sheetRef}
-                snapPoints={snapPoints}
-                enablePanDownToClose
-                backdropComponent={renderBackdrop}
-                backgroundStyle={{ backgroundColor: bgFullStyle }}
-                onDismiss={onClose}
-                handleIndicatorStyle={{ backgroundColor: appColors.primary, width: "13%" }}
-            >
-                <BottomSheetView style={{ padding: windowHeight(15) }}>
-                    <Text
-                        style={{
-                            color: textColorStyle,
-                            fontSize: fontSizes.FONT20,
-                            fontFamily: appFonts.medium,
-                            textAlign: "center",
-                            marginVertical: 10,
-                        }}
-                    >
-                        {translateData.changeLanguage}
-                    </Text>
-
+        <Modal visible={isVisible} transparent animationType="slide" onRequestClose={() => {if (!saving) onClose();}}>
+            <View style={{flex:1,justifyContent:'flex-end',backgroundColor:'#00000066'}}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Close language selector" onPress={() => {if (!saving) onClose();}} style={{flex:1}}/>
+                <View style={{backgroundColor:bgFullStyle,borderTopLeftRadius:28,borderTopRightRadius:28,padding:20,paddingBottom:Math.max(16,insets.bottom+12),maxHeight:'75%'}}>
+                    <CardHeading icon="globe" title={translateData.changeLanguage || 'Change Language'}/>
+                    <ScrollView keyboardShouldPersistTaps="handled" style={{flexShrink:1}}>
                     {languageData?.data?.map((item: any, index: number) => {
                         const isLast = index === languageData?.data?.length - 1;
                         return (
                             <View key={item.locale} style={styles.languageContainer}>
                                 <TouchableOpacity
+                                    accessibilityRole="radio" accessibilityLabel={item.name} accessibilityState={{checked:tempSelectedLanguage === item.locale}} disabled={saving}
                                     activeOpacity={0.7}
                                     style={[
-                                        { flexDirection: viewRTLStyle, alignItems: "center", marginVertical: windowHeight(7) },
+                                        { flexDirection: viewRTLStyle, alignItems: "center", minHeight:60, paddingVertical:10 },
                                     ]}
                                     onPress={() => setTempSelectedLanguage(item.locale)}
                                 >
-                                    <Image style={styles.flagImage} source={{ uri: item.flag }} />
+                                    {item.flagEmoji ? <Text style={{fontSize:24,width:34,textAlign:'center'}}>{item.flagEmoji}</Text> : <Image style={styles.flagImage} source={{ uri: item.flag }} />}
                                     <Text
                                         style={{
                                             marginHorizontal: 10,
@@ -119,7 +85,7 @@ export function LanguageBottomSheet({ isVisible, onClose, selectedLanguage, setS
                                     >
                                         {item.name}
                                     </Text>
-                                    <View style={{ left: windowHeight(12) }}>
+                                    <View>
                                         <CustomRadioButton
                                             selected={tempSelectedLanguage === item.locale}
                                             onPress={() => setTempSelectedLanguage(item.locale)}
@@ -131,11 +97,12 @@ export function LanguageBottomSheet({ isVisible, onClose, selectedLanguage, setS
                         );
                     })}
 
-                    <View style={styles.updateButton1}>
-                        <Button title={translateData.update} onPress={closeLanguage} />
+                    </ScrollView>
+                    <View style={{marginTop:16}}>
+                        <Button title={translateData.update || "Update"} onPress={closeLanguage} loading={saving} />
                     </View>
-                </BottomSheetView>
-            </BottomSheetModal>
-        </BottomSheetModalProvider>
+                </View>
+            </View>
+        </Modal>
     );
 }

@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { windowHeight, appColors, appFonts, fontSizes, windowWidth } from "@src/themes";
 
@@ -94,7 +95,9 @@ const styles = StyleSheet.create({
       width: '47.7%',
        justifyContent: 'center',
         backgroundColor: appColors.primary 
-      },
+      ,
+    ...riderCardFinish,
+  },
   searchRideView: { 
     borderRadius: windowHeight(6),
      height: windowHeight(40),
@@ -102,7 +105,9 @@ const styles = StyleSheet.create({
        borderColor: appColors.border, 
        borderWidth: windowHeight(1.5),
         justifyContent: 'center'
-       },
+       ,
+    ...riderCardFinish,
+  },
   rideView: { 
     flexDirection: 'row',
      marginHorizontal: windowHeight(10),
@@ -130,7 +135,9 @@ const styles = StyleSheet.create({
        borderColor: appColors.border,
         borderWidth: windowHeight(1.5),
          alignSelf: 'center'
-         },
+         ,
+    ...riderCardFinish,
+  },
   addressView: {
     borderBottomWidth: windowHeight(1),
     borderColor: appColors.border,
@@ -215,6 +222,8 @@ const styles = StyleSheet.create({
     width: '90%',
     alignSelf: "center",
      borderWidth: windowHeight(1)
+  ,
+    ...riderCardFinish,
   },
   searchView: {
     alignItems: "center",

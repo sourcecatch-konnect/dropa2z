@@ -1,3 +1,5 @@
+import {riderCardFinish,riderFieldFinish} from '../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import { Platform, StyleSheet } from 'react-native';
 import { appColors, fontSizes, windowHeight, windowWidth, appFonts } from '@src/themes';
 import { external } from '../../../../styles/externalStyle';
@@ -20,6 +22,8 @@ export const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: appColors.whiteColor,
     height: '15%',
+  
+    ...referenceSurfaces.card,
   },
   warningText: {
     color: appColors.alertRed,
@@ -69,10 +73,10 @@ export const styles = StyleSheet.create({
   },
   inputContainer: {
     marginHorizontal: windowHeight(14),
-    height: windowHeight(100),
-    bottom: windowHeight(7),
-    flex: 1,
+    paddingBottom: 6,
     marginTop: windowHeight(20),
+  
+    ...referenceSurfaces.control,
   },
   buttonContainer: {
     flex: 1,
@@ -98,6 +102,8 @@ export const styles = StyleSheet.create({
     borderRadius: windowHeight(74),
     textAlign: 'center',
     paddingVertical: windowHeight(30),
+  
+    ...riderCardFinish,
   },
   countryCode: {
     justifyContent: "space-between",
@@ -115,6 +121,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   phoneNumberInput: {
     width: windowWidth(326),
@@ -125,6 +133,10 @@ export const styles = StyleSheet.create({
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
     flexDirection: 'row',
+  
+    ...referenceSurfaces.control,
+  
+    ...riderFieldFinish,
   },
   iconContainer: {
     height: windowHeight(39),
@@ -143,5 +155,7 @@ export const styles = StyleSheet.create({
   },
   countryMainView: {
     marginTop: windowHeight(15),
+  
+    ...referenceSurfaces.control,
   },
 });

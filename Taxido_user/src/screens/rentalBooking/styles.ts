@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import {StyleSheet} from "react-native";
 import {
   appColors,
@@ -21,6 +22,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowHeight(10),
     paddingBottom: windowHeight(19),
     borderRadius: windowHeight(5),
+  
+    ...riderCardFinish,
   },
   datetimeText: {
     color: appColors.primaryText,
@@ -57,6 +60,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     borderRadius: windowHeight(5),
+  
+    ...riderCardFinish,
   },
   tripSubView: {
     width: "85%",

@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -21,24 +21,26 @@
       android:requestLegacyExternalStorage="true"
       android:name=".MainApplication"
       android:label="@string/app_name"
-      android:icon="@mipmap/ic_launcher"
-      android:roundIcon="@mipmap/ic_launcher_round"
+      android:icon="@mipmap/dropa2z_launcher"
+      android:roundIcon="@mipmap/dropa2z_launcher"
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/dropa2z_notification"/>
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/dropa2z_notification_accent" tools:replace="android:resource"/>
       
     <meta-data
         android:name="com.google.android.gms.version"
         android:value="@integer/google_play_services_version" />
     <meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="Enter Your Google Map Keye Here" /> 
+        android:value="AIzaSyDEZolwWXk44dACgtOotiXOuej0AIW-B5g" /> 
 
              <!-- Google Mobile Ads SDK configuration -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="enter your google ads key" />
+            android:value="ca-app-pub-3940256099942544~3347511713" />
             
       <activity
         android:name=".MainActivity"

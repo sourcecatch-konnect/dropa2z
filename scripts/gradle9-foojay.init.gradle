@@ -1,0 +1,10 @@
+// React Native 0.82 requests Foojay 0.5, which references IBM_SEMERU removed
+// in Gradle 9. Override only that resolver; application dependencies unchanged.
+beforeSettings { settings ->
+    settings.pluginManagement.resolutionStrategy.eachPlugin {
+        if (requested.id.id == 'org.gradle.toolchains.foojay-resolver-convention' ||
+            requested.id.id == 'org.gradle.toolchains.foojay-resolver') {
+            useVersion('1.0.0')
+        }
+    }
+}

@@ -18,21 +18,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginHorizontal: windowWidth(3),
-    marginVertical: windowHeight(1.7),
+    paddingVertical: 14,
+    minHeight: 76,
   },
   container: {
     alignItems: 'center',
   },
   iconView: {
-    height: windowHeight(5.3),
-    width: windowWidth(11),
-    borderRadius: windowHeight(20),
+    height: 42,
+    width: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     marginHorizontal: windowWidth(3),
-    fontFamily: appFonts.regular,
+    fontFamily: appFonts.medium,
+    fontSize: 16,
+    flexShrink: 1,
   },
 
   modalTitle: {

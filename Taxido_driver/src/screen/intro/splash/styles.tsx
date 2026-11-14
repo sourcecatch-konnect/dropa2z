@@ -19,13 +19,25 @@ const styles = StyleSheet.create({
     height: height,
     resizeMode: 'contain',
   },
+  brandLogo: {
+    width: '78%',
+    height: height * 0.28,
+    resizeMode: 'contain',
+  },
+  brandSubtitle: {
+    marginTop: 24,
+    color: '#656C76',
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 0.3,
+  },
   modalContent: {
     alignItems: 'center',
     padding: windowHeight(0.5),
   },
   modalImageContainer: {
     padding: windowHeight(0.7),
-    backgroundColor: '#E8F4F1',
+    backgroundColor: '#F4ECE8',
     borderRadius: windowHeight(10),
   },
   modalImage: {

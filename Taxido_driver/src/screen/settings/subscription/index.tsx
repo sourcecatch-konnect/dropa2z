@@ -1,323 +1,52 @@
-import React, { useEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  Dimensions,
-  ScrollView,
-  TouchableOpacity,
-  BackHandler,
-} from 'react-native'
-import Carousel from 'react-native-reanimated-carousel'
-import Animated from 'react-native-reanimated'
-import { Header } from '../../../commonComponents'
-import appColors from '../../../theme/appColors'
-import Icons from '../../../utils/icons/icons'
-import { useNavigation, useTheme } from '@react-navigation/native'
-import styles from './styles'
-import { useValues } from '../../../utils/context'
-import { useSelector } from 'react-redux'
-import { windowHeight } from '../../../theme/appConstant'
+﻿import React, {useMemo} from 'react';
+import {View, ScrollView, StyleSheet, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
+import {useNavigation} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
+import {Header} from '../../../commonComponents';
+import {useValues} from '../../../utils/context';
+import {ReferenceScreen, referenceSurfaces} from '../../../design/ReferenceChrome';
+import {CardHeading} from '../../../design/CardHeading';
 
 export function Subscription() {
-  const width = Dimensions.get('window').width
-  const [isNotificationOn, setIsNotificationOn] = useState<boolean>(false)
-  const { colors } = useTheme()
-  const [currentIndex, setCurrentIndex] = useState<number>(0)
-  const { viewRtlStyle, isDark } = useValues()
-  const { planData } = useSelector((state: any) => state.setting)
-  const { navigate } = useNavigation<any>()
-  const { translateData } = useSelector((state: any) => state.setting)
-  const { zoneValue } = useSelector((state: any) => state.zoneUpdate)
-  const { selfDriver } = useSelector((state: any) => state.account)
-  const sortedPlanData = React.useMemo(() => {
-    if (!planData?.data) return []
-
-    return [...planData.data].sort(
-      (a: any, b: any) => Number(a.price) - Number(b.price),
-    )
-  }, [planData])
-
-  const gotopayment = (planId: number) => {
-    navigate('PaymentSelect', { planId })
-  }
-
-  const renderItem = ({ item, index }: any) => {
-    const isEven = index % 2 === 0
-
-    // Check if this plan is the user's current active subscription
-    const isCurrentPlan =
-      selfDriver?.subscription?.is_active === 1 &&
-      selfDriver?.subscription?.plan_id === item.id
-
-    return (
-      <Animated.View
-        style={[
-          styles.item,
-          {
-            backgroundColor: isEven
-              ? isDark
-                ? appColors.darkThemeSub
-                : appColors.graybackground
-              : appColors.primary,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.centerAlign,
-            {
-              backgroundColor: isEven
-                ? appColors.primary
-                : isDark
-                ? appColors.darkThemeSub
-                : appColors.white,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.itemText,
-              {
-                color: isEven ? appColors.white : appColors.primary,
-              },
-            ]}
-          >
-            {item.name.toUpperCase()}
-          </Text>
-
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-end',
-              paddingBottom: 10,
-            }}
-          >
-            <Text
-              style={[
-                styles.price,
-                {
-                  color: isEven
-                    ? appColors.white
-                    : isDark
-                    ? appColors.white
-                    : appColors.primaryFont,
-                },
-              ]}
-            >
-              {zoneValue?.currency_symbol}
-              {zoneValue?.exchange_rate * Math.floor(item.price)}
-            </Text>
-            <Text
-              style={[
-                styles.type,
-                {
-                  color: isEven ? appColors.planLine : appColors.secondaryFont,
-                },
-              ]}
-            >
-              /{translateData.month}
-            </Text>
+  const {planData, translateData:t} = useSelector((state:any)=>state.setting);
+  const {zoneValue} = useSelector((state:any)=>state.zoneUpdate);
+  const {selfDriver} = useSelector((state:any)=>state.account);
+  const {isDark,viewRtlStyle} = useValues();
+  const navigation=useNavigation<any>();
+  const plans=useMemo(()=>Array.isArray(planData?.data)?[...planData.data].sort((a,b)=>Number(a.price)-Number(b.price)):[],[planData]);
+  const ink=isDark?'#FFFFFF':'#17191C', surface=isDark?'#25282D':'#FFFFFF', muted=isDark?'#BBC1CA':'#656C76', accent=isDark?'#FFBE60':'#A64B00';
+  const exchange=Number(zoneValue?.exchange_rate)>0?Number(zoneValue.exchange_rate):1;
+  return <ReferenceScreen>
+    <Header title={t?.planDetails || 'Subscription plans'}/>
+    <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <CardHeading icon="wallet" title={t?.subscriptionTitle || 'Choose your plan'} subtitle={t?.subscriptionMsg}/>
+      {plans.map(plan=>{
+        const current=Number(selfDriver?.subscription?.is_active)===1 && String(selfDriver.subscription.plan_id)===String(plan.id);
+        const validPrice=Number.isFinite(Number(plan.price)) && Number(plan.price)>=0;
+        const features=Array.isArray(plan.description)?plan.description:typeof plan.description==='string'?[plan.description]:[];
+        return <View key={plan.id} style={[styles.card,{backgroundColor:surface,borderColor:current?'#FC9F03':isDark?'#41464E':'#E5E7EB'}]}>
+          <View style={{flexDirection:viewRtlStyle,alignItems:'center',justifyContent:'space-between',gap:12}}>
+            <Text style={[styles.planName,{color:ink}]}>{plan.name}</Text>
+            {current && <Text style={[styles.current,{color:accent,backgroundColor:isDark?'#3A2A14':'#FFF5E5'}]}>{t?.currentPlan || 'Current plan'}</Text>}
           </View>
-        </View>
-
-        <View
-          style={{
-            backgroundColor: isEven ? appColors.darkLine : appColors.line,
-            height: windowHeight(1),
-          }}
-        />
-
-        <View style={{ paddingHorizontal: windowHeight(3) }}>
-          <ScrollView>
-            {item.description.map((feature: any, idx: number) => (
-              <View
-                key={idx}
-                style={[styles.featureRow, { flexDirection: viewRtlStyle }]}
-              >
-                <Icons.ShildTik
-                  background={isEven ? appColors.primary : appColors.white}
-                  tik={isEven ? appColors.primary : appColors.white}
-                />
-                <Text
-                  style={[
-                    styles.features,
-                    { color: isEven ? colors.text : appColors.white },
-                  ]}
-                >
-                  {feature}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.msgContainer}>
-          <View style={[styles.direction, { flexDirection: viewRtlStyle }]}>
-            <View
-              style={[
-                styles.dot,
-                {
-                  backgroundColor: isEven
-                    ? appColors.planLine
-                    : appColors.planDot,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.dashLine,
-                {
-                  borderColor: isEven ? appColors.planLine : appColors.planDot,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.dot,
-                {
-                  backgroundColor: isEven
-                    ? appColors.planLine
-                    : appColors.planDot,
-                },
-              ]}
-            />
+          <View style={{flexDirection:viewRtlStyle,alignItems:'baseline',gap:6,marginVertical:12}}>
+            <Text style={[styles.price,{color:ink}]}>{validPrice?`${zoneValue?.currency_symbol || '₹'}${(exchange*Number(plan.price)).toFixed(2)}`:'Price unavailable'}</Text>
+            {validPrice && <Text style={[styles.description,{color:muted}]}>/ {t?.month || 'month'}</Text>}
           </View>
-          <Text
-            style={[
-              styles.msg,
-              {
-                color: isEven
-                  ? colors.text
-                  : isDark
-                  ? appColors.black
-                  : appColors.white,
-              },
-            ]}
-          >
-            {translateData.subNote}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => (isCurrentPlan ? null : gotopayment(item.id))}
-          disabled={isCurrentPlan}
-          style={[
-            styles.selectBtn,
-            {
-              backgroundColor: isEven
-                ? appColors.primary
-                : isDark
-                ? appColors.darkThemeSub
-                : appColors.white,
-              opacity: isCurrentPlan ? 0.9 : 1,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.bottomNote,
-              {
-                color: isEven
-                  ? appColors.white
-                  : isDark
-                  ? appColors.white
-                  : appColors.primary,
-              },
-            ]}
-          >
-            {isCurrentPlan
-              ? translateData.currentPlan || 'Current Plan'
-              : translateData.selectPlan}
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
-    )
-  }
-
-  const navigation = useNavigation()
-
-  useEffect(() => {
-    const backAction = () => {
-      if (navigation.canGoBack()) {
-        navigation.goBack()
-        return true
-      }
-      return false
-    }
-
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      backAction,
-    )
-
-    return () => backHandler.remove()
-  }, [navigation])
-
-  return (
-    <View
-      style={[
-        styles.MainContainer,
-        { backgroundColor: isDark ? appColors.primaryFont : appColors.white },
-      ]}
-    >
-      <View
-        style={{
-          backgroundColor: isDark ? appColors.primaryFont : appColors.white,
-        }}
-      >
-        <Header
-          title={translateData.planDetails}
-          backgroundColor={isDark ? appColors.primaryFont : appColors.white}
-        />
-      </View>
-      <View
-        style={[
-          styles.planTitleContainer,
-          { backgroundColor: isDark ? appColors.primaryFont : appColors.white },
-        ]}
-      >
-        <Text
-          style={[
-            styles.planTitle,
-            { color: isNotificationOn ? appColors.primary : colors.text },
-          ]}
-        >
-          {translateData?.subscriptionTitle}
-        </Text>
-        <Text style={styles.planHeading}>{translateData.subscriptionMsg}</Text>
-      </View>
-      <View style={styles.container}>
-        <Carousel
-          width={width}
-          height={windowHeight(70)}
-          data={sortedPlanData}
-          renderItem={renderItem}
-          sliderWidth={width}
-          itemWidth={width * 0.8}
-          inactiveSlideOpacity={0.7}
-          inactiveSlideScale={0.8}
-          mode="parallax"
-          loop={false}
-          onSnapToItem={index => setCurrentIndex(index)}
-          useNativeDriver={true}
-        />
-      </View>
-      <View
-        style={[
-          styles.noteContainer,
-          {
-            backgroundColor: isDark
-              ? appColors.darkThemeSub
-              : appColors.planNote,
-          },
-        ]}
-      >
-        <Text style={[styles.note, { color: colors.text }]}>
-          {' '}
-          {translateData.subscriptionNote}
-        </Text>
-      </View>
-    </View>
-  )
+          {features.map((feature:any,index:number)=><View key={index} style={{flexDirection:viewRtlStyle,gap:10,marginBottom:10}}>
+            <Text style={{color:accent}}>✓</Text><Text style={{color:ink,flex:1,lineHeight:21}}>{String(feature)}</Text>
+          </View>)}
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={`${current?'Current plan':'Select plan'} ${plan.name}`} accessibilityState={{disabled:current||!validPrice}} disabled={current||!validPrice}
+            onPress={()=>navigation.navigate('PaymentSelect',{planId:plan.id})}
+            style={[styles.select,{backgroundColor:current?(isDark?'#3A2A14':'#FFF5E5'):'#FC9F03',opacity:validPrice?1:.5}]}>
+            <Text style={{fontWeight:'700',color:current?accent:'#17191C'}}>{current?t?.currentPlan || 'Current plan':t?.selectPlan || 'Select plan'}</Text>
+          </TouchableOpacity>
+        </View>;
+      })}
+      {!plans.length && <View style={[styles.card,{backgroundColor:surface}]}><Text style={{color:ink}}>No subscription plans are available right now.</Text></View>}
+      {!!t?.subscriptionNote && <Text style={[styles.description,{color:muted}]}>{t.subscriptionNote}</Text>}
+    </ScrollView>
+  </ReferenceScreen>;
 }
+const styles=StyleSheet.create({content:{padding:20,paddingBottom:40},heading:{fontSize:24,fontWeight:'700',marginBottom:8},description:{fontSize:13,color:'#68717A',lineHeight:20,marginBottom:12},card:{...referenceSurfaces.card,padding:20,marginTop:12},planName:{fontSize:19,fontWeight:'700',flex:1},current:{fontSize:12,color:'#00BE72',backgroundColor:'#E8FFF6',padding:8,borderRadius:8},price:{fontSize:30,fontWeight:'700',flexShrink:1},select:{minHeight:46,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:10,paddingHorizontal:12}});

@@ -36,6 +36,19 @@ class RideController extends Controller
         return $this->repository->details($request->ride_number);
     }
 
+    public function cancel(Request $request, Ride $ride)
+    {
+        $validated = $request->validate([
+            'cancellation_reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $this->repository->cancel($ride->id, $validated['cancellation_reason']);
+
+        return redirect()
+            ->route('admin.ride.details', ['ride_number' => $ride->id])
+            ->with('success', 'Ride cancelled successfully.');
+    }
+
     public function export(Request $request)
     {
         return $this->repository->export($request);

@@ -1,4 +1,5 @@
-import { View, Text } from 'react-native'
+import {View} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React from 'react'
 import { Switch } from '../'
 import styles from '../darkTheme/styles'

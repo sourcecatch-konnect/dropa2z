@@ -1,19 +1,11 @@
+import {BrandLoader} from '../../../design/BrandLogo';
+import {offerAvailable} from '../../../utils/driverOffer';
+import {driverWalletEligible} from '../../../utils/driverWalletPolicy';
+import {AvailabilityConfirmation} from '../component/AvailabilityConfirmation';
+import {ReferenceScreen,ReferenceLogo} from '../../../design/ReferenceChrome';
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  Animated,
-  View,
-  Image,
-  Text,
-  TouchableOpacity,
-  Vibration,
-  BackHandler,
-  Linking,
-  InteractionManager,
-  Modal,
-  ActivityIndicator,
-  NativeModules,
-  AppState,
-} from 'react-native'
+import {Animated, View, Image, TouchableOpacity, Vibration, BackHandler, Linking, InteractionManager, Modal, ActivityIndicator, NativeModules, AppState} from 'react-native';
+import {Text} from '../../../design/Typography';
 import appColors from '../../../theme/appColors'
 import {
   fontSizes,
@@ -134,8 +126,11 @@ export function Home() {
   const { selfDriver } = useSelector((state: any) => state.account)
   const char = selfDriver?.name ? selfDriver?.name.charAt(0) : ''
   const { zoneValue } = useSelector((state: any) => state.zoneUpdate)
+  const { rideRequestdata } = useSelector((state: any) => state.rideRequest)
   const driverId = selfDriver?.id
-  const [isOnline, setIsOnline] = useState(false)
+  const [isOnline, setIsOnline] = useState(Number(selfDriver?.is_online) === 1)
+  const availabilityPendingRef = useRef(false)
+  const lowBalancePromptedRef = useRef(false)
   const { taxidoSettingData, translateData } = useSelector(
     (state: any) => state.setting,
   )
@@ -150,7 +145,7 @@ export function Home() {
   const dispatch = useDispatch<AppDispatch>()
   const { navigate } = useNavigation<any>()
   const navigation = useNavigation<any>()
-  const [status, setStatus] = useState<'online' | 'offline'>('online')
+  const [status, setStatus] = useState<'online' | 'offline'>(Number(selfDriver?.is_online)===1?'online':'offline')
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [lastRideRequestId, setLastRideRequestId] = useState<string | null>(
@@ -417,7 +412,7 @@ export function Home() {
         .catch(err => console.error('API Reject dispatch error:', err))
     } catch (error) {
       console.error('Rejection Error:', error)
-      notificationHelper('', 'Error updating ride status', 'error')
+      notificationHelper('', 'Error updating delivery status', 'error')
     }
   }
 
@@ -462,16 +457,16 @@ export function Home() {
 
   const statusColors = {
     online: {
-      outer: appColors.primary,
-      inner: appColors.primary,
+      outer: '#FC9F03',
+      inner: '#17191C',
       pulse1: appColors.primaryLight,
       pulse2: appColors.value,
       label: 'Online',
       icon: <Icons.Online />,
     },
     offline: {
-      outer: appColors.brightRed,
-      inner: appColors.vividRed,
+      outer: '#656C76',
+      inner: '#25282D',
       pulse1: appColors.darkCrimson,
       pulse2: appColors.roseTint,
       label: 'Offline',
@@ -479,7 +474,7 @@ export function Home() {
     },
   }
   const nextStatus = status === 'online' ? 'offline' : 'online'
-  const current = statusColors[nextStatus]
+  const current = statusColors[isOnline ? 'online' : 'offline']
   const [lowBalance, setLowBalance] = useState<boolean>(false)
   useEffect(() => {
     if (!taxidoSettingData || Object.keys(taxidoSettingData).length == 0) {
@@ -667,7 +662,7 @@ export function Home() {
             '[SyncRide][Navigate] ✅ CASE: otp — navigating to OtpRide',
           )
           if (ride) {
-            navigate('OtpRide', { ride })
+            navigate('OtpRide', { rideData: ride, ride_Id: ride.id ?? rawData?.ride_id })
           }
           break
 
@@ -787,7 +782,7 @@ export function Home() {
     if (ride?.service_category?.service_category_type === 'rental') {
       navigate('RentalDetails', { ride })
     } else {
-      navigation.navigate('Ride', { ride })
+      navigation.navigate('Delivery', { ride })
     }
     bottomSheetModalRef.current?.close()
     setIsBottomSheetOpen(false)
@@ -809,12 +804,26 @@ export function Home() {
   useEffect(() => {
     const zone_id = zoneValue?.id
     if (zone_id && isFocused && isOnline) {
+      // Fetch immediately when Home becomes active, then poll frequently while
+      // the server-side WebSocket broadcaster is not configured. This keeps
+      // incoming requests near-real-time without waiting for a long interval.
+      dispatch(rideRequestDataGet(zone_id))
       const intervalId = setInterval(() => {
         dispatch(rideRequestDataGet(zone_id))
-      }, 20000)
+      }, 5000)
       return () => clearInterval(intervalId)
     }
   }, [dispatch, zoneValue, isFocused, isOnline])
+
+  // HTTP polling is the fallback when real-time delivery is unavailable.
+  // The earlier implementation fetched requests but never moved them into the
+  // screen state used by the incoming-ride sheet.
+  useEffect(() => {
+    const payload = rideRequestdata?.data ?? rideRequestdata
+    if (!Array.isArray(payload)) return
+
+    setRides(payload.filter((offer:any)=>offerAvailable(offer)))
+  }, [rideRequestdata])
 
   const selectDriver = (ride: any) => {
     setSelectedRide(ride)
@@ -843,26 +852,33 @@ export function Home() {
           return
         }
 
-        if (
-          selfDriver?.wallet_balance < 0 &&
-          taxidoSettingData?.cabbooking_values?.activation
-            ?.allow_negative_balance === 0
-        ) {
-          setLowBalance(true)
-          notificationHelper('', translateData?.lowBalance, 'error')
-          setIsOnline(false)
-          return
-        } else if (walletBalance < minWalletBalance) {
-          setLowBalance(true)
-          notificationHelper(
-            '',
-            translateData?.insufficientWalletBalance,
-            'error',
-          )
-          setIsOnline(false)
+        const negativeBalanceBlocked = walletBalance < 0 && !driverWalletEligible(walletBalance,taxidoSettingData?.cabbooking_values)
+        const belowMinimumBalance = !driverWalletEligible(walletBalance,taxidoSettingData?.cabbooking_values)
+
+        if (negativeBalanceBlocked || belowMinimumBalance) {
+          // A focus/re-render must not keep reopening the same modal after it
+          // has been dismissed. Prompt again only after the balance is fixed
+          // and later falls below the required minimum.
+          if (!lowBalancePromptedRef.current) {
+            setLowBalance(true)
+            notificationHelper(
+              '',
+              negativeBalanceBlocked
+                ? translateData?.lowBalance
+                : translateData?.insufficientWalletBalance,
+              'error',
+            )
+            lowBalancePromptedRef.current = true
+          }
+        } else {
+          lowBalancePromptedRef.current = false
         }
 
-        const online = selfDriver?.is_online === 1
+        // The API declares this field as number | string, so normalize it
+        // before deciding whether the driver should poll for ride requests.
+        // A low wallet may restrict new dispatches, but it must not silently
+        // change an online driver's presence when returning from a completed ride.
+        const online = Number(selfDriver?.is_online) === 1
         setIsOnline(online)
 
         if (online) {
@@ -877,6 +893,7 @@ export function Home() {
       selfDriver?.id,
       selfDriver?.wallet_balance,
       selfDriver?.is_online,
+      taxidoSettingData,
       translateData,
     ]),
   )
@@ -929,113 +946,84 @@ export function Home() {
     }
   }
 
-  const toggleSwitch = async () => {
-    Vibration.vibrate(42)
-    if (!driverId) return
 
-    if (!isOnline) {
-      SetOn(true)
-      runOnlineAnimation()
-      playQuickSound()
-      setIsOnline(true)
-      setStatus('online')
-
-      notificationHelper(
-        '',
-        'You’re online! You can start receiving ride requests now.',
-        'success',
-      )
-
-      if (!currentLatitude || !currentLongitude) {
-        notificationHelper(
-          '',
-          translateData?.locationNotAvailable ||
-            'Location not available yet. Please wait.',
-          'error',
-        )
-        return
-      }
-
-      try {
-        const statusPayload = {
-          is_online: 1,
-          location: {
-            lat: currentLatitude,
-            lng: currentLongitude,
-          },
-        }
-
-        await dispatch(driversStatus(statusPayload)).unwrap()
-        await startLiveLocation(driverId, selfDriver)
-      } catch (err) {
-        console.error('Error going online:', err)
-        setIsOnline(false)
-        setStatus('offline')
-        stopLiveLocation()
-        notificationHelper('', translateData.failedOnline, 'error')
-      }
-    } else {
-      bottomSheetOfflineRef.current?.present()
-      setIsBottomSheetOfflineOpen(true)
-    }
+  const closeDriveroffline = () => {
+    if (availabilityPendingRef.current) return
+    setIsBottomSheetOfflineOpen(false)
   }
 
-  const driverOffline = async () => {
+  const toggleSwitch = async () => {
+    if (!driverId || availabilityPendingRef.current) return
+    Vibration.vibrate(42)
+    if (isOnline) {
+      setIsBottomSheetOfflineOpen(true)
+      return
+    }
+    if (!currentLatitude || !currentLongitude) {
+      notificationHelper('', translateData?.locationNotAvailable || 'Location not available yet. Please wait.', 'error')
+      return
+    }
+    availabilityPendingRef.current = true
+    setOfflineLoading(true)
     try {
-      if (!driverId) return
-      setOfflineLoading(true)
-
-      const freshSelf = await dispatch(selfDriverData()).unwrap()
-      if (freshSelf?.is_on_ride == 1) {
-        notificationHelper('', 'Currently ride is active', 'error')
-        closeDriveroffline()
-        return
-      }
-
-      playQuickSound()
-      Vibration.vibrate(42)
-
-      SetOn(true)
-      runOnlineAnimation()
-      setIsOnline(false)
-      setStatus('offline')
-      closeDriveroffline()
-      stopLiveLocation()
-
-      notificationHelper(
-        '',
-        'You’re offline right now. Go online to start receiving ride requests.',
-        'error',
-      )
-
-      const statusPayload = {
-        is_online: 0,
-        location: {
-          lat: currentLatitude,
-          lng: currentLongitude,
-        },
-      }
-
-      await dispatch(driversStatus(statusPayload)).unwrap()
-    } catch (err) {
-      console.error('Error going offline:', err)
-      notificationHelper('', err, 'error')
+      await dispatch(driversStatus({is_online:1,location:{lat:currentLatitude,lng:currentLongitude}})).unwrap()
       setIsOnline(true)
       setStatus('online')
-
-      if (driverId) {
-        startLiveLocation(driverId, selfDriver)
+      SetOn(true)
+      runOnlineAnimation()
+      playQuickSound()
+      await dispatch(selfDriverData()).unwrap().catch(()=>null)
+      startLiveLocation(driverId,selfDriver).catch(()=>null)
+      notificationHelper('', 'You are online. You can receive delivery requests now.', 'success')
+    } catch (error: any) {
+      const message = error?.message || translateData?.failedOnline || 'Could not go online. Please try again.'
+      notificationHelper('', message, 'error')
+      // Training is required after approval. Send the Driver to the actual
+      // next step instead of leaving them at an unusable availability button.
+      if (/practice delivery|training/i.test(message)) {
+        const rootNavigation = navigation.getParent?.()
+        ;(rootNavigation || navigation).navigate('DriverTraining')
       }
-
-      notificationHelper('', translateData.failedOnline, 'error')
     } finally {
+      availabilityPendingRef.current=false
       setOfflineLoading(false)
     }
   }
 
-  const closeDriveroffline = () => {
-    bottomSheetOfflineRef.current?.close()
-    setIsBottomSheetOfflineOpen(false)
+  const driverOffline = async () => {
+    if (!driverId || availabilityPendingRef.current) return
+    availabilityPendingRef.current=true
+    setOfflineLoading(true)
+    try {
+      const freshSelf=await dispatch(selfDriverData()).unwrap()
+      if (Number(freshSelf?.is_online)!==1) {
+        setIsOnline(false)
+        setStatus('offline')
+        stopLiveLocation()
+        setIsBottomSheetOfflineOpen(false)
+        return
+      }
+      if (Number(freshSelf?.is_on_ride)===1) {
+        notificationHelper('', 'A delivery is active. Complete or cancel it before going offline.', 'error')
+        setIsBottomSheetOfflineOpen(false)
+        return
+      }
+      await dispatch(driversStatus({is_online:0,location:{lat:currentLatitude,lng:currentLongitude}})).unwrap()
+      setIsOnline(false)
+      setStatus('offline')
+      setIsBottomSheetOfflineOpen(false)
+      stopLiveLocation()
+      SetOn(true)
+      runOnlineAnimation()
+      playQuickSound()
+      await dispatch(selfDriverData()).unwrap().catch(()=>null)
+      notificationHelper('', 'You are offline. Go online when ready for delivery requests.', 'success')
+    } catch (error) {
+      notificationHelper('', error?.message || translateData?.failedOnline || 'Could not change your status. Please try again.', 'error')
+    } finally {
+      availabilityPendingRef.current=false
+      setOfflineLoading(false)
+    }
   }
 
   const fetchTime = async () => {
@@ -1164,7 +1152,7 @@ export function Home() {
   useEffect(() => {
     notifee.createChannel({
       id: 'ride-requests',
-      name: 'Ride Requests',
+      name: 'Delivery Requests',
       sound: 'default',
       importance: AndroidImportance.HIGH,
       vibration: true,
@@ -1423,7 +1411,25 @@ export function Home() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <ReferenceScreen><View style={{flex:1}}><View style={{flexDirection:rtl?"row-reverse":"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20,paddingVertical:6,backgroundColor:isDark?"#202422":"#FFFFFF"}}><ReferenceLogo driver width={130}/><TouchableOpacity
+          onPress={() => navigate('Notification')}
+          activeOpacity={0.9}
+          style={{
+            height: windowHeight(5.5),
+            width: windowHeight(5.5),
+            backgroundColor: isDark ? appColors.darkThemeSub : appColors.white,
+            borderRadius: windowHeight(15),
+            alignItems: 'center',
+            justifyContent: 'center',
+            right: windowHeight(2),
+            borderColor: isDark ? appColors.darkBorderBlack : appColors.white,
+            borderWidth: 1,
+          }}
+        >
+          <Icons.Notification
+            color={isDark ? appColors.white : appColors.primaryFont}
+          />
+        </TouchableOpacity></View><View style={{ flex: 1 }}>
       {mapLoaded && (
         <MapScreen
           key={mapKey}
@@ -1535,7 +1541,7 @@ export function Home() {
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor:
-              on && status === 'offline' ? appColors.red : appColors.primary,
+              '#17191C',
             height: windowHeight(5.5),
             borderRadius: windowHeight(8.5),
             paddingHorizontal: windowWidth(4.3),
@@ -1568,7 +1574,7 @@ export function Home() {
                 flexDirection: rtl ? 'row-reverse' : 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: appColors.primary,
+                backgroundColor: '#17191C',
                 height: windowHeight(5.5),
                 borderRadius: windowHeight(8.5),
               }}
@@ -1605,25 +1611,7 @@ export function Home() {
             </TouchableOpacity>
           )}
         </TourGuideZone>
-        <TouchableOpacity
-          onPress={() => navigate('Notification')}
-          activeOpacity={0.9}
-          style={{
-            height: windowHeight(5.5),
-            width: windowHeight(5.5),
-            backgroundColor: isDark ? appColors.darkThemeSub : appColors.white,
-            borderRadius: windowHeight(15),
-            alignItems: 'center',
-            justifyContent: 'center',
-            right: windowHeight(2),
-            borderColor: isDark ? appColors.darkBorderBlack : appColors.white,
-            borderWidth: 1,
-          }}
-        >
-          <Icons.Notification
-            color={isDark ? appColors.white : appColors.primaryFont}
-          />
-        </TouchableOpacity>
+        <View style={{width:windowHeight(5.5)}}/>
       </View>
       <TouchableOpacity
         activeOpacity={0.9}
@@ -1681,7 +1669,7 @@ export function Home() {
                 position: 'absolute',
                 left: windowHeight(2),
                 height: windowHeight(7),
-                bottom: windowHeight(10),
+                bottom: 116,
                 [rtl ? 'right' : 'left']: windowWidth(4),
                 zIndex: 1,
                 justifyContent: 'center',
@@ -1727,7 +1715,7 @@ export function Home() {
         onPress={handleFocusPress}
         style={{
           position: 'absolute',
-          bottom: windowHeight(10),
+          bottom: 116,
           height: windowHeight(7),
           width: windowHeight(7),
           borderRadius: windowHeight(4),
@@ -1784,10 +1772,14 @@ export function Home() {
               }}
             >
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={isOnline ? 'Online. Tap to go offline' : 'Offline. Tap to go online'}
+                accessibilityState={{busy:offlineloading,disabled:offlineloading}}
+                disabled={offlineloading}
                 onPress={toggleSwitch}
                 style={[styles.button, { backgroundColor: current.inner }]}
               >
-                {current.icon}
+                <View style={{alignItems:'center',gap:2}}>{offlineloading?<BrandLoader color="#FFFFFF"/>:current.icon}<Text style={{color:'#FFFFFF',fontSize:11,fontWeight:'700'}}>{offlineloading?'Updating…':isOnline?'Go Offline':'Go Online'}</Text></View>
               </TouchableOpacity>
             </TourGuideZone>
           </View>
@@ -1796,8 +1788,9 @@ export function Home() {
       <BottomSheetModalProvider>
         <BottomSheetModal
           ref={bottomSheetModalRef}
-          index={0}
+          index={1}
           snapPoints={['48%', '80%']}
+          enableDynamicSizing={false}
           onChange={handleSheetChanges}
           onDismiss={() => setIsBottomSheetOpen(false)}
           handleIndicatorStyle={{
@@ -1807,11 +1800,11 @@ export function Home() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-          enableContentPanningGesture={true}
+          enableContentPanningGesture={false}
           enableHandlePanningGesture={true}
           enableOverDrag={false}
           enablePanDownToClose={true}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={styles.contentContainer}>
             {rides?.length > 0 ? (
               <BottomSheetFlatList
@@ -1902,67 +1895,10 @@ export function Home() {
           </BottomSheetView>
         </BottomSheetModal>
       </BottomSheetModalProvider>
-      <BottomSheetModalProvider>
-        <BottomSheetModal
-          ref={bottomSheetOfflineRef}
-          index={0}
-          snapPoints={['30%']}
-          onChange={handleSheetChanges}
-          onDismiss={() => setIsBottomSheetOfflineOpen(false)}
-          style={{ zIndex: 2 }}
-          handleIndicatorStyle={{
-            backgroundColor: appColors.primary,
-            width: '13%',
-          }}
-          backgroundStyle={{
-            backgroundColor: isDark ? appColors.bgDark : appColors.white,
-          }}
-          enableOverDrag={false}
-        >
-          <BottomSheetView style={styles.contentContainer}>
-            <View>
-              <Text
-                style={{
-                  color: isDark ? appColors.white : appColors.primaryFont,
-                  fontFamily: appFonts.medium,
-                  fontSize: fontSizes.FONT4HALF,
-                  textAlign: 'center',
-                  marginBottom: windowHeight(5),
-                }}
-              >
-                {translateData?.offlineMsg ||
-                  'Are you sure you want to go offline?'}
-              </Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <View style={{ width: windowWidth(46) }}>
-                  <Button
-                    title={translateData?.cancel}
-                    backgroundColor={
-                      isDark ? appColors.darkThemeSub : appColors.graybackground
-                    }
-                    onPress={closeDriveroffline}
-                    color={isDark ? appColors.white : appColors.black}
-                  />
-                </View>
-                <View style={{ width: windowWidth(46) }}>
-                  <Button
-                    title={translateData?.confirm}
-                    backgroundColor={appColors.red}
-                    color={appColors.white}
-                    onPress={driverOffline}
-                    loading={offlineloading}
-                  />
-                </View>
-              </View>
-            </View>
-          </BottomSheetView>
-        </BottomSheetModal>
-      </BottomSheetModalProvider>
+      <AvailabilityConfirmation visible={isBottomSheetOfflineOpen} busy={offlineloading} dark={isDark}
+        title="Go offline and stop receiving new delivery requests?"
+        cancelLabel={translateData?.cancel || 'Cancel'} confirmLabel={translateData?.confirm || 'Confirm'}
+        onCancel={closeDriveroffline} onConfirm={driverOffline}/>
 
       <BottomSheetModalProvider>
         <BottomSheetModal
@@ -1982,7 +1918,7 @@ export function Home() {
           enableHandlePanningGesture={true}
           enableOverDrag={false}
           enablePanDownToClose={true}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={styles.contentContainer}>
             <View>
               <Text
@@ -2081,9 +2017,9 @@ export function Home() {
                           {item?.title}
                         </Text>
                         {loadingId === item?.id && (
-                          <ActivityIndicator
+                          <BrandLoader
                             size={'small'}
-                            color={appColors.primary}
+                            color={'#0867D7'}
                           />
                         )}
                       </View>
@@ -2112,7 +2048,7 @@ export function Home() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <View style={{ padding: 20 }}>
             <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 10 }}>
               {translateData?.exitMsg}
@@ -2150,7 +2086,7 @@ export function Home() {
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
           style={{ zIndex: 2 }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={styles.contentContainer}>
             <View style={{ padding: 20, paddingTop: windowHeight(2) }}>
               <Text
@@ -2219,6 +2155,6 @@ export function Home() {
           </BottomSheetView>
         </BottomSheetModal>
       </BottomSheetModalProvider>
-    </View>
+    </View></View></ReferenceScreen>
   )
 }

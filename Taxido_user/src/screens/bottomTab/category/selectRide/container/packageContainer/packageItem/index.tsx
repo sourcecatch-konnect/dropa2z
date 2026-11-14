@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../../../design/Typography';
 import { styles } from '../style';
 import { useValues } from '@src/utils/context/index';
 import { appColors } from '@src/themes';

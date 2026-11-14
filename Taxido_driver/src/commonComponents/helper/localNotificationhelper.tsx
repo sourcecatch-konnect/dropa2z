@@ -27,7 +27,8 @@ class NotificationHelper {
             body: message,
             android: {
                 channelId: 'default-channel-id',
-                smallIcon: 'ic_launcher',
+                smallIcon: 'dropa2z_notification',
+                color:'#FC9F03',
                 importance: AndroidImportance.HIGH,
                 sound: 'default',
                 pressAction: {

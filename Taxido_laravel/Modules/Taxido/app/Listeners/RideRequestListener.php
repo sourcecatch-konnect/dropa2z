@@ -3,9 +3,12 @@
 namespace Modules\Taxido\Listeners;
 
 use Exception;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use App\Enums\RoleEnum;
 use Modules\Taxido\Enums\ServiceCategoryEnum;
 use Modules\Taxido\Events\RideRequestEvent;
+use Modules\Taxido\Notifications\NewRideRequestNotification;
 use Modules\Taxido\Services\NotificationService;
 
 class RideRequestListener
@@ -55,6 +58,11 @@ class RideRequestListener
                     'type' => 'service_request'
                 ]
             );
+
+            User::role(RoleEnum::ADMIN)
+                ->where('status', true)
+                ->get()
+                ->each(fn (User $admin) => $admin->notify(new NewRideRequestNotification($rideRequest)));
 
 
         } catch (Exception $e) {

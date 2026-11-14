@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import {Image, TouchableOpacity, View, ScrollView} from 'react-native';
+import {Text} from '../../../design/Typography';
 import styles from "./styles";
 import {
   appColors,

@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity } from 'react-native'
+import {View, Image, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React, { useEffect, useState } from 'react'
 import styles from './styles'
 import { useValues } from '../../../../../utils/context'
@@ -80,6 +81,7 @@ export function Profile() {
                 style={{
                   flexDirection: viewRtlStyle,
                   justifyContent: 'space-between',
+                  gap: 8,
                   alignItems: 'center',
                 }}
               >
@@ -124,7 +126,7 @@ export function Profile() {
               </View>
 
               {selfDriver?.email && (
-                <Text style={[styles.mail, { textAlign: textRtlStyle }]}>
+                <Text style={[styles.mail, { textAlign: textRtlStyle, color: isDark ? "#BBC1CA" : "#656C76" }]}>
                   {selfDriver?.email}
                 </Text>
               )}

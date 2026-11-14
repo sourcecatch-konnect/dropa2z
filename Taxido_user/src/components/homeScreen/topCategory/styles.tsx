@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { commonStyles } from "../../../styles/commonStyle";
@@ -6,8 +7,11 @@ import { external } from "../../../styles/externalStyle";
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: windowHeight(15),
-    marginTop: windowHeight(30),
+    width: "100%",
+    alignSelf: "center",
+    paddingHorizontal: windowWidth(16),
+    marginTop: windowHeight(8),
+    marginBottom: windowHeight(8),
   },
   topCategoryTitle: {
     textAlign: "right",
@@ -31,6 +35,8 @@ const styles = StyleSheet.create({
     height: windowHeight(68),
     marginHorizontal: windowWidth(10),
     marginBottom: windowHeight(15),
+  
+    ...riderCardFinish,
   },
   itemText: {
     ...commonStyles.mediumTextBlack12,
@@ -123,25 +129,73 @@ const styles = StyleSheet.create({
     height: windowHeight(150),
   },
   packageMainView: {
-    padding: windowHeight(10),
-    marginHorizontal: windowHeight(15),
-    marginTop: windowHeight(15),
-    borderRadius: windowHeight(6),
-    width: "90%",
+    padding: windowWidth(10),
+    borderRadius: windowHeight(8),
+    width: "100%",
+    maxWidth: 680,
     alignSelf: "center",
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
-  searchView: {
-    alignItems: "center",
-    paddingHorizontal: windowWidth(15),
-    borderRadius: windowHeight(5),
+  bookingCardBody: {
     width: "100%",
-    height: windowHeight(40),
+    paddingHorizontal: windowWidth(4),
+    paddingVertical: windowHeight(4),
+    borderRadius: windowHeight(6),
   },
-  whereNext: {
+  bookingFieldRow: {
+    width: "100%",
+    minHeight: 64,
+    alignItems: "center",
+    paddingHorizontal: windowWidth(12),
+    borderRadius: windowHeight(6),
+  },
+  bookingDestinationRow: {
+    marginTop: windowHeight(8),
+  },
+  bookingFieldIcon: {
+    width: windowWidth(38),
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: windowWidth(6),
+  },
+  bookingFieldCopy: {
+    flex: 1,
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+    maxWidth: "100%",
+  },
+  bookingFieldLabel: {
+    fontFamily: appFonts.regular,
+    fontSize: fontSizes.FONT14,
+    marginBottom: windowHeight(2),
+  },
+  bookingFieldValue: {
+    fontFamily: appFonts.medium,
+    fontSize: fontSizes.FONT17,
+    flexShrink: 1,
+    maxWidth: "100%",
+  },
+  bookingDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: windowWidth(42),
+    marginVertical: windowHeight(4),
+  },
+  bookingProceed: {
+    alignSelf: "flex-end",
+    paddingHorizontal: windowWidth(18),
+    paddingVertical: windowHeight(7),
+    borderRadius: windowHeight(5),
+    marginTop: windowHeight(5),
+  },
+  bookingProceedText: {
+    color: appColors.whiteColor,
     fontFamily: appFonts.semiBold,
-    paddingHorizontal: windowWidth(10),
-    fontSize: fontSizes.FONT20,
+    fontSize: fontSizes.FONT16,
   },
   homeRecentSearch: {
     color: appColors.gray,
@@ -152,6 +206,11 @@ const styles = StyleSheet.create({
   adajanText: {
     fontFamily: appFonts.medium,
     marginHorizontal: windowWidth(8),
+    flexShrink: 1,
+  },
+  recentTextContainer: {
+    flex: 1,
+    minWidth: 0,
   },
   bottomLocationView: {
     alignItems: "center",
@@ -163,11 +222,16 @@ const styles = StyleSheet.create({
   centerLocation: {
     alignItems: "center",
     backgroundColor: appColors.whiteColor,
-    marginHorizontal: windowWidth(25),
-    padding: windowHeight(10),
+    marginHorizontal: 0,
+    padding: windowWidth(12),
+    width: "100%",
+    maxWidth: 680,
+    alignSelf: "center",
     borderWidth: 1,
     borderColor: appColors.border,
     borderRadius: windowHeight(5),
+  
+    ...riderCardFinish,
   },
   emptyContainer: {
     padding: windowHeight(15),
@@ -202,7 +266,8 @@ const styles = StyleSheet.create({
   },
   titleTextDetail: {
     fontSize: fontSizes.FONT18,
-    width: windowWidth(362),
+    width: "100%",
+    flexShrink: 1,
     color: appColors.gray,
     fontFamily: appFonts.regular,
     marginHorizontal: windowWidth(10),

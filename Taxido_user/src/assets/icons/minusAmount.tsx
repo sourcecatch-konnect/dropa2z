@@ -5,7 +5,7 @@ export function MinusAmount() {
   return (
     <Svg fill="none">
       <Path
-        stroke="#20B149"
+        stroke="#B15520"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeMiterlimit={10}

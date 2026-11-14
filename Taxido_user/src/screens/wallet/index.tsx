@@ -1,4 +1,6 @@
-import { View, Text } from "react-native";
+import {ReferenceScreen} from '../../design/ReferenceChrome';
+import {View} from 'react-native';
+import {Text} from '../../design/Typography';
 import React, { useEffect, useState } from "react";
 import { BalanceTopup, List } from "./component/index";
 import { Header, notificationHelper } from "@src/commonComponent";
@@ -42,13 +44,13 @@ export function Wallet() {
 
 
   return (
-    <View
-      style={[
+    <ReferenceScreen><View
+      style={[[
         styles.main,
         {
           backgroundColor: isDark ? appColors.primaryText : appColors.lightGray,
         },
-      ]}
+      ], {backgroundColor:'transparent'}]}
     >
       <Header value={translateData.myWallet} />
       <BalanceTopup balance={walletTypedata?.balance || 0} />
@@ -84,6 +86,6 @@ export function Wallet() {
           />
         </View>
       )}
-    </View>
+    </View></ReferenceScreen>
   );
 }

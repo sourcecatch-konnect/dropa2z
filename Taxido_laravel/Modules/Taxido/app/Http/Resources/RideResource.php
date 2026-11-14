@@ -23,6 +23,7 @@ class RideResource  extends BaseResource
             'vehicle_type_id' => $this->vehicle_type_id,
             'locations' => $this->locations,
             'location_coordinates' => $this->location_coordinates,
+            'parcel_delivery_progress' => $this->parcel_delivery_progress,
             'tax' => $this->tax,
             'platform_fees' => $this->platform_fees,
             'ride_fare' => $this->ride_fare,
@@ -63,7 +64,7 @@ class RideResource  extends BaseResource
             'plate_number' => $this->driver?->vehicle_info?->plate_number,
             'weight' => $this->weight,
             'parcel_receiver' => $this->parcel_receiver,
-            'parcel_delivered_otp' => $this?->parcel_delivered_otp,
+            'delivery_details' => $this->delivery_details ? ['goods_type' => $this->delivery_details['goods_type'] ?? null, 'vehicle_choice' => $this->delivery_details['vehicle_choice'] ?? null] : null,
             'cargo_image_url' => $this?->cargo_image?->original_url,
             'currency_symbol' => $this?->currency_symbol,
             'total_extra_charge'  => $this->total_extra_charge,
@@ -84,6 +85,7 @@ class RideResource  extends BaseResource
                 'phone' => $this->driver?->phone,
                 'country_code' => $this->driver?->country_code,
                 'driver_profile_image_url' => $this->driver?->profile_image?->original_url,
+                'profile_image_url' => $this->driver?->profile_image?->original_url,
                 'rating_count' => $this->driver?->rating_count,
                 'review_count' => $this->driver?->review_count,
             ];
@@ -96,6 +98,11 @@ class RideResource  extends BaseResource
                 'email' => $this->rider['email'] ?? null,
                 'phone' => $this->rider['phone'] ?? null,
                 'country_code' => $this->rider['country_code'] ?? null,
+                // `rider` is a saved JSON snapshot, which shadows the relation.
+                // Calling ->profile_image on that array breaks both the list
+                // response and the start response after the PIN is committed.
+                'profile_image_url' => data_get($this->rider, 'profile_image_url')
+                    ?? $this->resource->rider()->first()?->profile_image?->original_url,
                 'rating_count' => $this->rider['rating_count'] ?? null,
                 'reviews_count' => $this->rider['reviews_count'] ?? null,
             ];

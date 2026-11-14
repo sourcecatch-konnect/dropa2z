@@ -1,25 +1,14 @@
+import {requireApiSuccess} from '../responseError';
 import {coupons, couponsVerify} from '../endpoints/couponeEndPoint';
 import {CouponsVerifyInterface} from '../interface/couponInterface';
 import {GET_API, POST_API} from '../methods';
 
-export const couponListData = async () => {
-  return GET_API(coupons)
-    .then(res => {
-      return res;
-    })
-    .catch(e => {
-      return e?.response;
-    });
+export const couponListData = async (filters?: {service_id?: number}) => {
+  return requireApiSuccess(await GET_API(coupons,{params:filters}), 'Could not load offers. Please try again.');
 };
 
 export const couponVerifyData = async (data: CouponsVerifyInterface) => {
-  return POST_API(data, couponsVerify)
-    .then(res => {
-      return res;
-    })
-    .catch(e => {
-      return e?.response;
-    });
+  return requireApiSuccess(await POST_API(data, couponsVerify), 'Unable to apply coupon.');
 };
 
 const couponService = {

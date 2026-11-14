@@ -1,7 +1,7 @@
 import * as React from "react"
 import Svg, { Path } from "react-native-svg"
 
-export function Swap() {
+export function Swap({color='#777'}: {color?:string}) {
     return (
         <Svg
             width={18}
@@ -9,7 +9,7 @@ export function Swap() {
             fill="none"
         >
             <Path
-                stroke="#777"
+                stroke={color}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={1.5}

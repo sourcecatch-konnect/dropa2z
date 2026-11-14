@@ -1,4 +1,6 @@
-import {Image, Text, TouchableOpacity, View, StyleSheet} from "react-native";
+import {VehicleChoiceArtwork} from '../../../design/VehicleChoiceArtwork';
+import {Image, TouchableOpacity, View, StyleSheet} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, {useEffect, memo} from "react";
 import {external} from "../../../styles/externalStyle";
 import {styles} from "../styles";
@@ -20,6 +22,7 @@ export const BookRideItem = memo(function BookRideItem({
   isSelected,
   onPressAlternate,
   isDisabled,
+  showSeats = true,
   couponsData,
   onPriceCalculated,
   selectedPrefsValue,
@@ -42,20 +45,13 @@ export const BookRideItem = memo(function BookRideItem({
   const isCouponApplicable =
     couponsData?.success &&
     (couponsData?.is_apply_all === 1 ||
-      couponsData?.applicable_vehicles?.includes(item?.id));
+      couponsData?.applicable_vehicles?.some((id:any)=>String(id)===String(item?.id)));
 
   let discountedFare = originalFare;
   let couponSaving = 0;
 
   if (isCouponApplicable) {
-    const discountValue = `${couponsData?.amount ?? 0}`;
-    const flatValue = couponsData?.total_coupon_discount ?? 0;
-
-    if (couponsData?.coupon_type === "percentage") {
-      couponSaving = originalFare * (Number(discountValue) / 100);
-    } else {
-      couponSaving = flatValue;
-    }
+    couponSaving = Math.min(originalFare,Number(couponsData?.total_coupon_discount ?? 0));
 
     couponSaving = Number(couponSaving.toFixed(2));
 
@@ -102,15 +98,18 @@ export const BookRideItem = memo(function BookRideItem({
             : appColors.whiteColor,
           flexDirection: "row",
           justifyContent: "space-between",
-          height: windowWidth(80),
+          alignItems: "center",
+          minHeight: windowWidth(80),
+          paddingVertical: windowHeight(2),
           marginVertical: windowHeight(2),
         },
       ]}
       onPress={() => handlePress(item)}
       disabled={isDisabled}>
-      <View style={{flexDirection: "row"}}>
+      <View style={{flexDirection: "row", flex: 1, minWidth: 0, alignItems: "center"}}>
         <View
           style={{
+            flexShrink: 0,
             alignItems: "center",
             justifyContent: "center",
             height: windowWidth(60),
@@ -131,10 +130,11 @@ export const BookRideItem = memo(function BookRideItem({
               ? appColors.darkPrimary
               : appColors.lightGray,
           }}>
-          <Image
-            style={[styles.img, isDisabled && !isSelected && {opacity: 0.5}]}
-            source={{uri: item?.vehicle_image_url}}
-          />
+          <VehicleChoiceArtwork style={[styles.img, isDisabled && !isSelected && {
+  opacity: 0.5
+}]} source={typeof item?.vehicle_image_url === "number" ? item.vehicle_image_url : {
+  uri: item?.vehicle_image_url
+}} vehicle={item} />
         </View>
 
         <View
@@ -142,18 +142,21 @@ export const BookRideItem = memo(function BookRideItem({
             external.js_space,
             external.mh_5,
             external.mv_5,
-            {height: windowHeight(30), marginTop: windowHeight(7.5)},
+            {flex: 1, minWidth: 0, marginTop: windowHeight(2)},
           ]}>
-          <View style={external.fd_row}>
+          <View style={[external.fd_row, {alignItems: "center", minWidth: 0}]}>
             <Text
               style={[
                 styles.vehicleName,
                 {fontFamily: isSelected ? appFonts.medium : appFonts.regular},
                 {color: isDark ? appColors.whiteColor : appColors.blackColor},
-              ]}>
+                {flex: 1, minWidth: 0},
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail">
               {item?.name}
             </Text>
-            <View
+            {showSeats && <View
               style={[
                 external.fd_row,
                 {alignItems: "center", marginHorizontal: windowWidth(3)},
@@ -164,12 +167,13 @@ export const BookRideItem = memo(function BookRideItem({
                   commonStyles.regularText,
                   styles.vehicleName,
                   {color: isDark ? appColors.iconColor : appColors.primaryText},
-                ]}>
+              ]}
+                numberOfLines={1}>
                 {item?.max_seat}
               </Text>
-            </View>
+            </View>}
           </View>
-          <View style={[external.fd_row, {alignItems: "center"}]}>
+          <View style={[external.fd_row, {alignItems: "center", minWidth: 0}]}>
             <Text
               style={[
                 commonStyles.regularText,
@@ -177,11 +181,14 @@ export const BookRideItem = memo(function BookRideItem({
                   fontSize: fontSizes.FONT15,
                   color: isDark ? appColors.darkText : appColors.primaryText,
                   fontFamily: appFonts.regular,
+                  flex: 1,
+                  minWidth: 0,
                 },
-              ]}>
-              {item?.description?.length > 25
-                ? item?.description.substring(0, 25) + "..."
-                : item?.description}
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {item?.description}
             </Text>
           </View>
         </View>
@@ -189,6 +196,8 @@ export const BookRideItem = memo(function BookRideItem({
 
       <View
         style={{
+          flexShrink: 0,
+          alignItems: "flex-end",
           marginHorizontal: windowWidth(12),
           marginBottom: windowWidth(5),
         }}>

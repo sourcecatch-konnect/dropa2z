@@ -61,6 +61,15 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
+                            <label for="goods_included_minutes" class="form-label">Included Minutes for Parcel / Freight</label>
+                            <input type="number" class="form-control" id="goods_included_minutes"
+                                name="goods_included_minutes" min="0" max="1440" step="1" value="0">
+                            <small class="text-muted">The time charge applies after this allowance. Set 0 to charge from the first minute.</small>
+                            <span class="invalid-feedback d-none" id="goods_included_minutes_error"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
                             <label for="per_weight_charge" class="form-label">Per Weight Charge</label>
                             <div class="input-group">
                                 <span class="input-group-text currency-symbol">{{ getDefaultCurrency()?->symbol ?? 'N/A' }}</span>
@@ -244,6 +253,7 @@
                              $('#priceId').val(data.vehicleTypeZone.id);
                              $('#base_fare_charge').val(data.vehicleTypeZone.base_fare_charge);
                              $('#base_distance').val(data.vehicleTypeZone.base_distance);
+                             $('#goods_included_minutes').val(data.vehicleTypeZone.goods_included_minutes ?? 0);
                              $('#per_distance_charge').val(data.vehicleTypeZone.per_distance_charge);
                              $('#per_minute_charge').val(data.vehicleTypeZone.per_minute_charge);
                              $('#per_weight_charge').val(data.vehicleTypeZone.per_weight_charge || '');

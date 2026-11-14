@@ -1,5 +1,9 @@
 interface LoginViewProps {
   googleLogin?: () => void
+  googleLoading?: boolean
+  selectedRole?: 'driver' | 'fleet' | null
+  setSelectedRole?: (role: 'driver' | 'fleet') => void
+  showRoleSelector?: boolean
   appleLogin?: () => void
   gotoOTP: any
   gotoRegistration?: () => void

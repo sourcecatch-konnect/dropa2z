@@ -3,6 +3,7 @@
 namespace Modules\Taxido\Http\Controllers\Api;
 
 use Exception;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Traits\MessageTrait;
@@ -14,6 +15,7 @@ use Modules\Taxido\Http\Resources\FleetManagers\FleetSelfResource;
 use Modules\Taxido\Models\Document;
 use App\Exceptions\ExceptionHandler;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
@@ -46,6 +48,85 @@ class FleetAuthController extends Controller
         }
     }
 
+    public function socialLogin(Request $request)
+    {
+        try {
+            $request->validate([
+                'id_token' => 'required|string',
+                'fcm_token' => 'nullable|string',
+            ]);
+
+            $identity = $this->verifyGoogleIdToken($request->id_token);
+            $email = strtolower(trim($identity['email']));
+            $account = User::where('email', $email)->whereNull('deleted_at')->first();
+
+            if (! $account || ! $account->hasRole(RoleEnum::FLEET_MANAGER)) {
+                return response()->json([
+                    'success' => true,
+                    'is_registered' => false,
+                    'email' => $email,
+                    'name' => $identity['name'] ?? $account?->name ?? '',
+                ], 200);
+            }
+
+            $fleet = FleetManager::findOrFail($account->id);
+            if (! $fleet->status) {
+                throw new Exception(__('Account is disabled'), 403);
+            }
+
+            $fleet->email_verified_at = $fleet->email_verified_at ?? now();
+            $fleet->fcm_token = $request->fcm_token;
+            $fleet->save();
+
+            $token = $fleet->createToken('auth_token')->plainTextToken;
+            $fleet->tokens()->update(['role_type' => RoleEnum::FLEET_MANAGER]);
+            $settings = getTaxidoSettings();
+            $isVerified = $fleet->is_verified;
+            if (! ($settings['activation']['fleet_verification'] ?? true)) {
+                $isVerified = 1;
+            }
+
+            return response()->json([
+                'success' => true,
+                'is_registered' => true,
+                'id' => $fleet->id,
+                'access_token' => $token,
+                'is_verified' => $isVerified,
+                'needs_mobile_update' => empty($fleet->phone),
+                'role' => RoleEnum::FLEET_MANAGER,
+            ], 200);
+        } catch (Exception $e) {
+            throw new ExceptionHandler($e->getMessage(), $e->getCode());
+        }
+    }
+
+    private function verifyGoogleIdToken(string $idToken): array
+    {
+        $expectedClientId = config('services.google.client_id');
+        if (! $expectedClientId) {
+            throw new Exception(__('Google sign-in is not configured.'), 503);
+        }
+
+        $response = Http::timeout(10)->acceptJson()->get(
+            'https://oauth2.googleapis.com/tokeninfo',
+            ['id_token' => $idToken]
+        );
+        $identity = $response->json();
+
+        if (! $response->successful()
+            || ! is_array($identity)
+            || ($identity['aud'] ?? null) !== $expectedClientId
+            || ! in_array($identity['iss'] ?? null, ['accounts.google.com', 'https://accounts.google.com'], true)
+            || (int) ($identity['exp'] ?? 0) <= time()
+            || ($identity['email_verified'] ?? null) !== 'true'
+            || empty($identity['email'])
+        ) {
+            throw new Exception(__('Google sign-in could not be verified.'), 401);
+        }
+
+        return $identity;
+    }
+
     private function sendEmailToken($email)
     {
         $token = $this->generateToken(email: $email);
@@ -75,7 +156,12 @@ class FleetAuthController extends Controller
         $token = $this->generateToken($country_code, $phone);
 
         if (! isDemoMode()) {
-            sendSMS('+' . $country_code . $phone, $token);
+            try {
+                sendSMS('+' . $country_code . $phone, $token);
+            } catch (Exception $e) {
+                DB::table('auth_tokens')->where('phone', '+' . $country_code . $phone)->where('token', $token)->delete();
+                throw $e;
+            }
         }
         return response()->json(['message' => __('OTP sent successfully to your phone!'), 'success' => true], 200);
     }
@@ -197,6 +283,11 @@ class FleetAuthController extends Controller
         DB::beginTransaction();
 
         try {
+
+            $taxidoSettings = getTaxidoSettings();
+            if (! ($taxidoSettings['activation']['fleet_registration'] ?? true)) {
+                throw new Exception(__('Fleet registration is currently disabled.'), 403);
+            }
 
             $validator = Validator::make($request->all(), [
                 'name' => 'required',

@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors } from '@src/themes';
 import { external } from '../../../../../styles/externalStyle';
@@ -12,7 +13,9 @@ const styles = StyleSheet.create({
         borderColor: appColors.border,
         borderWidth: windowHeight(1),
         overflow: 'hidden',
-    },
+    
+    ...riderCardFinish,
+  },
     viewData: {
         backgroundColor: appColors.primary,
         marginHorizontal: windowWidth(3),
@@ -21,7 +24,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: windowWidth(8),
         paddingVertical: windowHeight(3),
-    },
+    
+    ...riderCardFinish,
+  },
     pendingViewContainer: {
         ...external.ph_13,
         ...external.pv_10,

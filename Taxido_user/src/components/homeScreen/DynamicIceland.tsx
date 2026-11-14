@@ -1,5 +1,8 @@
+import {BrandLoader} from '../../design/BrandLogo';
+import {VehicleGraphic} from '../../design/VehicleGraphic';
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, Animated, PanResponder, Dimensions, Image, Vibration, ActivityIndicator } from "react-native";
+import {View, StyleSheet, Animated, PanResponder, Dimensions, Image, Vibration, ActivityIndicator} from 'react-native';
+import {Text} from '../../design/Typography';
 import { appColors, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { appFonts } from "@src/themes";
 import { useAppNavigation } from "@src/utils/navigation";
@@ -238,7 +241,7 @@ const DynamicIceland: React.FC<DynamicIcelandProps> = ({ rideData }) => {
                 navigation.navigate("Payment", { rideId: rideData?.id });
             } else if (rideData?.ride_status?.slug == "completed") {
                 deleteValue("current_ride_request_id");
-                notificationHelper("", "Ride completed", "success");
+                notificationHelper("", "Delivery completed", "success");
             }
             else {
                 notificationHelper("", "Something went wrong", "error");
@@ -281,10 +284,9 @@ const DynamicIceland: React.FC<DynamicIcelandProps> = ({ rideData }) => {
             if (isBubble) {
                 return (
                     <View style={[styles.icelandView, { backgroundColor: appColors.whiteColor }]}>
-                        {loading ? <ActivityIndicator color={appColors.primary} size={'small'} /> : <Image
-                            source={{ uri: rideData?.vehicle_type?.vehicle_image_url }}
-                            style={styles.icelandImage}
-                        />}
+                        {loading ? <BrandLoader color={appColors.primary} size={'small'} /> : <VehicleGraphic source={{
+  uri: rideData?.vehicle_type?.vehicle_image_url
+}} style={styles.icelandImage} vehicle={rideData?.vehicle_type} />}
                     </View>
                 );
             } else {
@@ -318,7 +320,9 @@ const DynamicIceland: React.FC<DynamicIcelandProps> = ({ rideData }) => {
                             {getRideDisplayStatus(rideData)}
                         </Text>
                         <View style={styles.icelandView} >
-                            {loading ? <ActivityIndicator color={appColors.primary} size={'small'} /> : <Image source={{ uri: rideData?.vehicle_type?.vehicle_image_url }} style={styles.icelandImage} />}
+                            {loading ? <BrandLoader color={appColors.primary} size={'small'} /> : <VehicleGraphic source={{
+  uri: rideData?.vehicle_type?.vehicle_image_url
+}} style={styles.icelandImage} vehicle={rideData?.vehicle_type} />}
                         </View>
                     </View>
                 );

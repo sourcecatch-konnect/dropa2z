@@ -1,4 +1,5 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import {Image, Pressable, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React from 'react';
 import { styles } from '../style';
 import { commonStyles } from '../../../styles/commonStyle';

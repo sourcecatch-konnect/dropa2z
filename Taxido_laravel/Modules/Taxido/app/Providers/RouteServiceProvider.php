@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Modules\Taxido\Enums\RideStatusEnum;
 use Modules\Taxido\Http\Middleware\TaxidoAuthMiddleware;
+use Modules\Taxido\Http\Middleware\DriverPortalAuthMiddleware;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider
@@ -26,6 +27,7 @@ class RouteServiceProvider extends ServiceProvider
         parent::boot();
         $router = $this->app['router'];
         $router->aliasMiddleware('taxido.auth', TaxidoAuthMiddleware::class);
+        $router->aliasMiddleware('driver.portal.auth', DriverPortalAuthMiddleware::class);
     }
 
     /**

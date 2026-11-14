@@ -1,4 +1,5 @@
-import { Image, View, TouchableOpacity, Text } from 'react-native'
+import {Image, View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from 'react'
 import styles from '../styles'
 import Icons from '../../../../utils/icons/icons'
@@ -12,7 +13,7 @@ export function ImageContainer({ data, openBottomSheet, imageUri }: any) {
 
 
   return (
-    <View style={{ marginTop: windowHeight(7) }}>
+    <View style={{padding:20,alignItems:"center",backgroundColor:"#17191C",borderTopLeftRadius:22,borderTopRightRadius:22}}>
       <View style={[styles.profileImageView, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {imageUri ? (
           <Image style={styles.profileImage} source={{ uri: imageUri }} />
@@ -23,6 +24,7 @@ export function ImageContainer({ data, openBottomSheet, imageUri }: any) {
         )}
 
         <TouchableOpacity
+          accessibilityRole="button" accessibilityLabel="Change profile photo"
           activeOpacity={0.7}
           style={[styles.editIconContainer, { borderColor: colors.border, backgroundColor: colors.card }]}
           onPress={openBottomSheet}

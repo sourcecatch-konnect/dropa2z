@@ -149,6 +149,18 @@ class Driver extends User implements HasMedia
         return 'App\Models\User';
     }
 
+    public function getFcmTokenAttribute($value)
+    {
+        return array_key_exists('driver_fcm_token', $this->attributes)
+            ? $this->attributes['driver_fcm_token'] : $value;
+    }
+
+    public function setFcmTokenAttribute($value): void
+    {
+        $this->attributes['fcm_token'] = $value;
+        $this->attributes['driver_fcm_token'] = $value;
+    }
+
     public function routeNotificationForFcm()
     {
         return $this->fcm_token;

@@ -1,6 +1,7 @@
 import { useTheme } from '@react-navigation/native'
 import React, { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity } from 'react-native'
+import {View, TouchableOpacity} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import appColors from '../../theme/appColors'
 import { useValues } from '../../utils/context'
 import styles from './styles'
@@ -8,6 +9,7 @@ import InputProps from './types'
 import { fontSizes, windowHeight, windowWidth } from '../../theme/appConstant'
 import appFonts from '../../theme/appFonts'
 import { useSelector } from 'react-redux'
+import {useReferenceTheme} from '../../design/ReferenceChrome'
 
 export function Input({
   placeholder,
@@ -39,6 +41,7 @@ export function Input({
   const { textRtlStyle, viewRtlStyle, isDark } = useValues()
   const { translateData } = useSelector((state: any) => state.setting)
   const [isFocused, setIsFocused] = useState(false)
+  const reference=useReferenceTheme()
 
   return (
     <View style={styles.container}>
@@ -76,11 +79,12 @@ export function Input({
           styles.subContainer,
           {
             borderColor: isFocused
-              ? appColors.primary
+              ? reference.active ? reference.accent : appColors.primary
               : borderColor
               ? borderColor
               : colors.border,
           },
+          reference.active && {borderRadius:14},
         ]}
       >
         <View
@@ -100,7 +104,7 @@ export function Input({
             <Text
               style={{
                 marginLeft: windowWidth(4),
-                color: isDark ? appColors.darkText : appColors.secondaryFont,
+                color: isDark ? "#BBC1CA" : appColors.secondaryFont,
               }}
             >
               {iconText}
@@ -120,18 +124,19 @@ export function Input({
 
                 color:
                   editable === false
-                    ? appColors.secondaryFont
+                    ? (isDark ? '#BBC1CA' : appColors.secondaryFont)
                     : isDark
                     ? appColors.white
                     : appColors.black,
               },
               style,
+              {flex:1,minWidth:0,width:undefined},
             ]}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
             placeholderTextColor={
-              isDark ? appColors.darkText : appColors.secondaryFont
+              isDark ? '#BBC1CA' : appColors.secondaryFont
             }
             keyboardType={keyboardType}
             value={value}

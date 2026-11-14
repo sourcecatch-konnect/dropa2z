@@ -14,13 +14,17 @@ const styles = StyleSheet.create({
         paddingVertical: windowHeight(3),
         paddingHorizontal: windowWidth(2),
         borderRadius: windowWidth(5),
-        width: '80%',
+        width: '90%',
+        maxWidth: 440,
+        padding: 22,
     },
     title: {
-        fontSize: fontSizes.FONT4,
+        fontSize: 20,
+        lineHeight: 27,
         fontFamily: appFonts.semiBold,
         marginVertical: windowHeight(2),
-        alignSelf: 'center'
+        alignSelf: 'center',
+        textAlign: 'center'
     },
     image: {
         height: windowHeight(6.5),

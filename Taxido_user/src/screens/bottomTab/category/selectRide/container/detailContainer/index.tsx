@@ -1,17 +1,6 @@
-import {
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-  BackHandler,
-  FlatList,
-  Pressable,
-  ScrollView,
-  Keyboard,
-  TextInput,
-  ActivityIndicator,
-  AppState,
-} from "react-native";
+import {BrandLoader} from '../../../../../../design/BrandLogo';
+import {Image, TouchableOpacity, View, BackHandler, FlatList, Pressable, ScrollView, Keyboard, ActivityIndicator, AppState} from 'react-native';
+import {Text, TextInput} from '../../../../../../design/Typography';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { external } from "../../../../../../styles/externalStyle";
 import { styles } from "./styles";
@@ -240,7 +229,7 @@ export function DetailContainer() {
   }, []);
 
   const chooseRider = () => {
-    navigate("ChooseRider");
+    navigate("ChooseRiderScreen");
   };
 
   const handleChooseRiderAndClose = () => {
@@ -348,6 +337,44 @@ export function DetailContainer() {
       (driver: any) => driver?.vehicleId === selectedVehicleData?.id,
     )
     : [];
+
+  const requestedVehicleId = selectedItemData?.id ?? selectedItem;
+  const mapVehicleData = packageVehicle?.find(
+    (vehicle: any) => String(vehicle?.id) === String(requestedVehicleId),
+  ) ?? selectedVehicleData;
+  const nearestAvailableDriver = useMemo(() => {
+    if (!pickupCoords || requestedVehicleId == null) return null;
+
+    const candidates = Array.isArray(driverData?.data) ? driverData.data : [];
+    let nearest: { lat: number; lng: number; distanceKm: number } | null = null;
+
+    for (const driver of candidates) {
+      const driverVehicleId =
+        driver?.vehicle_info?.vehicle_type_id ?? driver?.vehicle_type_id;
+      if (String(driverVehicleId) !== String(requestedVehicleId)) continue;
+
+      const location = Array.isArray(driver?.location)
+        ? driver.location[0]
+        : driver?.location;
+      if (location?.lat == null || location?.lng == null) continue;
+
+      const lat = Number(location.lat);
+      const lng = Number(location.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+      const distanceKm = turf.distance(
+        turf.point([pickupCoords.lng, pickupCoords.lat]),
+        turf.point([lng, lat]),
+        { units: "kilometers" },
+      );
+
+      if (!nearest || distanceKm < nearest.distanceKm) {
+        nearest = { lat, lng, distanceKm };
+      }
+    }
+
+    return nearest;
+  }, [driverData?.data, pickupCoords, requestedVehicleId]);
 
   const getVehicleTypes = () => {
     const payload = {
@@ -514,15 +541,28 @@ export function DetailContainer() {
       .filter(Boolean);
   };
 
-  useEffect(() => {
+  const driverZoneId = zoneValue?.data?.[0]?.id;
+  const refreshAvailableDrivers = useCallback(() => {
+    if (!driverZoneId) return;
     dispatch(
       allDriver({
-        zones: zoneValue?.data?.[0]?.id,
+        zones: driverZoneId,
         is_online: 1,
         is_on_ride: 0,
       }),
     );
-  }, []);
+  }, [dispatch, driverZoneId]);
+
+  useEffect(() => {
+    refreshAvailableDrivers();
+  }, [refreshAvailableDrivers]);
+
+  useEffect(() => {
+    if (!isExpanding || !driverZoneId) return;
+
+    const refreshInterval = setInterval(refreshAvailableDrivers, 15000);
+    return () => clearInterval(refreshInterval);
+  }, [isExpanding, driverZoneId, refreshAvailableDrivers]);
 
   const formattedData =
     allLocationCoords && allLocationCoords?.length > 0
@@ -733,6 +773,7 @@ export function DetailContainer() {
       isSelected={selectedItemData?.id === item.id}
       onPress={() => {
         if (!isExpanding) {
+          setSelectedItem(item.id);
           setSelectedItemData(item);
 
           if (taxidoSettingData?.cabbooking_values?.activation?.bidding === 0) {
@@ -744,6 +785,7 @@ export function DetailContainer() {
       }}
       onPressAlternate={() => {
         if (!isExpanding) {
+          setSelectedItem(item.id);
           setSelectedItemData(item);
           handleOpenVehicleDetails(item);
         }
@@ -943,6 +985,16 @@ export function DetailContainer() {
               isDark={isDark}
               Google_Map_Key={Google_Map_Key}
               isPulsing={isPulsing}
+              nearbyVehicle={isExpanding ? nearestAvailableDriver : null}
+              vehicleMarkerImage={
+                mapVehicleData?.vehicle_map_icon_url ||
+                mapVehicleData?.vehicle_type?.vehicle_map_icon_url
+              }
+              vehicleLabel={
+                mapVehicleData?.name ||
+                mapVehicleData?.vehicle_type?.name ||
+                "auto"
+              }
             />
           )}
         </View>
@@ -964,7 +1016,7 @@ export function DetailContainer() {
           snapPoints={mainSnapPoints}
           enablePanDownToClose={false}
           backgroundStyle={{ backgroundColor: bgContainer }}
-          handleIndicatorStyle={{ backgroundColor: textColorStyle }}>
+          handleIndicatorStyle={{ backgroundColor: textColorStyle }} android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={[external.fx_1, external.ph_10]}>
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -994,7 +1046,7 @@ export function DetailContainer() {
                       </View>
                     ) : (
                       <View style={styles.loaderContainer}>
-                        <ActivityIndicator />
+                        <BrandLoader />
                       </View>
                     )}
                   </View>
@@ -1124,7 +1176,7 @@ export function DetailContainer() {
           enablePanDownToClose={true}
           onChange={handleSubSheetChanges}
           backgroundStyle={{ backgroundColor: bgContainer }}
-          handleIndicatorStyle={{ backgroundColor: textColorStyle }}>
+          handleIndicatorStyle={{ backgroundColor: textColorStyle }} android_keyboardInputMode="adjustResize" >
           <BottomSheetView>
             <ModalContainers
               selectedItemData={selectedItemData}
@@ -1140,7 +1192,7 @@ export function DetailContainer() {
           enablePanDownToClose={true}
           onChange={handleSubSheetChanges}
           backgroundStyle={{ backgroundColor: bgContainer }}
-          handleIndicatorStyle={{ backgroundColor: textColorStyle }}>
+          handleIndicatorStyle={{ backgroundColor: textColorStyle }} android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={[external.fx_1, external.ph_20,]}>
             <ScrollView>
               <Text
@@ -1176,7 +1228,7 @@ export function DetailContainer() {
           enablePanDownToClose={true}
           onChange={handleSubSheetChanges}
           backgroundStyle={{ backgroundColor: bgContainer }}
-          handleIndicatorStyle={{ backgroundColor: textColorStyle }}>
+          handleIndicatorStyle={{ backgroundColor: textColorStyle }} android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={[external.fx_1, external.ph_20]}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <TouchableOpacity activeOpacity={0.7}>
@@ -1286,7 +1338,7 @@ export function DetailContainer() {
               ? appColors.darkPrimary
               : appColors.whiteColor,
           }}
-          handleIndicatorStyle={{ backgroundColor: textColorStyle }}>
+          handleIndicatorStyle={{ backgroundColor: textColorStyle }} android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={external.fx_1}>
             <ScrollView>
               <TouchableOpacity
@@ -1370,7 +1422,7 @@ export function DetailContainer() {
           handleIndicatorStyle={{ backgroundColor: textColorStyle }}
           enablePanDownToClose={true}
           enableContentPanningGesture={true}
-          enableHandlePanningGesture={false}>
+          enableHandlePanningGesture={false} android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={[external.fx_1, external.ph_10]}>
             <View>
               <View>

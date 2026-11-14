@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import {
   fontSizes,
@@ -13,15 +14,17 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   container: {
-    paddingHorizontal: windowWidth(4),
-    marginTop: windowHeight(1.3),
+    paddingHorizontal: 20,
+    marginTop: 20,
+  
   },
   listContainer: {
-    height: windowHeight(25.5),
+    paddingVertical: 4,
     width: '100%',
     marginVertical: windowHeight(1.5),
     borderRadius: windowHeight(1),
     borderWidth: windowHeight(0.1),
+    borderRadius: 22,
   },
   modalAlign: {
     alignItems: 'center',
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
     marginBottom: windowHeight(0.9),
   },
   buttonTitle: {
-    color: appColors.white,
+    color: "#17191C",
     fontSize: fontSizes.FONT4HALF,
     fontFamily: appFonts.medium,
   },

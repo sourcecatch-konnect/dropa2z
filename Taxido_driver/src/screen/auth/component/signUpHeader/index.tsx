@@ -1,3 +1,4 @@
+import {BrandLogo} from '../../../../design/BrandLogo';
 import React from 'react'
 import { View, TouchableOpacity, Image } from 'react-native'
 import styles from './styles'
@@ -41,10 +42,7 @@ export function Header({
         </TouchableOpacity>
       )}
       <View style={[styles.header, { flexDirection: viewRtlStyle }]}>
-        <Image
-          source={isDark ? images.splashDark : images.splash}
-          style={styles.imageLogo}
-        />
+        <BrandLogo light={isDark} size={30} driver/>
       </View>
     </View>
   )

@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
+import {View, TouchableOpacity} from 'react-native';
+import {Text, TextInput} from '../../../../design/Typography';
+import { BottomSheetModal, BottomSheetView, BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { appColors } from "@src/themes";
 import { windowHeight, windowWidth } from "@src/themes";
 import { CloseCircle } from "@src/utils/icons";
@@ -51,6 +52,9 @@ const CouponsBottomSheet = forwardRef<BottomSheetModal, CouponsBottomSheetProps>
         return (
             <BottomSheetModal
                 ref={ref}
+                stackBehavior="switch"
+                enableDynamicSizing={false}
+                android_keyboardInputMode="adjustResize"
                 snapPoints={couponsSnapPoints}
                 backgroundStyle={{ backgroundColor: bgContainer }}
                 handleIndicatorStyle={{
@@ -97,7 +101,7 @@ const CouponsBottomSheet = forwardRef<BottomSheetModal, CouponsBottomSheetProps>
                                 },
                             ]}
                         >
-                            <TextInput
+                            <BottomSheetTextInput
                                 style={[styles.input, { color: textColorStyle }]}
                                 value={inputValue}
                                 onChangeText={setInputValue}

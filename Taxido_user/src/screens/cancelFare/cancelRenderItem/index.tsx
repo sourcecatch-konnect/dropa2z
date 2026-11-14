@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Image, Text, View } from "react-native";
+import {Image, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { external } from "../../../styles/externalStyle";
 import { styles } from "../style";
 import { commonStyles } from "../../../styles/commonStyle";

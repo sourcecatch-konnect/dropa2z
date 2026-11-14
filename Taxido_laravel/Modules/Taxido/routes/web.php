@@ -66,3 +66,20 @@ Route::group(['middleware' => ['localization' , 'maintenance', 'web'], 'namespac
   });
 });
 
+Route::group(['middleware' => ['localization', 'maintenance', 'web'], 'namespace' => 'DriverPortal', 'prefix' => 'driver', 'as' => 'driver.portal.'], function () {
+  Route::get('login', 'DriverPortalController@login')->name('login');
+  Route::post('login', 'DriverPortalController@authenticate')->middleware('throttle:5,1')->name('authenticate');
+
+  Route::group(['middleware' => ['driver.portal.auth']], function () {
+    Route::get('/', 'DriverPortalController@dashboard')->name('dashboard');
+    Route::post('availability', 'DriverPortalController@availability')->middleware('throttle:30,1')->name('availability');
+    Route::post('location', 'DriverPortalController@location')->middleware('throttle:30,1')->name('location');
+    Route::get('ride-request/current', 'DriverPortalController@currentRideRequest')->middleware('throttle:30,1')->name('ride-request.current');
+    Route::post('ride-request/accept', 'DriverPortalController@acceptRideRequest')->middleware('throttle:20,1')->name('ride-request.accept');
+    Route::post('ride-request/reject', 'DriverPortalController@rejectRideRequest')->middleware('throttle:20,1')->name('ride-request.reject');
+    Route::post('ride/start', 'DriverPortalController@startRide')->middleware('throttle:20,1')->name('ride.start');
+    Route::post('ride/complete', 'DriverPortalController@completeRide')->middleware('throttle:20,1')->name('ride.complete');
+    Route::post('logout', 'DriverPortalController@logout')->name('logout');
+  });
+});
+

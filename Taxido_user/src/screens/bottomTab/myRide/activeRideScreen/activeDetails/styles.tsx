@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, windowHeight, windowWidth } from '@src/themes'; 
 import { external } from '../../../../../styles/externalStyle';
@@ -11,7 +12,9 @@ const styles = StyleSheet.create({
         borderColor: appColors.border,
         borderWidth: windowHeight(1),
         overflow: 'hidden',
-    },
+    
+    ...riderCardFinish,
+  },
     pendingViewContainer: {
         ...external.ph_13,
         ...external.pv_10,

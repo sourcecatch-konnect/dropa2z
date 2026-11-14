@@ -1,5 +1,6 @@
 import React from 'react'
-import { TouchableOpacity, View, Text, Image } from 'react-native'
+import {TouchableOpacity, View, Image} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import Icons from '../../../../../utils/icons/icons'
 import styles from './styles'
 import { DocumentPickerResponse } from '@react-native-documents/picker'

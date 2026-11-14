@@ -1,11 +1,8 @@
-import {
-  View,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-} from 'react-native'
+import {LogoutConfirmation} from '../../../design/LogoutConfirmation';
+import {BrandLoader} from '../../../design/BrandLogo';
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import {View, ScrollView, TouchableOpacity, ActivityIndicator, Image} from 'react-native';
+import {Text} from '../../../design/Typography';
 import LottieView from 'lottie-react-native'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styles from './styles'
@@ -37,6 +34,7 @@ import {
   BottomSheetModal,
   BottomSheetModalProvider,
   BottomSheetView,
+  BottomSheetScrollView,
 } from '@gorhom/bottom-sheet'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import appColors from '../../../theme/appColors'
@@ -159,14 +157,14 @@ export function Settings() {
   }
 
   const logoutSheetRef = useRef<any>(null)
-  const logoutSnapPoints = useMemo(() => ['43%'], [])
+  const logoutSnapPoints = useMemo(() => ['42%', '65%'], [])
 
   const openLogoutSheet = () => {
     logoutSheetRef.current?.present()
   }
 
   return (
-    <GestureHandlerRootView>
+    <ReferenceScreen><GestureHandlerRootView>
       <View style={{ flex: 1 }}>
         <ScrollView
           style={[styles.main, { backgroundColor: colors.background }]}
@@ -202,7 +200,7 @@ export function Settings() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={{ alignItems: 'center' }}>
             <LottieView
               source={require('../../../assets/gif/delete.json')}
@@ -247,8 +245,9 @@ export function Settings() {
       <BottomSheetModalProvider>
         <BottomSheetModal
           ref={logoutSheetRef}
-          index={1}
+          index={0}
           snapPoints={logoutSnapPoints}
+          enableDynamicSizing={false}
           backdropComponent={renderLogoutBackdrop}
           enablePanDownToClose={true}
           handleIndicatorStyle={{
@@ -258,96 +257,12 @@ export function Settings() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
-          <BottomSheetView style={{ alignItems: 'center' }}>
-            <Image
-              source={Images.logoutImage}
-              style={{
-                height: windowHeight(9),
-                width: windowHeight(8),
-                top: windowHeight(2),
-              }}
-              resizeMode="cover"
-            />
-            <Text
-              style={{
-                color: isDark ? appColors.white : appColors.black,
-                fontFamily: appFonts.medium,
-                fontSize: fontSizes.FONT4HALF,
-                top: windowHeight(5),
-                width: '80%',
-                textAlign: 'center',
-              }}
-            >
-              {translateData.logoutConfirm}
-            </Text>
-            <View
-              style={{
-                flexDirection: viewRtlStyle,
-                justifyContent: 'space-between',
-                marginTop: windowHeight(8),
-                gap: 15,
-              }}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.cancelButton,
-                  {
-                    backgroundColor: isDark
-                      ? appColors.darkText
-                      : appColors.graybackground,
-                    width: '43%',
-                  },
-                ]}
-                onPress={closeLogoutSheet}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={{
-                    color: isDark ? appColors.bgDark : appColors.iconColor,
-                    textAlign: 'center',
-                    fontFamily: appFonts.medium,
-                    fontSize: fontSizes.FONT4,
-                    paddingVertical: windowHeight(1.5),
-                  }}
-                >
-                  {translateData?.cancel}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.cancelButton,
-                  { backgroundColor: appColors.red, width: '43%' },
-                ]}
-                onPress={gotoLogout}
-                disabled={isLoggingOut}
-                activeOpacity={0.7}
-              >
-                {isLoggingOut ? (
-                  <ActivityIndicator
-                    color={appColors.white}
-                    style={{ paddingVertical: windowHeight(1.5) }}
-                    size={'small'}
-                  />
-                ) : (
-                  <Text
-                    style={{
-                      color: appColors.white,
-                      textAlign: 'center',
-                      fontFamily: appFonts.medium,
-                      fontSize: fontSizes.FONT4,
-                      paddingVertical: windowHeight(1.5),
-                    }}
-                  >
-                    {translateData?.logout}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </BottomSheetView>
+         android_keyboardInputMode="adjustResize" >
+          <BottomSheetScrollView keyboardShouldPersistTaps="handled">
+            <LogoutConfirmation busy={isLoggingOut} onCancel={closeLogoutSheet} onLogout={gotoLogout}/>
+          </BottomSheetScrollView>
         </BottomSheetModal>
       </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+    </GestureHandlerRootView></ReferenceScreen>
   )
 }

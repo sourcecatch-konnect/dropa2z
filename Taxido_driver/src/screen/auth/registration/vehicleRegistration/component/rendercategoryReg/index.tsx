@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Text, View } from 'react-native'
+import {serviceLabel} from '../../../../../../utils/serviceLabels';
+import {View} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import appColors from '../../../../../../theme/appColors'
 import { useTheme } from '@react-navigation/native'
 import { useDispatch, useSelector } from 'react-redux'
@@ -49,14 +51,16 @@ export function RenderCategoryReg({
 
       const filteredServices = categoryData.data.filter(
         (category: any) =>
-          normalize(category.service_type) === normalizedSelected,
+          normalize(category.service_type) === normalizedSelected &&
+          Number(category.status ?? 1) === 1 &&
+          /^ride-parcel-(bike|auto)$/.test(category.slug ?? ''),
       )
 
       setServiceDataValue(filteredServices)
 
       const dropdownItems = filteredServices.map(
         (item: any, index: number) => ({
-          label: item.name,
+          label: serviceLabel(item.name),
           value: item.id,
           index: index,
           service_type: item.service_type,
@@ -65,8 +69,12 @@ export function RenderCategoryReg({
 
       setItems(dropdownItems)
 
-      if (dropdownItems.length > 0 && value === null) {
-        handleValueChange(dropdownItems[0].value)
+      if (dropdownItems.length > 0 && !dropdownItems.some((item: any) => item.value === value)) {
+        const first = filteredServices[0]
+        setValue(first.id)
+        handleItemPress(0, first.name, first.id, first.service_type)
+      } else if (dropdownItems.length === 0) {
+        setValue(null)
       }
     }
   }, [selectedService, categoryData, value])
@@ -149,7 +157,7 @@ export function RenderCategoryReg({
           nestedScrollEnabled: true,
         }}
         zIndex={3}
-        listMode="SCROLLVIEW"
+        listMode="MODAL"
         dropDownDirection="AUTO"
         ListEmptyComponent={() => (
           <View

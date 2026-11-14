@@ -1,8 +1,12 @@
-import React, { useMemo, useCallback } from 'react'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { windowHeight } from '../../theme/appConstant'
+import React, { useMemo, useCallback, useState } from 'react'
+import {ReferenceIcon} from '../../design/ReferenceChrome'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Home } from '../../screen/home'
 import { MyRide, Settings } from '../../screen'
-import { Text, TouchableOpacity, Vibration } from 'react-native'
+import {TouchableOpacity, Vibration} from 'react-native';
+import {Text} from '../../design/Typography';
 import appColors from '../../theme/appColors'
 import Icons from '../../utils/icons/icons'
 import styles from './styles'
@@ -11,15 +15,16 @@ import { useValues } from '../../utils/context'
 import { DashBoard } from '../../screen/dashBoard'
 import { FleetDashBoard, FleetHome } from '../../screen/fleet'
 import { useTabGuard } from '../../utils/hooks'
+import {DriverTraining} from '../../screen/driverTraining'
 
 const Tab = createBottomTabNavigator()
 
-const TabLabel = React.memo(({ focused, label, rtl }: { focused: boolean; label: string; rtl: boolean }) => (
+const TabLabel = React.memo(({ focused, label, rtl, reference, dark }: { focused: boolean; label: string; rtl: boolean;reference:boolean;dark:boolean }) => (
   <Text
     style={[
       styles.tabBarLabelStyle,
       {
-        color: focused ? appColors.white : appColors.categoryTitle,
+        color: reference ? focused?(dark?'#FFBE60':'#A64B00'):dark?'#FFFFFF':'#333333' : focused ? appColors.white : appColors.categoryTitle,
         textAlign: rtl ? 'right' : 'left',
         writingDirection: rtl ? 'rtl' : 'ltr',
       },
@@ -34,14 +39,17 @@ const TabIcon = React.memo(({ Icon, focused }: { Icon: any; focused: boolean }) 
 ))
 
 export default function App() {
+  const [activeTab,setActiveTab]=useState('Home')
+  const referenceTabs=true
+  const insets = useSafeAreaInsets()
   const { translateData } = useSelector((state: any) => state.setting)
-  const { rtl } = useValues()
+  const { rtl, isDark } = useValues()
   const { selfDriver } = useSelector((state: any) => state.account)
 
   const defaultTranslations = useMemo(() => ({
     home: 'Home',
     activeRide: 'DashBoard',
-    myRide: 'My Ride',
+    myRide: 'My Delivery',
     settings: 'Settings',
   }), [])
 
@@ -49,7 +57,7 @@ export default function App() {
   const type = selfDriver?.role
 
   const screens = useMemo(() => {
-    return type === 'driver'
+    return type !== 'fleet_manager'
       ? [
         {
           name: 'Home',
@@ -64,7 +72,7 @@ export default function App() {
           label: translateData?.dashboard,
         },
         {
-          name: 'My Ride',
+          name: 'My Delivery',
           component: MyRide,
           icon: Icons.Car,
           label: t.myRide,
@@ -130,13 +138,19 @@ export default function App() {
 
   // Memoize screen options to prevent recreation on every render
   const screenOptions = useMemo(() => ({
-    tabBarStyle: styles.tabBarContainer,
+    tabBarStyle: [styles.tabBarContainer, {
+      backgroundColor:referenceTabs?(isDark?'#17191C':'#FFFFFF'):appColors.primaryFont,
+      height: windowHeight(8.9) + insets.bottom,
+      paddingBottom: windowHeight(1.3) + insets.bottom,
+    }],
     headerShown: false,
-  }), [])
+  }), [insets.bottom,referenceTabs,isDark])
 
+  if(type==='driver'&&Number(selfDriver?.is_verified)===1&&selfDriver?.training?.required) return <DriverTraining/>;
   return (
     <Tab.Navigator
       initialRouteName='Home'
+      screenListeners={{state:(event:any)=>{const state=event.data?.state;if(state?.routes?.[state.index])setActiveTab(state.routes[state.index].name)}}}
       detachInactiveScreens={false}
       screenOptions={screenOptions}
     >
@@ -148,14 +162,14 @@ export default function App() {
           options={{
             unmountOnBlur: false,
             lazy: true,
-            tabBarIcon: ({ focused }) => <TabIcon Icon={Icon} focused={focused} />,
+            tabBarIcon: ({ focused }) => referenceTabs ? <ReferenceIcon name={name==='Home'?'home':name==='DashBoard'?'services':name==='Settings'?'settings':'package'} color={focused?(isDark?'#FFBE60':'#A64B00'):isDark?'#FFFFFF':'#333333'}/> : <TabIcon Icon={Icon} focused={focused} />,
             tabBarButton: (props: any) => (
               <TouchableOpacity
                 {...props}
                 onPress={() => handleTabPress(name, props.onPress, props.accessibilityState?.selected)}
               />
             ),
-            tabBarLabel: ({ focused }) => <TabLabel focused={focused} label={label} rtl={rtl} />,
+            tabBarLabel: ({ focused }) => <TabLabel focused={focused} label={label} rtl={rtl} reference={referenceTabs} dark={isDark}/>,
           }}
         />
       ))}

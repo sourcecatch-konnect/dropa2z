@@ -1,4 +1,5 @@
-import { View, Text } from 'react-native'
+import {View} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { ListItem } from '../listItem'
 import Icons from '../../../../../utils/icons/icons'

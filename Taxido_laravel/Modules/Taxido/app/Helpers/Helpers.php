@@ -573,12 +573,17 @@ if (! function_exists('getZoneByPoint')) {
         $lng = (float) $longitude;
         $point = new Point($lat, $lng);
 
-        return Zone::whereContains('place_points', $point)
+        $zones = Zone::whereContains('place_points', $point)
             ->where('status', true)
             ->orderByRaw('ST_Area(place_points) ASC')
             ->limit(1)
             ->with('currency:id,code,symbol,exchange_rate')
             ->get();
+        if ($zones->contains(fn ($zone) => (bool) $zone->is_india_local_default)) {
+            app(\Modules\Taxido\Services\IndiaLocalDeliveryPolicy::class)->assertIndianPoint($lat, $lng);
+        }
+        return $zones;
+
     }
 }
 
@@ -598,10 +603,16 @@ if (! function_exists('getZoneByPoints')) {
         $lng = (float) $longitude;
         $point = new Point($lat, $lng);
 
-        return Zone::whereContains('place_points', $point)
+        $zones = Zone::whereContains('place_points', $point)
+            ->where('status', true)
             ->orderByRaw('ST_Area(place_points) ASC')
             ->limit(1)
-            ->get(['id', 'name', 'locations', 'amount', 'currency_id']);
+            ->get(['id', 'name', 'locations', 'amount', 'currency_id', 'is_india_local_default']);
+        if ($zones->contains(fn ($zone) => (bool) $zone->is_india_local_default)) {
+            app(\Modules\Taxido\Services\IndiaLocalDeliveryPolicy::class)->assertIndianPoint($lat, $lng);
+        }
+        return $zones;
+
     }
 }
 
@@ -612,9 +623,15 @@ if (! function_exists('getDriverZoneByPoint')) {
         $lng = (float) $longitude;
         $point = new Point($lat, $lng);
 
-        return Zone::whereContains('place_points', $point)
+        $zones = Zone::whereContains('place_points', $point)
+            ->where('status', true)
             ->orderByRaw('ST_Area(place_points) ASC')
-            ->get(['id', 'name', 'locations', 'amount', 'currency_id', 'payment_method']);
+            ->get(['id', 'name', 'locations', 'amount', 'currency_id', 'payment_method', 'is_india_local_default']);
+        if ($zones->contains(fn ($zone) => (bool) $zone->is_india_local_default)) {
+            app(\Modules\Taxido\Services\IndiaLocalDeliveryPolicy::class)->assertIndianPoint($lat, $lng);
+        }
+        return $zones;
+
     }
 }
 
@@ -1720,57 +1737,64 @@ if (! function_exists('getDriverById')) {
 if (! function_exists('calculateRideDistance')) {
     function calculateRideDistance(array $locations, $units = '')
     {
-        $apiKey = env('GOOGLE_MAP_API_KEY');
-        $url = 'https://maps.googleapis.com/maps/api/distancematrix/json';
-        $distanceUnit = '';
-        if ($units === 'mile') {
-            $distanceUnit = 'imperial';
+        // Use one Routes API request for the whole itinerary. Apart from being
+        // faster for multi-stop rides, this keeps the quote based on the same
+        // ordered route the rider selected and includes current traffic time.
+        // Server-to-server Routes API calls must use an IP-restricted server key,
+        // not the web key restricted to HTTP referrers.
+        $apiKey = env('GOOGLE_MAPS_SERVER_KEY', env('GOOGLE_MAP_API_KEY'));
+        $url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
+        $distanceUnit = $units === 'mile' ? 'mile' : 'km';
+
+        if (count($locations) < 2) {
+            throw new \InvalidArgumentException('A route needs a pickup and a destination.');
         }
 
-        $totalDistance = 0.0;
-        $totalDurationInSeconds = 0;
-        for ($i = 0; $i < count($locations) - 1; $i++) {
-            $origin = "{$locations[$i]['lat']},{$locations[$i]['lng']}";
-            $destination = "{$locations[$i + 1]['lat']},{$locations[$i + 1]['lng']}";
-
-            $response = Http::get($url, [
-                'origins' => $origin,
-                'destinations' => $destination,
-                'key' => $apiKey,
-                'units' => $distanceUnit,
-            ]);
-
-            if ($response->ok()) {
-                $data = $response->json();
-
-                if (
-                    $data['status'] === 'OK' &&
-                    isset($data['rows'][0]['elements'][0]) &&
-                    $data['rows'][0]['elements'][0]['status'] === 'OK'
-                ) {
-                    $element = $data['rows'][0]['elements'][0];
-                    $distanceText = $element['distance']['text'] ?? null;
-                    $distanceValue = $element['distance']['value'] ?? null;
-                    $durationSec = $element['duration']['value'] ?? 0;
-                    if ($units === 'mile') {
-                        // convert meters  to miles
-                        $totalDistance = $distanceValue * 0.000621371;
-                    } else {
-                        // convert meters to km
-                        $totalDistance = $distanceValue * 0.001;
-                    }
-
-                    if ($distanceText) {
-                        [$value, $unit] = explode(' ', $distanceText);
-                        $distanceUnit = $unit;
-                    }
-
-                    $totalDurationInSeconds += $durationSec;
-                }
+        $toWaypoint = static function (array $location): array {
+            if (! isset($location['lat'], $location['lng']) ||
+                ! is_numeric($location['lat']) || ! is_numeric($location['lng'])) {
+                throw new \InvalidArgumentException('A route location is missing valid coordinates.');
             }
+
+            return ['location' => ['latLng' => [
+                'latitude' => (float) $location['lat'],
+                'longitude' => (float) $location['lng'],
+            ]]];
+        };
+
+        $routeRequest = [
+            'origin' => $toWaypoint($locations[0]),
+            'destination' => $toWaypoint($locations[count($locations) - 1]),
+            'travelMode' => 'DRIVE',
+            'routingPreference' => 'TRAFFIC_AWARE',
+        ];
+
+        if (count($locations) > 2) {
+            $routeRequest['intermediates'] = array_map(
+                $toWaypoint,
+                array_slice($locations, 1, -1)
+            );
         }
 
-        $totalDurationMinutes = (int) ceil($totalDurationInSeconds / 60);
+        $response = Http::timeout(12)->withHeaders([
+            'X-Goog-Api-Key' => $apiKey,
+            'X-Goog-FieldMask' => 'routes.distanceMeters,routes.duration',
+        ])->post($url, $routeRequest);
+
+        $route = $response->json('routes.0');
+        if (! $response->successful() || ! $route || ! isset($route['distanceMeters'])) {
+            throw new \RuntimeException(
+                'Unable to calculate the road route for these stops. Please check the locations and try again.',
+                422
+            );
+        }
+
+        $distanceMeters = (float) $route['distanceMeters'];
+        $totalDistance = $units === 'mile'
+            ? $distanceMeters * 0.000621371
+            : $distanceMeters * 0.001;
+        $durationSeconds = (float) preg_replace('/[^0-9.]/', '', $route['duration'] ?? '0s');
+        $totalDurationMinutes = (int) ceil($durationSeconds / 60);
 
         return [
             'distance_value' => (float) round($totalDistance, 2),

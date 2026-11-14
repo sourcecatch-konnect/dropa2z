@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, windowHeight, windowWidth, fontSizes, appFonts } from '@src/themes';
 
@@ -23,6 +24,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     borderRadius: windowHeight(5),
     bottom: windowHeight(20),
+  
+    ...riderCardFinish,
   },
   selectedSubImg: {
     borderColor: appColors.primary,
@@ -45,6 +48,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(15),
     borderRadius: windowHeight(4),
     paddingBottom: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   titleView: {
     justifyContent: 'space-between',
@@ -159,7 +164,7 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   confirmButton: {
-    backgroundColor: 'green',
+    backgroundColor: 'orange',
     padding: 10,
     borderRadius: 5,
     flex: 1,

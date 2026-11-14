@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { Platform, StyleSheet } from 'react-native';
 import { fontSizes, windowHeight, windowWidth } from '../../../theme/appConstant';
 import appColors from '../../../theme/appColors';
@@ -74,7 +75,9 @@ export const styles = StyleSheet.create({
         bottom: windowHeight(2),
         flex: 1,
         marginTop: windowHeight(5),
-    },
+    
+    ...referenceSurfaces.control,
+  },
     buttonContainer: {
         flex: 1,
         justifyContent: 'flex-end',
@@ -123,7 +126,9 @@ export const styles = StyleSheet.create({
         borderRadius: windowHeight(1),
         borderColor: appColors.border,
         flexDirection: 'row',
-    },
+    
+    ...referenceSurfaces.control,
+  },
     iconContainer: {
         height: windowHeight(6),
         width: windowWidth(5),
@@ -151,8 +156,8 @@ export const styles = StyleSheet.create({
         borderColor: appColors.darkborder,
     },
     input: {
-        backgroundColor: 'red',
+        backgroundColor: 'transparent',
         width: '90%',
-        color: appColors.alertRed
+        color: appColors.primaryFont
     }
 });

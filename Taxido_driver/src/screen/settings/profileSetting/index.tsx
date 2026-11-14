@@ -1,13 +1,8 @@
-import {
-  View,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-  ScrollView,
-  Text,
-  Image,
-  BackHandler,
-} from 'react-native'
+import {CardHeading} from '../../../design/CardHeading';
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {View, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView, Image, BackHandler} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import appColors from '../../../theme/appColors'
 import styles from './styles'
@@ -62,6 +57,7 @@ const findCountryByCallingCode = async (code: string) => {
 }
 
 export function ProfileSetting() {
+  const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>()
   const { goBack } = useNavigation()
   const navigation = useNavigation<any>()
@@ -79,7 +75,7 @@ export function ProfileSetting() {
     username: '',
     phoneNumber: '',
     email: '',
-    countryCode: '',
+    countryCode: '+91',
   })
   const [error, setError] = useState('')
   const [profileImg, setProfileImage] = useState<any>()
@@ -105,6 +101,18 @@ export function ProfileSetting() {
           }
         }
 
+        if (!selected && !selfDriver?.country_code) {
+          const india = await findCountryByCallingCode('91')
+          if (india?.idd?.root) {
+            const root = india.idd.root.replace('+', '')
+            const suffix = india.idd.suffixes?.[0] ?? ''
+            selected = {
+              callingCode: [`${root}${suffix}`],
+              cca2: india.cca2,
+            }
+          }
+        }
+
         if (!selected) {
           const saved = await AsyncStorage.getItem('selectedCountry')
           if (saved) {
@@ -114,7 +122,7 @@ export function ProfileSetting() {
 
         setCountryCode1(selected)
         setFormData(prev => {
-          let derivedCountryCode = ''
+          let derivedCountryCode = '+91'
           if (selected) {
             derivedCountryCode = `+${selected.callingCode[0]}`
           } else if (selfDriver?.country_code) {
@@ -184,7 +192,6 @@ export function ProfileSetting() {
         method: 'POST',
         body: updateFormData,
         headers: {
-          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
       })
@@ -197,23 +204,19 @@ export function ProfileSetting() {
       }
 
       if (!response.ok) {
-        notificationHelper('', translateData.failedprofile, 'error')
+        throw new Error(translateData.failedprofile || 'Unable to update profile')
       }
 
-      dispatch(selfDriverData())
-        .unwrap()
-        .then(res => {
-          setImageUri(res?.profile_image_url)
-        })
+      const updatedProfile = await dispatch(selfDriverData()).unwrap()
+      setImageUri(updatedProfile?.profile_image_url)
+      await setValue('profile_image_uri', updatedProfile?.profile_image_url || '')
       notificationHelper(
         '',
         translateData.profileUpdatedSuccessfully,
         'success',
       )
       goBack()
-      if (profileImg) {
-        setValue('profile_image_uri', profileImg?.uri)
-      }
+
     } catch (error) {
       notificationHelper('', translateData.profileupdatefailed, 'error')
     } finally {
@@ -238,7 +241,6 @@ export function ProfileSetting() {
         method: 'POST',
         body: updateFormData,
         headers: {
-          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
       })
@@ -251,23 +253,19 @@ export function ProfileSetting() {
       }
 
       if (!response.ok) {
-        notificationHelper('', translateData.failedprofile, 'error')
+        throw new Error(translateData.failedprofile || 'Unable to update profile')
       }
 
-      dispatch(selfDriverData())
-        .unwrap()
-        .then(res => {
-          setImageUri(res?.profile_image_url)
-        })
+      const updatedProfile = await dispatch(selfDriverData()).unwrap()
+      setImageUri(updatedProfile?.profile_image_url)
+      await setValue('profile_image_uri', updatedProfile?.profile_image_url || '')
       notificationHelper(
         '',
         translateData.profileUpdatedSuccessfully,
         'success',
       )
       goBack()
-      if (profileImg) {
-        setValue('profile_image_uri', profileImg?.uri)
-      }
+
     } catch (error) {
       notificationHelper('', translateData.profileupdatefailed, 'error')
     } finally {
@@ -278,7 +276,7 @@ export function ProfileSetting() {
   const handleChange = (key: string, value: string) => {
     setFormData(prevData => ({ ...prevData, [key]: value }))
     if (key === 'email') {
-      const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/
+      const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i
       setEmailFormatWarning(
         emailRegex.test(value) ? '' : 'Invalid email format',
       )
@@ -309,9 +307,7 @@ export function ProfileSetting() {
     if (selectedImage?.uri) {
       setImageUri(selectedImage.uri)
       setProfileImage(selectedImage)
-      try {
-        await setValue('profile_image_uri', selectedImage.uri)
-      } catch (error) { }
+
       bottomSheetModalRef.current?.dismiss()
     }
   }
@@ -338,13 +334,13 @@ export function ProfileSetting() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <ReferenceScreen><KeyboardAvoidingView
       style={styles.main}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -200}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <Header title={translateData.profileSettings} />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={{paddingBottom:24}} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View
           style={[
             styles.profileView,
@@ -355,24 +351,6 @@ export function ProfileSetting() {
             <SkeletonEditProfile />
           ) : (
             <>
-              <View
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: windowHeight(90),
-                }}
-              >
-                <Image
-                  source={Images.profileBackground}
-                  style={{
-                    width: '100%',
-                    height: windowHeight(12.9),
-                    bottom: windowHeight(7),
-                    borderTopLeftRadius: windowHeight(1),
-                    borderTopRightRadius: windowHeight(1),
-                  }}
-                />
-              </View>
               <ImageContainer
                 data={selfDriver}
                 setImageUri={setImageUri}
@@ -380,6 +358,7 @@ export function ProfileSetting() {
                 openBottomSheet={() => bottomSheetModalRef.current?.present()}
               />
               <View style={styles.fieldView}>
+                <CardHeading icon="user-round" title="Personal Details"/>
                 <Input
                   title={translateData.userName}
                   titleShow={true}
@@ -538,11 +517,11 @@ export function ProfileSetting() {
         </View>
       </ScrollView>
       {!loadingShimmer && (
-        <View style={styles.updateBtn}>
+        <View style={[styles.updateBtn,{paddingBottom:Math.max(12,insets.bottom+8)}]}>
           <Button
             title={translateData.updateProfile}
             backgroundColor={appColors.primary}
-            color={appColors.white}
+            color="#17191C"
             onPress={update}
             loading={loading}
           />
@@ -560,7 +539,7 @@ export function ProfileSetting() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={{ padding: windowHeight(2) }}>
             <Text
               style={{
@@ -683,6 +662,6 @@ export function ProfileSetting() {
           </BottomSheetView>
         </BottomSheetModal>
       </BottomSheetModalProvider>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingView></ReferenceScreen>
   )
 }

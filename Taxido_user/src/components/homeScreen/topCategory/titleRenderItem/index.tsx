@@ -1,4 +1,5 @@
-import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
+import {Dimensions, Image, TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useState } from "react";
 import { styles } from "../styles";
 import { useValues } from "@src/utils/context/index";

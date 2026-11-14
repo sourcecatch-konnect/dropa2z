@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import {
   windowHeight,
@@ -31,6 +32,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     paddingVertical: windowHeight(10)
+  ,
+    ...riderCardFinish,
   },
   largeDriverImage: {
     width: windowWidth(100),
@@ -86,6 +89,8 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(20),
     width: '100%',
     borderWidth: windowWidth(1)
+  ,
+    ...riderCardFinish,
   },
   locStepContainer: {
     flexDirection: 'row',
@@ -135,6 +140,8 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: windowHeight(10),
     borderWidth: windowWidth(1)
+  ,
+    ...riderCardFinish,
   },
   dateTimePart: {
     flex: 1,
@@ -181,6 +188,8 @@ const styles = StyleSheet.create({
     borderWidth: windowWidth(1),
     paddingVertical: windowHeight(13),
     marginTop: windowHeight(12)
+  ,
+    ...riderCardFinish,
   },
   carText: {
     fontFamily: appFonts.medium,
@@ -195,6 +204,8 @@ const styles = StyleSheet.create({
     marginBottom: windowHeight(15),
     width: '100%',
     borderWidth: windowWidth(1)
+  ,
+    ...riderCardFinish,
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -225,6 +236,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
+  
+    ...riderCardFinish,
   },
   reviewRatingText: {
     fontFamily: appFonts.bold,

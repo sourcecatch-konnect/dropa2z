@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
 
@@ -66,7 +67,9 @@ const styles = StyleSheet.create({
         borderWidth: windowHeight(1),
         borderColor: appColors.border,
         borderRadius: windowHeight(7.9)
-    },
+    ,
+    ...riderCardFinish,
+  },
     arrowView: {
         width: windowWidth(110),
         justifyContent: 'space-between',
@@ -122,6 +125,8 @@ const styles = StyleSheet.create({
         borderColor: appColors.border,
         paddingBottom: windowHeight(8.9),
         borderRadius: windowHeight(5),
-    }
+    
+    ...riderCardFinish,
+  }
 });
 export default styles

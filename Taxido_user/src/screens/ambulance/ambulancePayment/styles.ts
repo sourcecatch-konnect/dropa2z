@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { windowHeight, windowWidth, appFonts, fontSizes, appColors } from '@src/themes';
 
@@ -14,6 +15,8 @@ const styles = StyleSheet.create({
     borderWidth: windowHeight(1),
     flexDirection: 'row',
     marginTop: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   btn: {
     position: 'absolute',
@@ -33,6 +36,8 @@ const styles = StyleSheet.create({
     padding: windowHeight(10),
     flexDirection: 'row',
     marginVertical: windowHeight(15),
+  
+    ...riderCardFinish,
   },
   pickUp: {
     color: appColors.primaryText,
@@ -62,6 +67,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowHeight(12),
     borderRadius: windowHeight(5),
     marginVertical: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   description: {
     marginHorizontal: windowWidth(20),
@@ -98,6 +105,8 @@ const styles = StyleSheet.create({
     borderWidth: windowHeight(1),
     borderRadius: windowWidth(8),
     alignSelf: 'center',
+  
+    ...riderCardFinish,
   },
   buttonAdd: {
     backgroundColor: appColors.primary,
@@ -137,6 +146,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: windowHeight(6),
     marginTop: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   paymentMethodText: {
     marginHorizontal: windowWidth(20),
@@ -155,6 +166,8 @@ const styles = StyleSheet.create({
     height: '10.5%',
     borderRadius: windowHeight(6),
     marginTop: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   ambulancePriceView: {
     justifyContent: 'space-between',

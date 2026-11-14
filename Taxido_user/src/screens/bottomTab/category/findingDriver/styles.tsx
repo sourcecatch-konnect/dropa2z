@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { commonStyles } from '../../../../styles/commonStyle';
 import { external } from '../../../../styles/externalStyle';
@@ -21,6 +22,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: windowHeight(9),
+  
+    ...riderCardFinish,
   },
   iconContainer: {
     alignItems: 'center',

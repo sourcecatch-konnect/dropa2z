@@ -1,3 +1,4 @@
+import {riderFieldFinish,riderCardFinish} from '../../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, fontSizes, appFonts, windowHeight, windowWidth } from '@src/themes';
 
@@ -26,6 +27,8 @@ const styles = StyleSheet.create({
     width: windowWidth(375),
     zIndex: 1,
     height: windowHeight(40),
+  
+    ...riderFieldFinish,
   },
   textInput: {
     color: appColors.blackColor,
@@ -97,6 +100,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(19),
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   radioButton: {
     height: windowWidth(25),

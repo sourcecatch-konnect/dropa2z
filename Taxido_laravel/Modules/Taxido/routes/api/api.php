@@ -14,32 +14,37 @@ use Illuminate\Support\Facades\Route;
 */
 Route::group(['middleware' => ['localization','throttle:api']], function () {
 
+    Route::get('realtime-config', 'RealtimeConfigController');
+
     // Home Screen
     Route::get('home-screen', 'HomeScreenController@index')->name('home.index');
 
     // Rider Authentication
-    Route::post('rider/login', 'AuthController@login')->middleware('throttle:5,1');
-    Route::post('rider/forgot-password', 'AuthController@forgotPassword')->middleware('throttle:5,1');
-    Route::post('rider/verify-token', 'AuthController@verifyRiderToken')->middleware('throttle:5,1');
-    Route::post('rider/register', 'AuthController@riderRegister')->middleware('throttle:5,1');
-    Route::post('rider/update-password', 'AuthController@updatePassword')->middleware('throttle:5,1');
-    Route::post('rider/social/login', 'AuthController@socialLogin')->middleware('throttle:5,1');
-    Route::delete('rider/deleteAccount', 'AuthController@deleteAccount');
-    Route::post('rider/firebase/auth', 'AuthController@verifyFirebaseAuthToken')->middleware('throttle:5,1');
+    Route::post('rider/login', 'AuthController@login')->middleware('throttle:5,1,dropa2z.auth.rider.login.');
+    Route::post('rider/forgot-password', 'AuthController@forgotPassword')->middleware('throttle:5,1,dropa2z.auth.rider.forgot-password.');
+    Route::post('rider/verify-token', 'AuthController@verifyRiderToken')->middleware('throttle:5,1,dropa2z.auth.rider.verify-token.');
+    Route::post('rider/register', 'AuthController@riderRegister')->middleware('throttle:5,1,dropa2z.auth.rider.register.');
+    Route::post('rider/update-password', 'AuthController@updatePassword')->middleware('throttle:5,1,dropa2z.auth.rider.update-password.');
+    Route::post('rider/social/login', 'AuthController@socialLogin')->middleware('throttle:5,1,dropa2z.auth.rider.social.login.');
+    Route::get('rider/deletion-policy','AuthController@deletionPolicy')->middleware('auth:sanctum');
+    Route::delete('rider/deleteAccount', 'AuthController@deleteAccount')->middleware('auth:sanctum');
+    Route::post('rider/firebase/auth', 'AuthController@verifyFirebaseAuthToken')->middleware('throttle:5,1,dropa2z.auth.rider.firebase.auth.');
 
     // Driver Authentication
-    Route::post('driver/login', 'DriverAuthController@login')->middleware('throttle:5,1');
-    Route::post('driver/verify-token', 'DriverAuthController@verifyDriverToken')->middleware('throttle:5,1');
-    Route::post('driver/register', 'DriverAuthController@driverRegister')->middleware('throttle:5,1');
-    Route::post('driver/forgot-password', 'DriverAuthController@forgotPassword')->middleware('throttle:5,1');
-    Route::post('driver/update-password', 'DriverAuthController@updatePassword')->middleware('throttle:5,1');
+    Route::post('driver/login', 'DriverAuthController@login')->middleware('throttle:5,1,dropa2z.auth.driver.login.');
+    Route::post('driver/social/login', 'DriverAuthController@socialLogin')->middleware('throttle:5,1,dropa2z.auth.driver.social.login.');
+    Route::post('driver/verify-token', 'DriverAuthController@verifyDriverToken')->middleware('throttle:5,1,dropa2z.auth.driver.verify-token.');
+    Route::post('driver/register', 'DriverAuthController@driverRegister')->middleware('throttle:5,1,dropa2z.auth.driver.register.');
+    Route::post('driver/forgot-password', 'DriverAuthController@forgotPassword')->middleware('throttle:5,1,dropa2z.auth.driver.forgot-password.');
+    Route::post('driver/update-password', 'DriverAuthController@updatePassword')->middleware('throttle:5,1,dropa2z.auth.driver.update-password.');
     Route::delete('driver/deleteAccount', 'DriverAuthController@deleteAccount');
-    Route::post('driver/firebase/auth', 'DriverAuthController@verifyFirebaseAuthToken')->middleware('throttle:5,1');
+    Route::post('driver/firebase/auth', 'DriverAuthController@verifyFirebaseAuthToken')->middleware('throttle:5,1,dropa2z.auth.driver.firebase.auth.');
 
     // Fleet Authentication
-    Route::post('fleet/login', 'FleetAuthController@login')->middleware('throttle:5,1');
-    Route::post('fleet/verify-token', 'FleetAuthController@verifyFleetToken')->middleware('throttle:5,1');
-    Route::post('fleet/register', 'FleetAuthController@fleetRegister')->middleware('throttle:5,1');
+    Route::post('fleet/login', 'FleetAuthController@login')->middleware('throttle:5,1,dropa2z.auth.fleet.login.');
+    Route::post('fleet/social/login', 'FleetAuthController@socialLogin')->middleware('throttle:5,1,dropa2z.auth.fleet.social.login.');
+    Route::post('fleet/verify-token', 'FleetAuthController@verifyFleetToken')->middleware('throttle:5,1,dropa2z.auth.fleet.verify-token.');
+    Route::post('fleet/register', 'FleetAuthController@fleetRegister')->middleware('throttle:5,1,dropa2z.auth.fleet.register.');
 
     // Settings
     Route::get('cabbooking/settings', 'SettingController@index');
@@ -55,10 +60,13 @@ Route::group(['middleware' => ['localization','throttle:api']], function () {
 
     // Vehicle Types
     Route::apiResource('vehicleType', 'VehicleTypeController', ['only' => ['index', 'show']]);
+    Route::post('vehicleType/locations', 'VehicleTypeController@getVehicleTypeByLocations')->name('api.vehicle.location');
 
     // Nearest Drivers
     Route::post('nearest-drivers', 'DriverController@getNearestDrivers')?->name('nearest.driver.index');
     Route::post('find-driver', 'DriverController@findDriver');
+
+    Route::get('delivery/service-cards', 'DeliveryServiceCardController@index');
 
     // Documents
     Route::apiResource('document', 'DocumentController', ['only' => ['index', 'show']]);
@@ -92,6 +100,8 @@ Route::group(['middleware' => ['localization','throttle:api']], function () {
 
         // Drivers
         Route::get('driver/self', 'DriverAuthController@self');
+        Route::get('driver/training', 'DriverTrainingController@show');
+        Route::post('driver/training/step', 'DriverTrainingController@advance')->middleware('throttle:60,1');
         Route::get('driver/find-driver/self', 'DriverAuthController@findDriverSelf');
         Route::post('update/payment-account', 'DriverAuthController@updatePaymentAccount');
         Route::post('update/vehicle', 'DriverAuthController@updateVehicle');
@@ -108,9 +118,6 @@ Route::group(['middleware' => ['localization','throttle:api']], function () {
 
         // Fleet
         // Route::get('fleet/self', 'FleetAuthController@self');
-
-        // Vehicle Types
-        Route::post('vehicleType/locations', 'VehicleTypeController@getVehicleTypeByLocations')->name('vehicle.location');
 
         // Hourly Packages
         Route::apiResource('hourlyPackage', 'HourlyPackageController', ['only' => ['index', 'show']]);
@@ -153,6 +160,8 @@ Route::group(['middleware' => ['localization','throttle:api']], function () {
 
         // Rides
         Route::apiResource('ride', 'RideController');
+        Route::post('ride/{ride}/parcel-stop', 'RideController@updateParcelStop')->middleware(['can:ride.edit', 'throttle:20,1']);
+        Route::post('ride/{ride}/confirm-pickup-vehicle', 'RideController@confirmPickupVehicle')->middleware('throttle:20,1');
         Route::post('ride/start-ride', 'RideController@startRide')->name('ride.start')->middleware(['can:ride.edit', 'throttle:20,1']);
         Route::post('ride/payment', 'RideController@payment')->name('ride.payment')->middleware('throttle:20,1');
         Route::post('ride/verify-payment', 'RideController@verifyPayment')->name('ride.verify.payment')->middleware('throttle:20,1');

@@ -1,6 +1,9 @@
+import {SavedPlaceCard} from '../../../../design/SavedPlaceCard';
+import {ReferenceScreen,ReferenceLogo} from '../../../../design/ReferenceChrome';
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { Text, View, TouchableOpacity, ScrollView } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import {View, TouchableOpacity, ScrollView} from 'react-native';
+import {Text} from '../../../../design/Typography';
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -27,13 +30,17 @@ import {
 } from "@utils/icons";
 import Images from "@src/utils/images";
 import { LocationLoader } from "./locationLoader";
-import { clearValue } from "@src/utils/localstorage";
+import { deleteValue } from "@src/utils/localstorage";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import appFonts from "@src/themes/appFonts";
 import LottieView from "lottie-react-native";
+
+import { indianCoordinates } from "@src/utils/deliveryPlaces";
+import {usePlaceCategories} from '../../../../utils/usePlaceCategories';
+import {groupSavedPlaces} from '../../../../utils/groupSavedPlaces';
 
 export function SavedLocation() {
   const {
@@ -53,6 +60,7 @@ export function SavedLocation() {
     (state: any) => state.saveLocation,
   );
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const {categories}=usePlaceCategories(Array.isArray(saveLocationDataGet?.data)?saveLocationDataGet.data:[],false);
   const {
     selectedLocation,
     savefield,
@@ -60,18 +68,26 @@ export function SavedLocation() {
     service_name,
     service_category_ID,
     service_category_slug,
+    preferredVehicleKind,
     formattedDate,
     formattedTime,
   } = route.params || {};
   const deleteBottomSheetRef = useRef<BottomSheet>(null);
   const deleteSnapPoints = useMemo(() => ["1%", "35%"], []);
+  const deleteInFlight = useRef(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      (dispatch as any)(userSaveLocation());
+    }, [dispatch]),
+  );
   
   const gotoAdd = useCallback(() => {
     navigation.navigate("LocationSave");
   }, [navigation]);
 
   const editAddress = useCallback(
-    (locationDetails: number) => {
+    (locationDetails: any) => {
       navigation.navigate("LocationSave", {
         mode: "edit",
         locationID: locationDetails?.id,
@@ -101,13 +117,15 @@ export function SavedLocation() {
   );
 
   const deleteAddress = useCallback(() => {
+    if (deleteInFlight.current) return;
     if (selectedItemId !== null) {
+      deleteInFlight.current = true;
       dispatch(deleteSaveLocation(selectedItemId))
         .unwrap()
         .then((res: any) => {
           if (res.status == 403) {
             notificationHelper("", translateData.loginAgain, "error");
-            clearValue("token").then(() => {
+            deleteValue("token").then(() => {
               navigation.reset({
                 index: 0,
                 routes: [{ name: "SignIn" }],
@@ -125,6 +143,7 @@ export function SavedLocation() {
           notificationHelper("", translateData.failDelAddress, "error");
         })
         .finally(() => {
+          deleteInFlight.current = false;
           closeDeleteBottomSheet();
         });
     }
@@ -133,14 +152,14 @@ export function SavedLocation() {
   const getCoordinatesFromAddress = async (address: string) => {
     try {
       const encodedAddress = encodeURIComponent(address);
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${Google_Map_Key}`;
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&components=country:IN&key=${Google_Map_Key}`;
 
       const response = await fetch(url);
       const data = await response.json();
 
       if (data.status === "OK" && data.results?.length > 0) {
         const location = data.results[0].geometry.location;
-        return { lat: location.lat, lng: location.lng };
+        return indianCoordinates(location.lat, location.lng);
       } else {
         throw new Error("No location found");
       }
@@ -151,8 +170,10 @@ export function SavedLocation() {
   };
 
   const selectLocation = useCallback(
-    async (location: string) => {
-      const coordinates = await getCoordinatesFromAddress(location);
+    async (item: any) => {
+      const location = item.location;
+      const coordinates = indianCoordinates(item.location_coordinates?.lat, item.location_coordinates?.lng)
+        || await getCoordinatesFromAddress(location);
 
       if (!coordinates) {
         notificationHelper("", translateData.failedCoordinates, "danger");
@@ -161,6 +182,26 @@ export function SavedLocation() {
 
       const { lat, lng } = coordinates;
       const screenName = selectedLocation === "findLocationScreen" ? "FindLocationScreen" : "Ride";
+
+      if (selectedLocation === "homeScreen") {
+        navigation.navigate("MyTabs" as never, {
+          screen: "HomeScreen",
+          params: {
+            selectedAddress: location,
+            fieldValue: savefield || "destination",
+            pinLatitude: lat,
+            pinLongitude: lng,
+            service_ID,
+            service_name,
+            service_category_ID,
+            service_category_slug,
+            preferredVehicleKind,
+            formattedDate,
+            formattedTime,
+          },
+        } as never);
+        return;
+      }
 
       if (selectedLocation === "locationDrop" || selectedLocation === "findLocationScreen") {
         navigation.navigate(screenName, {
@@ -172,6 +213,7 @@ export function SavedLocation() {
           service_name: service_name,
           service_category_ID: service_category_ID,
           service_category_slug: service_category_slug,
+          preferredVehicleKind,
           formattedDate: formattedDate,
           formattedTime: formattedTime,
         });
@@ -180,7 +222,7 @@ export function SavedLocation() {
         notificationHelper("", translateData.copyClipboard, "success");
       }
     },
-    [navigation, selectedLocation, savefield, translateData]
+    [navigation, selectedLocation, savefield, translateData, Google_Map_Key, service_ID, service_name, service_category_ID, service_category_slug, preferredVehicleKind, formattedDate, formattedTime]
   );
 
   const renderLocationIcon = (type: string) => {
@@ -225,130 +267,19 @@ export function SavedLocation() {
     return (
       <ScrollView
         style={[styles.mainView, external.mh_20]}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{paddingBottom:40}}
       >
-        {saveLocationDataGet.data.map((item: any) => (
-          <View
-            key={item.id}
-            style={[
-              external.mb_10,
-              styles.containerList,
-              {
-                backgroundColor: bgFullStyle,
-                borderColor: isDark ? appColors.darkBorder : appColors.border,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.listItemContainer,
-                { flexDirection: viewRTLStyle },
-              ]}
-            >
-              <View
-                style={[
-                  styles.iconContainer,
-                  { backgroundColor: linearColorStyle },
-                ]}
-              >
-                {renderLocationIcon(item.type)}
-              </View>
-
-              <View style={styles.detailsContainer}>
-                <Text
-                  style={[
-                    commonStyles.mediumTextBlack12,
-                    {
-                      color: textColorStyle,
-                      textAlign: textRTLStyle,
-                      fontSize: fontSizes.FONT21,
-                    },
-                  ]}
-                >
-                  {item.title}
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={external.mh_3}
-                onPress={() => selectLocation(item.location)}
-              >
-                <Copy
-                  color={isDark ? appColors.whiteColor : appColors.primaryText}
-                />
-              </TouchableOpacity>
-
-              <VerticalLine dynamicHeight="36%" />
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={external.mh_3}
-                onPress={() => editAddress(item)}
-              >
-                <Edit />
-              </TouchableOpacity>
-
-              <VerticalLine dynamicHeight="36%" />
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={external.mh_2}
-                onPress={() => {
-                  openDeleteBottomSheet(item.id);
-                }}
-              >
-                <Delete iconColor={appColors.alertRed} />
-              </TouchableOpacity>
-            </View>
-
-            <View
-              style={[
-                styles.dashLine,
-                {
-                  borderBottomColor: isDark
-                    ? appColors.darkBorder
-                    : appColors.primaryGray,
-                },
-              ]}
-            />
-
-            <View
-              style={[
-                styles.locationContainer,
-                { flexDirection: viewRTLStyle },
-              ]}
-            >
-              <View style={styles.pickLocationView}>
-                <PickLocation
-                  height={12}
-                  width={12}
-                  colors={isDark ? appColors.whiteColor : appColors.primaryText}
-                />
-              </View>
-
-              <Text
-                style={[
-                  styles.locationText,
-                  {
-                    color: isDark
-                      ? appColors.whiteColor
-                      : appColors.primaryText,
-                    textAlign: textRTLStyle,
-                  },
-                ]}
-              >
-                {item.location?.length > 70
-                  ? `${item.location.slice(0, 70)}...`
-                  : item.location}
-              </Text>
-            </View>
-          </View>
-        ))}
+        {groupSavedPlaces(saveLocationDataGet.data,categories).map(group=><View key={group.name.toLowerCase()} style={{marginBottom:12}}>
+          <Text accessibilityRole="header" style={{color:textColorStyle,fontSize:18,fontWeight:'700',marginBottom:10,marginTop:8}}>{group.name} ({group.items.length})</Text>
+          {group.items.length?group.items.map((item:any)=><SavedPlaceCard key={item.id} item={{...item,displayCategory:group.name}} dark={isDark} selecting={!!selectedLocation}
+            onOpen={()=>selectedLocation?selectLocation(item):editAddress(item)} onUse={()=>selectLocation(item)} onEdit={()=>editAddress(item)} onDelete={()=>openDeleteBottomSheet(item.id)}/>):<Text style={{color:isDark?'#C5CAD0':'#656C76',marginBottom:12}}>No saved addresses yet.</Text>}
+        </View>)}
       </ScrollView>
     );
   }, [
     saveLocationDataGet,
+    categories,
     bgFullStyle,
     isDark,
     textColorStyle,
@@ -364,7 +295,8 @@ export function SavedLocation() {
   ]);
 
   return (
-    <View style={[styles.container, { backgroundColor: linearColorStyle }]}>
+    <ReferenceScreen><View style={[[styles.container, { backgroundColor: linearColorStyle }], {backgroundColor:'transparent'}]}>
+      <View style={{alignItems:'center',paddingTop:12,paddingBottom:6,backgroundColor:bgFullStyle}}><ReferenceLogo width={130}/></View>
       <View
         style={{
           backgroundColor: isDark ? appColors.darkHeader : appColors.whiteColor,
@@ -385,21 +317,24 @@ export function SavedLocation() {
           </TouchableOpacity>
 
           <Text style={[styles.headerTitle, { color: textColorStyle }]}>
-            {translateData.savedLocation}
+            Saved Locations
           </Text>
 
           <TouchableOpacity
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Add saved location"
             style={[
               styles.backButton,
-              { borderColor: isDark ? appColors.darkBorder : appColors.border },
+              { borderColor:appColors.primary, backgroundColor:appColors.primary },
             ]}
             onPress={gotoAdd}
           >
-            <Add colors={textColorStyle} />
+            <Add colors="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
+      <View style={{marginHorizontal:20,marginTop:16,marginBottom:4,padding:16,borderRadius:18,backgroundColor:isDark?'#332B1C':'#FFF5E5'}}><Text style={{fontSize:17,fontWeight:'700',color:textColorStyle}}>Keep your everyday places close</Text><Text style={{fontSize:13,lineHeight:19,color:isDark?"#BBC1CA":appColors.regularText,marginTop:5}}>Save an address once. Choose it whenever you book a delivery.</Text></View>
       <View style={styles.locationListView}>
         {loading
           ? Array.from({ length: 10 }).map((_, index) => (
@@ -424,7 +359,7 @@ export function SavedLocation() {
             width: "13%",
           }}
           backgroundStyle={{ backgroundColor: bgFullStyle }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView>
             <View>
               <View style={{ alignSelf: "center" }}>
@@ -487,6 +422,6 @@ export function SavedLocation() {
           </BottomSheetView>
         </BottomSheet>
       )}
-    </View>
+    </View></ReferenceScreen>
   );
 }

@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { appColors } from "@src/themes";
@@ -74,6 +75,8 @@ export const styles = StyleSheet.create({
     padding: windowHeight(8),
     alignItems: "center",
     marginVertical: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   addMainView: { width: "100%", paddingHorizontal: windowWidth(10) },
   line: {

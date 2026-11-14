@@ -45,8 +45,4 @@ class FleetWithdrawRequestController extends Controller
         return $this->repository->update($request->all(), $fleetWithdrawRequest->id);
     }
 
-    public function status(Request $request, $id)
-    {
-        return $this->repository->status($request->status, $id);
-    }
 }

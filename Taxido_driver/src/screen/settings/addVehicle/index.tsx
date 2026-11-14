@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Alert, Image, TouchableWithoutFeedback, TextInput, ScrollView, FlatList, } from 'react-native'
+import {View, TouchableOpacity, Alert, Image, TouchableWithoutFeedback, ScrollView, FlatList} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Header, Input, notificationHelper, } from '../../../commonComponents'
 import appColors from '../../../theme/appColors'
@@ -1739,7 +1740,7 @@ export function AddVehicle() {
           handleIndicatorStyle={{ backgroundColor: appColors.primary, width: '13%' }}
           snapPoints={snapPoints}
           backdropComponent={(props) => <BottomSheetBackdrop {...props} pressBehavior="close" />}
-        >
+         android_keyboardInputMode="adjustResize" >
 
           <BottomSheetView >
             <TouchableWithoutFeedback onPress={cancelDelete}>
@@ -1772,7 +1773,7 @@ export function AddVehicle() {
           handleIndicatorStyle={{ backgroundColor: appColors.primary, width: '13%' }}
           snapPoints={snapPoints1}
           backdropComponent={(props) => <BottomSheetBackdrop {...props} pressBehavior="close" />}
-        >
+         android_keyboardInputMode="adjustResize" >
 
           <BottomSheetView  >
             <View style={styles.modalOverlay}>

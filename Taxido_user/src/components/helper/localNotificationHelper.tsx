@@ -1,6 +1,7 @@
 import { Notifier, Easing } from 'react-native-notifier';
 import { Platform, PermissionsAndroid } from 'react-native';
 import notifee, { AndroidImportance } from '@notifee/react-native';
+import {CustomNotification} from '../../commonComponent/notificationHelper';
 
 class NotificationHelper {
     static async configure() {
@@ -30,6 +31,8 @@ class NotificationHelper {
             showAnimationDuration: 800,
             showEasing: Easing.out(Easing.exp),
             hideOnPress: true,
+            Component: CustomNotification,
+            componentProps: {title,description:message,alertType:'info'},
         });
 
         // Also show system notification using Notifee for consistency
@@ -38,6 +41,8 @@ class NotificationHelper {
             body: message,
             android: {
                 channelId: 'default',
+                smallIcon:'dropa2z_notification',
+                color:'#FC9F03',
                 importance: AndroidImportance.HIGH,
                 pressAction: {
                     id: 'default',

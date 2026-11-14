@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, Platform, BackHandler } from 'react-native';
+import {ScrollView, View, Platform, BackHandler} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import {
   pick,
   types,

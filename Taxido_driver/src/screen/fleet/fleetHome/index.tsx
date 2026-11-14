@@ -1,17 +1,7 @@
+import {VehicleGraphic} from '../../../design/VehicleGraphic';
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import {
-    Animated,
-    View,
-    Image,
-    Text,
-    TouchableOpacity,
-    Vibration,
-    BackHandler,
-    InteractionManager,
-    Modal,
-    FlatList,
-    NativeModules,
-} from 'react-native'
+import {Animated, View, Image, TouchableOpacity, Vibration, BackHandler, InteractionManager, Modal, FlatList, NativeModules} from 'react-native';
+import {Text} from '../../../design/Typography';
 import appColors from '../../../theme/appColors'
 import { fontSizes, windowHeight, windowWidth } from '../../../theme/appConstant'
 import Icons from '../../../utils/icons/icons'
@@ -380,11 +370,12 @@ export function FleetHome() {
                 }}
                 onPress={() => toggleVehicleSelection(item.id)}
             >
-                <Image
-                    source={{ uri: item.vehicle_image_url }}
-                    style={{ width: windowHeight(5), height: windowHeight(5) }}
-                    resizeMode="contain"
-                />
+                <VehicleGraphic source={{
+  uri: item.vehicle_image_url
+}} style={{
+  width: windowHeight(5),
+  height: windowHeight(5)
+}} resizeMode="contain" vehicle={item} />
                 <Text style={{ flex: 1, color: isDark ? appColors.white : appColors.black, marginHorizontal: windowWidth(2) }}>
                     {item.name}
                 </Text>
@@ -587,8 +578,23 @@ export function FleetHome() {
                 .toString()
                 .padStart(2, '0')}`
 
-    const handleRefresh = () => {
-
+    const refreshInFlight = useRef(false)
+    const handleRefresh = async () => {
+        if (refreshInFlight.current) return
+        refreshInFlight.current = true
+        try {
+            const results = await Promise.allSettled([
+                dispatch(selfDriverData()).unwrap(),
+                dispatch(fleetDriverList()).unwrap(),
+                dispatch(fleetWalletData()).unwrap(),
+                dispatch(dashBoardData({ unit: zoneValue?.distance_type, zoneId: zoneValue?.id, driver_id: selfDriver?.id || 0 })).unwrap(),
+            ])
+            if (results.some(result => result.status === 'rejected')) {
+                notificationHelper('', 'Some data could not refresh. Please try again.', 'error')
+            }
+        } finally {
+            refreshInFlight.current = false
+        }
     }
 
 
@@ -607,7 +613,7 @@ export function FleetHome() {
     useEffect(() => {
         notifee.createChannel({
             id: 'ride-requests',
-            name: 'Ride Requests',
+            name: 'Delivery Requests',
             sound: 'default',
             importance: AndroidImportance.HIGH,
             vibration: true,
@@ -1070,7 +1076,7 @@ export function FleetHome() {
                     backgroundStyle={{
                         backgroundColor: isDark ? appColors.bgDark : appColors.white,
                     }}
-                >
+                 android_keyboardInputMode="adjustResize" >
                     <View style={{ padding: 20 }}>
                         <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 10, color: isDark ? appColors.white : appColors.black }}>
                             {translateData.exitMsg}

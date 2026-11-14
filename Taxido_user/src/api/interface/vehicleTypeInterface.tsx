@@ -1,5 +1,15 @@
 
 
+export interface VehicleQuoteRequest {
+    locations: Array<{ lat: number; lng: number }>;
+    service_id: number | string;
+    service_category_id: number | string;
+    weight?: number | string;
+    current_time?: string;
+    distance?: string | number;
+    duration?: string | number;
+}
+
 export interface VehicleTypeInterface {
     success?: boolean;
     vehicleTypedata?: VehicleTypeDataInterface | [];

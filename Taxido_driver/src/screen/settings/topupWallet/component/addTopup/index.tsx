@@ -1,5 +1,6 @@
 import React, { useState, useImperativeHandle, forwardRef, useEffect } from "react";
-import { View, Text, TextInput } from "react-native";
+import {View} from 'react-native';
+import {Text, TextInput} from '../../../../../design/Typography';
 import { useTheme } from "@react-navigation/native";
 import { useValues } from "../../../../../utils/context";
 import { useSelector, useDispatch } from "react-redux";

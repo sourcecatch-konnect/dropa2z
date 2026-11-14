@@ -1,10 +1,13 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { windowHeight, appFonts, appColors, fontSizes, windowWidth } from "@src/themes";
 
 const styles = StyleSheet.create({
     mainContainer: { flex: 1 },
     headerMainView: { height: windowHeight(60), backgroundColor: appColors.whiteColor, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: windowWidth(20), alignItems: 'center' },
-    back: { height: windowHeight(35), width: windowHeight(35), borderWidth: windowHeight(1), borderColor: appColors.border, borderRadius: windowHeight(5), alignItems: 'center', justifyContent: 'center' },
+    back: { height: windowHeight(35), width: windowHeight(35), borderWidth: windowHeight(1), borderColor: appColors.border, borderRadius: windowHeight(5), alignItems: 'center', justifyContent: 'center' ,
+    ...riderCardFinish,
+  },
     hedaerText: { color: appColors.primaryText, fontFamily: appFonts.semiBold, fontSize: fontSizes.FONT22 },
     dashedLine: {
         height: 0.1,
@@ -29,7 +32,9 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOpacity: 0.1,
         shadowRadius: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     safetyCallView: {
         alignItems: "center",
         justifyContent: "center", height: windowHeight(30),
@@ -41,7 +46,9 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOpacity: 0.1,
         shadowRadius: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     starContainer: { alignItems: "flex-end", justifyContent: "center" },
     dataView: {
         backgroundColor: appColors.whiteColor,
@@ -53,7 +60,9 @@ const styles = StyleSheet.create({
         marginTop: windowHeight(14),
         width: '91%',
         alignSelf: 'center'
-    },
+    ,
+    ...riderCardFinish,
+  },
     viewData: {
         flexDirection: "row",
         alignItems: "center",
@@ -119,7 +128,9 @@ const styles = StyleSheet.create({
     },
     calenderSmall: { left: windowHeight(5) },
     rightArrow: { marginHorizontal: windowHeight(8) },
-    seatMainView: { flexDirection: 'row', backgroundColor: "#E8F5F2", borderRadius: windowHeight(5), justifyContent: 'space-between', padding: windowHeight(6), width: '29%' },
+    seatMainView: { flexDirection: 'row', backgroundColor: "#F5EDE8", borderRadius: windowHeight(5), justifyContent: 'space-between', padding: windowHeight(6), width: '29%' ,
+    ...riderCardFinish,
+  },
     seatView: { flexDirection: 'row', paddingHorizontal: windowHeight(5), justifyContent: 'space-between', gap: 5 },
     torontoText: {
         color: appColors.primaryText,

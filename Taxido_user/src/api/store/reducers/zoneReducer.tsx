@@ -25,6 +25,9 @@ const zoneSlice = createSlice({
             state.zoneValue = action.payload; 
             state.loading = false;
         });
+        builder.addCase(userZone.rejected, (state) => {
+            state.loading = false;
+        });
     }
 });
 export default zoneSlice.reducer;

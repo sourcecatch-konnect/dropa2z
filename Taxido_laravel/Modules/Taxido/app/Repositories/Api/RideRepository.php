@@ -7,11 +7,14 @@ use Carbon\Carbon;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentMode;
 use App\Enums\PaymentStatus;
+use App\Enums\RoleEnum as AppRoleEnum;
 use App\Enums\TransactionType;
 use App\Exceptions\ExceptionHandler;
 use App\Http\Traits\PaymentTrait;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Modules\Taxido\Broadcasts\DriverRideRequestBroadcast;
 use Modules\Taxido\Broadcasts\RideStatusBroadcast;
 use Modules\Taxido\Enums\RideStatusEnum;
 use Modules\Taxido\Enums\RoleEnum;
@@ -36,6 +39,7 @@ use Modules\Taxido\Models\RideRequest;
 use Modules\Taxido\Models\RiderWallet;
 use Modules\Taxido\Models\ServiceCategory;
 use Modules\Taxido\Models\VehicleTypeZone;
+use Modules\Taxido\Notifications\RiderRideStatusNotification;
 use Modules\Taxido\Services\IncentiveCalculationService;
 use Nwidart\Modules\Facades\Module;
 use Prettus\Repository\Criteria\RequestCriteria;
@@ -63,6 +67,17 @@ class RideRepository extends BaseRepository
         } catch (Exception $e) {
             throw new ExceptionHandler($e->getMessage(), $e->getCode());
         }
+    }
+
+    private function parcelStopCount(Ride $ride): int
+    {
+        $coordinateCount = is_array($ride->location_coordinates) ? count($ride->location_coordinates) : 0;
+        $locationCount = is_array($ride->locations) ? count($ride->locations) : 0;
+
+        $isGoodsDelivery = in_array($ride->service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true);
+        // Every goods destination needs a handoff, including the final drop.
+        // Retain the existing intermediate-stop behavior for legacy cab trips.
+        return max(max($coordinateCount, $locationCount) - ($isGoodsDelivery ? 1 : 2), 0);
     }
 
     public function getRideLocation($ride_id)
@@ -149,11 +164,80 @@ class RideRepository extends BaseRepository
         }
     }
 
-    public function update($request, $id)
+    public function updateParcelStop($request, $id)
     {
         DB::beginTransaction();
         try {
-            $ride = $this->model->findOrFail($id);
+            $ride = $this->model->lockForUpdate()->findOrFail($id);
+            if (getCurrentRoleName() != RoleEnum::DRIVER || (int) $ride->driver_id !== (int) getCurrentUserId()) {
+                throw new Exception(__('taxido::static.rides.only_assigned_driver'), 403);
+            }
+
+            if (! in_array($ride->service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true) && $this->parcelStopCount($ride) === 0) {
+                throw new Exception('Stop-by-stop handoff is available for parcel trips only.', 422);
+            }
+
+            if ($ride->ride_status?->slug !== RideStatusEnum::STARTED) {
+                throw new Exception('Start the trip with the pickup OTP before updating parcel stops.', 409);
+            }
+
+            $progress = \Modules\Taxido\Services\DeliveryProgress::update(
+                $ride->parcel_delivery_progress ?? [], $this->parcelStopCount($ride),
+                (int) $request['stop_index'], $request['action'],
+                (int) getCurrentUserId(), now()->toIso8601String(),
+            );
+
+            $ride->update(['parcel_delivery_progress' => $progress]);
+            $ride = $ride->fresh();
+            DB::commit();
+            try {broadcast(new RideStatusBroadcast($ride));}
+            catch (\Throwable $broadcastError) {Log::warning("Delivery progress broadcast failed", ["ride_id" => $ride->id]);}
+
+            return response()->json(new RideDetailResource($ride), 200);
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new ExceptionHandler($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function confirmPickupVehicle($id)
+    {
+        DB::beginTransaction();
+        try {
+            $ride = $this->model->lockForUpdate()->findOrFail($id);
+            if (getCurrentRoleName() !== RoleEnum::RIDER || (int) $ride->rider_id !== (int) getCurrentUserId()) {
+                throw new Exception('Only the customer who booked this delivery can confirm the vehicle.', 403);
+            }
+            if (! in_array($ride->ride_status?->slug, [RideStatusEnum::ACCEPTED, RideStatusEnum::ARRIVED], true)) {
+                throw new Exception('Vehicle confirmation is available after assignment and before pickup.', 409);
+            }
+            $progress = $ride->parcel_delivery_progress ?? [];
+            if (empty($progress['pickup_vehicle_confirmed_at'])) {
+                $progress['pickup_vehicle_confirmed_at'] = now()->toIso8601String();
+                $progress['pickup_vehicle_confirmed_by'] = (int) getCurrentUserId();
+                $ride->update(['parcel_delivery_progress' => $progress]);
+            }
+            $ride = $ride->fresh();
+            DB::commit();
+            try {broadcast(new RideStatusBroadcast($ride));}
+            catch (\Throwable $broadcastError) {Log::warning("Delivery progress broadcast failed", ["ride_id" => $ride->id]);}
+            return response()->json(new RideDetailResource($ride), 200);
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new ExceptionHandler($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function update($request, $id)
+    {
+        DB::beginTransaction();
+        $cancelledRideRequest = null;
+        $cancelledRequestDriverIds = [];
+        try {
+            $ride = $this->model->lockForUpdate()->findOrFail($id);
+            if (isset($request['location_coordinates']) && in_array($ride->service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true)) {
+                app(\Modules\Taxido\Services\IndiaLocalDeliveryPolicy::class)->assertLocalRoute($request['location_coordinates']);
+            }
             $roleName = getCurrentRoleName();
             $taxidoSettings = getTaxidoSettings();
             $ride_status_id = isset($request['status']) ? getRideStatusIdBySlug($request['status']) : null;
@@ -164,7 +248,16 @@ class RideRepository extends BaseRepository
                 ->where('zone_id', $zone_id)?->first();
 
             if (isset($request['status'])) {
+                if ($request['status'] === RideStatusEnum::STARTED &&
+                    in_array($ride->service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true) &&
+                    ! $ride->is_otp_verified) {
+                    throw new Exception('Verify the pickup OTP before starting this delivery.', 409);
+                }
                 if ($request['status'] == RideStatusEnum::CANCELLED) {
+                    if ($roleName == RoleEnum::DRIVER && (int) $ride->driver_id !== (int) getCurrentUserId()) {
+                        throw new Exception(__('taxido::static.rides.only_assigned_driver'), 403);
+                    }
+
                     if (empty($request['cancellation_reason'])) {
                         throw new Exception(__('taxido::static.rides.cancellation_reason_required'), 422);
                     }
@@ -182,6 +275,11 @@ class RideRepository extends BaseRepository
                     if ($roleName == RoleEnum::DRIVER) {
                         $riderCancellationCharge = 0;
                     } elseif ($roleName == RoleEnum::RIDER) {
+                        $driverCancellationCharge = 0;
+                    } elseif ($roleName == AppRoleEnum::ADMIN) {
+                        // An admin cancellation is an operational action, not
+                        // a rider or driver cancellation. Do not charge either.
+                        $riderCancellationCharge = 0;
                         $driverCancellationCharge = 0;
                     }
 
@@ -211,6 +309,38 @@ class RideRepository extends BaseRepository
 
                     $driver->update(['is_on_ride' => false]);
                     $driver = $driver->refresh();
+
+                    // Driver app cancellations update the Ride endpoint directly.
+                    // Keep the originating request in the same terminal state so
+                    // it cannot remain in the driver's active/request lists.
+                    $linkedRideRequest = RideRequest::query()
+                        ->where('ride_number', $ride->ride_number)
+                        ->first();
+                    if ($linkedRideRequest) {
+                        $latestRequestStatus = $linkedRideRequest->ride_status_activities()
+                            ->latest('id')
+                            ->value('status');
+
+                        if ($latestRequestStatus !== RideStatusEnum::CANCELLED) {
+                            $linkedRideRequest->ride_status_activities()->create([
+                                'status' => RideStatusEnum::CANCELLED,
+                                'ride_id' => $ride->id,
+                                'changed_at' => now(),
+                            ]);
+                            $cancelledRequestDriverIds = $linkedRideRequest->drivers()
+                                ->pluck('users.id')
+                                ->map(fn ($driverId) => (int) $driverId)
+                                ->all();
+                            $cancelledRequestDriverIds[] = (int) $ride->driver_id;
+                            $cancelledRideRequest = $linkedRideRequest;
+                        }
+
+                        $linkedRideRequest->update([
+                            'current_driver_id' => null,
+                            'driver_acceptance_expires_at' => null,
+                            'find_driver_expires_at' => null,
+                        ]);
+                    }
                 }
 
                 if ($roleName == RoleEnum::DRIVER && $request['status'] == RideStatusEnum::COMPLETED) {
@@ -219,19 +349,44 @@ class RideRepository extends BaseRepository
                         throw new Exception(__('taxido::static.rides.only_assigned_driver'), 400);
                     }
 
-                    if ($ride->service->type == ServicesEnum::PARCEL) {
-                        $isParcelOtpEnabled = $taxidoSettings['activation']['parcel_otp'];
-                        if ($isParcelOtpEnabled && ! $ride->is_otp_verified) {
-                            if (isset($request['parcel_delivered_otp']) && ! is_null($request['parcel_delivered_otp'])) {
-                                if ($ride->parcel_delivered_otp == $request['parcel_delivered_otp']) {
-                                    $ride->update(['is_otp_verified' => true, 'parcel_otp_verified_at' => now()]);
-                                    $ride = $ride->refresh();
-                                }
-                            }
-                            if (! $ride->parcel_otp_verified_at) {
-                                throw new Exception(__('taxido::static.rides.otp_not_verified_for_parcel'), 400);
+                    if (in_array($ride->service->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true) || $this->parcelStopCount($ride) > 0) {
+                        $expectedStopCount = $this->parcelStopCount($ride);
+                        $completedStops = $ride->parcel_delivery_progress['stops'] ?? [];
+                        if (count($completedStops) < $expectedStopCount) {
+                            throw new Exception('Mark the parcel delivered at every booked stop before completing this trip.', 409);
+                        }
+                        foreach (array_slice($completedStops, 0, $expectedStopCount) as $stop) {
+                            if (($stop['status'] ?? 'pending') !== 'delivered') {
+                                throw new Exception('Mark the parcel delivered at every booked stop before completing this trip.', 409);
                             }
                         }
+
+                    }
+
+                    if (
+                        strtolower((string) $ride->payment_method) == PaymentMethod::CASH &&
+                        strtoupper((string) $ride->payment_status) != PaymentStatus::COMPLETED
+                    ) {
+                        throw new Exception('Confirm that cash was received before completing this ride.', 409);
+                    }
+
+                    // BUG-08: a ride cannot be completed unless it was actually started
+                    if (! in_array($ride?->ride_status?->slug, [RideStatusEnum::STARTED, RideStatusEnum::ARRIVED])) {
+                        throw new Exception(__('taxido::static.rides.ride_location_can_update_when_ride_started'), 400);
+                    }
+
+                    // BUG-06: record when the ride actually ended
+                    if (! $ride->end_time) {
+                        $ride->update(['end_time' => $request['end_time'] ?? now()]);
+                        $ride = $ride->refresh();
+                    }
+
+                    // BUG-07: the status trail stopped at 'accepted'; record completion
+                    if (! $ride->ride_status_activities()->where('status', RideStatusEnum::COMPLETED)->exists()) {
+                        $ride->ride_status_activities()->create([
+                            'status'     => RideStatusEnum::COMPLETED,
+                            'changed_at' => now(),
+                        ]);
                     }
 
                     $driver->update(['is_on_ride' => false]);
@@ -336,9 +491,35 @@ class RideRepository extends BaseRepository
             $rideData = new RideDetailResource($ride->refresh());
             event(new  RideStatusBroadcast($ride));
 
+            if ($cancelledRideRequest) {
+                try {
+                    $cancelledRideRequest = $cancelledRideRequest->fresh();
+                    $riderRecipient = \App\Models\User::query()->find($cancelledRideRequest->rider_id);
+                    $riderRecipient?->notify(
+                        new RiderRideStatusNotification($cancelledRideRequest, 'cancelled')
+                    );
+                    foreach (array_unique($cancelledRequestDriverIds) as $cancelledDriverId) {
+                        event(new DriverRideRequestBroadcast(
+                            $cancelledRideRequest,
+                            (int) $cancelledDriverId,
+                            'cancelled'
+                        ));
+                    }
+                } catch (\Throwable $notificationException) {
+                    Log::warning('RideRepository@update: ride request cancellation notification failed', [
+                        'ride_id' => $ride->id,
+                        'error' => $notificationException->getMessage(),
+                    ]);
+                }
+            }
+
             if (isset($request['status'])) {
                 if ($request['status'] == RideStatusEnum::COMPLETED) {
                     $this->handleExtraChargesAndWaitingTime($ride, $request, $vehicleTypeZone);
+                    $ride = $ride->refresh();
+                    if ($ride->payment_status == PaymentStatus::COMPLETED) {
+                        $this->calAdminDriverCommission($ride);
+                    }
                 }
             }
             $driver = $driver->refresh();
@@ -393,6 +574,9 @@ class RideRepository extends BaseRepository
         try {
 
             $ride = $this->model->where('id', $request['ride_id'])?->whereNull('deleted_at')?->first();
+            if (in_array($ride?->service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true)) {
+                app(\Modules\Taxido\Services\IndiaLocalDeliveryPolicy::class)->assertLocalRoute($request['location_coordinates']);
+            }
             $zoneRideDistance = $this->getZoneRideDistance($request['location_coordinates']);
             if ($zoneRideDistance) {
                 $new_zone_id = $zoneRideDistance->zone->id;
@@ -547,7 +731,7 @@ class RideRepository extends BaseRepository
 
             $roleName = getCurrentRoleName();
             if ($roleName == RoleEnum::DRIVER) {
-                $ride = $this->model->findOrFail($request->ride_id);
+                $ride = $this->model->lockForUpdate()->findOrFail($request->ride_id);
                 $service = getServiceById($ride->service_id);
                 if ($ride->otp != $request->otp) {
                     throw new Exception(__('taxido::static.rides.invalid_otp'), 400);
@@ -557,10 +741,42 @@ class RideRepository extends BaseRepository
                     throw new Exception(__('taxido::static.rides.only_assigned_driver'), 400);
                 }
 
-                if ($service->slug == ServicesEnum::PARCEL) {
+                if ($ride->is_otp_verified && $ride->ride_status?->slug === RideStatusEnum::STARTED) {
+                    DB::commit();
+                    return response()->json([
+                        'id' => $ride->id,
+                        'data' => new RideResource($ride),
+                        'ride_status' => ['name' => $ride->ride_status->name, 'slug' => $ride->ride_status->slug],
+                    ]);
+                }
+                if (in_array($ride->ride_status?->slug, [RideStatusEnum::CANCELLED, RideStatusEnum::COMPLETED], true)) {
+                    throw new Exception('This delivery is already closed.', 409);
+                }
+                if (in_array($service->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true) &&
+                    $ride->ride_status?->slug !== RideStatusEnum::ARRIVED) {
+                    throw new Exception('Mark arrival at pickup before verifying the pickup OTP.', 409);
+                }
+
+                if (in_array($service->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true) || $this->parcelStopCount($ride) > 0) {
+                    $parcelStops = [];
+                    $stopCount = $this->parcelStopCount($ride);
+                    for ($index = 1; $index <= $stopCount; $index++) {
+                        $parcelStops[] = [
+                            'stop_index' => $index,
+                            'status' => 'pending',
+                            'arrived_at' => null,
+                            'delivered_at' => null,
+                        ];
+                    }
+
                     $ride->update([
                         'ride_status_id' => getRideStatusIdBySlug(RideStatusEnum::STARTED),
-                        'parcel_delivered_otp' => rand(1000, 9999),
+                        'start_time' => now(),
+                        'is_otp_verified' => true,
+                        'parcel_otp_verified_at' => now(),
+                        'parcel_delivery_progress' => [
+                            'stops' => $parcelStops,
+                        ],
                     ]);
                 } else {
                     $ride->update([
@@ -573,6 +789,15 @@ class RideRepository extends BaseRepository
                 }
 
                 $ride->save();
+                // BUG-07: the status trail stopped at 'accepted'; record the start
+                if (! $ride->ride_status_activities()->where('status', RideStatusEnum::STARTED)->exists()) {
+                    $ride->ride_status_activities()->create([
+                        'status'     => RideStatusEnum::STARTED,
+                        'changed_at' => now(),
+                    ]);
+                }
+
+
                 DB::commit();
                 $ride = $ride->refresh();
                 $driver = getDriverById($ride->driver_id);
@@ -700,6 +925,9 @@ class RideRepository extends BaseRepository
 
             $rideDiscount = 0;
             $coupon = $this->getCoupon($request->coupon);
+            if (!$coupon) {
+                throw new Exception('This coupon is invalid or no longer available.', 422);
+            }
             if ($coupon) {
                 $total = $this->isValidCoupon($coupon, $request);
                 if ($total) {
@@ -733,8 +961,34 @@ class RideRepository extends BaseRepository
     {
         DB::beginTransaction();
         try {
-            $ride = $this->model->findOrFail($request->ride_id);
+            $ride = $this->model->lockForUpdate()->findOrFail($request->ride_id);
             $settings = getTaxidoSettings();
+            if (
+                $request->payment_method == PaymentMethod::CASH &&
+                getCurrentRoleName() == RoleEnum::DRIVER
+            ) {
+                if ((int) $ride->driver_id !== (int) getCurrentUserId()) {
+                    throw new Exception(__('taxido::static.rides.only_assigned_driver'), 403);
+                }
+
+                if (in_array($ride->service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true) &&
+                    ! in_array($ride->ride_status?->slug, [RideStatusEnum::STARTED, RideStatusEnum::COMPLETED], true)) {
+                    throw new Exception('Deliver the parcel before collecting the final fare.', 409);
+                }
+
+                if ($ride->ride_status?->slug == RideStatusEnum::STARTED && $this->parcelStopCount($ride) > 0) {
+                    $expectedStopCount = $this->parcelStopCount($ride);
+                    $completedStops = $ride->parcel_delivery_progress['stops'] ?? [];
+                    if (count($completedStops) < $expectedStopCount) {
+                        throw new Exception('Mark the parcel delivered at every booked stop before collecting payment.', 409);
+                    }
+                    foreach (array_slice($completedStops, 0, $expectedStopCount) as $stop) {
+                        if (($stop['status'] ?? 'pending') !== 'delivered') {
+                            throw new Exception('Mark the parcel delivered at every booked stop before collecting payment.', 409);
+                        }
+                    }
+                }
+            }
             if ($request->driver_tip && ! $ride->driver_tips) {
                 if ($settings['activation']['driver_tips']) {
                     $ride->driver_tips = $request->driver_tip;
@@ -758,6 +1012,43 @@ class RideRepository extends BaseRepository
                         $ride->save();
                     }
                 }
+            }
+
+            // For an active ride, cash collection records payment only. The
+            // Driver's separate completion request closes the trip so the
+            // Rider sees one clean status change and commission uses the final
+            // fare (including any waiting or extra charges).
+            if (
+                $request->payment_method == PaymentMethod::CASH &&
+                getCurrentRoleName() == RoleEnum::DRIVER &&
+                $ride->ride_status?->slug == RideStatusEnum::STARTED
+            ) {
+                if ((int) $ride->driver_id !== (int) getCurrentUserId()) {
+                    throw new Exception(__('taxido::static.rides.only_assigned_driver'), 403);
+                }
+
+                if (! $settings['activation']['cash_payments']) {
+                    throw new Exception(__('taxido::static.cash_payments_is_disabled'), 400);
+                }
+
+                if (strtoupper((string) $ride->payment_status) !== PaymentStatus::COMPLETED) {
+                    $zoneId = $ride->zones()->pluck('zone_id')->first();
+                    $cashVehicleTypeZone = VehicleTypeZone::where('vehicle_type_id', $ride->vehicle_type_id)
+                        ->where('zone_id', $zoneId)
+                        ->first();
+                    if (! $cashVehicleTypeZone) {
+                        throw new Exception('Trip pricing is unavailable. Please contact support before collecting cash.', 422);
+                    }
+                    $this->handleExtraChargesAndWaitingTime($ride, $request->all(), $cashVehicleTypeZone);
+                    $ride->update([
+                        'payment_mode' => PaymentMode::OFFLINE,
+                        'payment_status' => PaymentStatus::COMPLETED,
+                    ]);
+                }
+
+                DB::commit();
+
+                return response()->json(['id' => $ride->id, 'payment_status' => PaymentStatus::COMPLETED]);
             }
 
             DB::commit();
@@ -796,7 +1087,6 @@ class RideRepository extends BaseRepository
                 $ride->payment_mode = PaymentMode::OFFLINE;
                 $ride->save();
                 $request->merge(['type' => 'ride']);
-                $ride = $this->paymentStatus($ride, PaymentStatus::COMPLETED, $request);
                 $ride = $this->paymentStatus($ride, PaymentStatus::COMPLETED, $request);
                 return $ride;
             } elseif ($request->payment_method == PaymentMethod::WALLET) {

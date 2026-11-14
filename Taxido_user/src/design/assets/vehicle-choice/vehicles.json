@@ -1,0 +1,52 @@
+[
+  {
+    "id": "bike",
+    "name": "Bike",
+    "image": "bike.webp",
+    "fallback": "bike.png",
+    "width": 1040,
+    "height": 720,
+    "alt": "Bike showing parcel placement and example dimension arrows",
+    "dimensionsAreIllustrative": true
+  },
+  {
+    "id": "roof-rack-auto",
+    "name": "Roof rack auto",
+    "image": "roof-rack-auto.webp",
+    "fallback": "roof-rack-auto.png",
+    "width": 1040,
+    "height": 720,
+    "alt": "Roof rack auto showing parcel placement and example dimension arrows",
+    "dimensionsAreIllustrative": true
+  },
+  {
+    "id": "classic-auto",
+    "name": "Classic auto",
+    "image": "classic-auto.webp",
+    "fallback": "classic-auto.png",
+    "width": 1040,
+    "height": 720,
+    "alt": "Classic auto showing parcel placement and example dimension arrows",
+    "dimensionsAreIllustrative": true
+  },
+  {
+    "id": "electric-rickshaw",
+    "name": "Electric rickshaw",
+    "image": "electric-rickshaw.webp",
+    "fallback": "electric-rickshaw.png",
+    "width": 1040,
+    "height": 720,
+    "alt": "Electric rickshaw showing parcel placement and example dimension arrows",
+    "dimensionsAreIllustrative": true
+  },
+  {
+    "id": "open-cargo-auto",
+    "name": "Cargo auto",
+    "image": "open-cargo-auto.webp",
+    "fallback": "open-cargo-auto.png",
+    "width": 1040,
+    "height": 720,
+    "alt": "Cargo auto showing parcel placement and example dimension arrows",
+    "dimensionsAreIllustrative": true
+  }
+]

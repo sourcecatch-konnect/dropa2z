@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
 import { Platform, StyleSheet } from 'react-native';
 import { commonStyles } from '../../../../styles/commonStyle';
 import { external } from '../../../../styles/externalStyle';
@@ -35,6 +36,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(12),
     paddingVertical: windowHeight(4.5),
     borderRadius: windowHeight(3),
+  
+    ...riderCardFinish,
   },
   promoCodeCodeText: {
     ...commonStyles.regularText,

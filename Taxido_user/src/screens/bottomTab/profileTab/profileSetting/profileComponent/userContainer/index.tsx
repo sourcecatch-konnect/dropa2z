@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Image, Text, View, TouchableOpacity } from "react-native";
+import {Image, View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { walletData } from "@src/api/store/actions/walletActions";
@@ -11,6 +12,7 @@ import { styles } from "./style";
 import { useValues } from "@src/utils/context/index";
 import { UserContainerSkeleton } from "./userSkeleton";
 import { Star } from "@src/utils/icons";
+import {DesignIcon} from "../../../../../../design/DesignIcon";
 
 export function UserContainer() {
   const { bgFullStyle, textColorStyle, viewRTLStyle, isDark, isRTL } = useValues();
@@ -68,7 +70,7 @@ export function UserContainer() {
               external.ai_center,
               { flexDirection: viewRTLStyle },
             ]}>
-            <TouchableOpacity onPress={navigationProfile} activeOpacity={0.7}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Edit profile photo and details" onPress={navigationProfile} activeOpacity={0.7}>
               {self?.profile_image_url ? (
                 <Image
                   style={styles.userImage}
@@ -89,12 +91,12 @@ export function UserContainer() {
                     flexDirection: viewRTLStyle,
                     justifyContent: "space-between",
                     alignItems: "center",
-                    width: !isRTL && "84%",
+                    flex: 1, gap: 8,
                   }}>
                   <Text
                     style={[
                       commonStyles.mediumTextBlack,
-                      { color: textColorStyle },
+                      { color: textColorStyle, flex:1, fontFamily:appFonts.bold, fontSize:20 },
                     ]}>
                     {self?.name
                       ? self?.name?.length > 30
@@ -128,7 +130,7 @@ export function UserContainer() {
                     </Text>
                   </View>
                 </View>
-                <Text style={[commonStyles.regularText, external.mt_3]}>
+                <Text style={[commonStyles.regularText, external.mt_3, {lineHeight:20,flexShrink:1,color:isDark?"#BBC1CA":"#656C76"}]}>
                   {self?.email}
                 </Text>
               </View>
@@ -142,9 +144,10 @@ export function UserContainer() {
           {token && (
             <TouchableOpacity
               style={[styles.walletContainer, { flexDirection: viewRTLStyle }]}
+              accessibilityRole="button" accessibilityLabel="Open wallet"
               onPress={() => navigate("Wallet")}
               activeOpacity={0.7}>
-              <Text style={styles.walletBalance}>{translateData?.balance}</Text>
+              <View style={{flexDirection:viewRTLStyle,gap:10,alignItems:"center",flex:1}}><DesignIcon name="wallet" color="#FFBE60" width={22} height={22}/><Text style={styles.walletBalance}>{translateData?.balance}</Text></View>
               <Text
                 style={[
                   commonStyles.mediumTextBlack,

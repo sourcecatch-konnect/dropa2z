@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import {TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import styles from "./styles";
 import { Button, Header } from "@src/commonComponent";
 import {

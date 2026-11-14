@@ -40,7 +40,14 @@ class NotificationService
                 if (in_array('push', $channels)) {
                     try {
                         $payload = $this->getPushPayload($user, $slug, $placeholders, $extraData);
-                        if ($payload) $pushPayloads[] = $payload;
+                        if ($payload) {
+                            $pushPayloads[] = $payload;
+                            try {
+                                app(AppNotificationInbox::class)->store((int) data_get($user, 'id'), $slug, $payload['message']);
+                            } catch (\Throwable $inboxError) {
+                                Log::warning('App notification inbox write failed: ' . $inboxError->getMessage());
+                            }
+                        }
                     } catch (\Exception $e) {
                         Log::error("Push notification prep fail for user " . data_get($user, 'id') . ": " . $e->getMessage());
                     }

@@ -35,7 +35,7 @@ class FindDriverGlobalTimeoutJob implements ShouldQueue
             ->latest('changed_at')
             ->value('status');
 
-        $activeStatuses = [RideStatusEnum::REQUESTED, RideStatusEnum::PENDING];
+        $activeStatuses = [RideStatusEnum::REQUESTED, RideStatusEnum::PENDING, RideStatusEnum::REJECTED];
         if (!in_array($currentStatus, $activeStatuses)) {
             Log::info("FindDriverGlobalTimeoutJob: Ride #{$rideRequest->ride_number} already in status '{$currentStatus}'. No action needed.");
             return;
@@ -52,6 +52,7 @@ class FindDriverGlobalTimeoutJob implements ShouldQueue
         $rideRequest->update([
             'current_driver_id' => null,
             'driver_acceptance_expires_at' => null,
+            'find_driver_expires_at' => null,
         ]);
 
         broadcast(new RideNoDriverFoundBroadcast($rideRequest));

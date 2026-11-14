@@ -6,13 +6,13 @@ import { appColors } from '@src/themes';
 
 const styles = StyleSheet.create({
   container: {
-    width: windowHeight(32),
-    height: windowHeight(32),
+    width: 40,
+    height: 40,
     backgroundColor: appColors.whiteColor,
     borderWidth: windowHeight(1),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: windowHeight(5),
+    borderRadius: 14,
   },
   textContainer: {
     ...external.as_center,

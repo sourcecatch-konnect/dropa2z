@@ -1,9 +1,10 @@
 import { editProfile, deleteAccount, driverSelf, editBank, documentUpdate, updateVehicleRegi, fleetSelf, country, preference, phoneOrEmail, verifyPhoneOrEmail } from '../endpoints/accountEndPoint'
 import { BankDetailsinterface, UpdateProfileInterface, updateVehicleInterface } from '../interface/accountInterface'
 import { GET_API, PUT_API, DELETE_API, POST_API } from '../methods'
+import { requireApiSuccess } from '../responseError'
 
 export const selfDriverData = async () => {
-  return GET_API(driverSelf)
+  return GET_API(driverSelf, {timeout:12000})
     .then(res => {
       return res
     })
@@ -13,7 +14,7 @@ export const selfDriverData = async () => {
 }
 
 export const selfFleetData = async () => {
-  return GET_API(fleetSelf)
+  return GET_API(fleetSelf, {timeout:12000})
     .then(res => {
       return res
     })
@@ -93,23 +94,11 @@ export const preferenceData = async () => {
 }
 
 export const updateMobileEmail = async (data: UpdateProfileInterface) => {
-  return POST_API(data, phoneOrEmail)
-    .then(res => {
-      return res;
-    })
-    .catch(e => {
-      return e?.response;
-    });
+  return requireApiSuccess(await POST_API(data, phoneOrEmail), 'Could not send the verification code.');
 };
 
 export const verifyMobileEmail = async (data: UpdateProfileInterface) => {
-  return POST_API(data, verifyPhoneOrEmail)
-    .then(res => {
-      return res;
-    })
-    .catch(e => {
-      return e?.response;
-    });
+  return requireApiSuccess(await POST_API(data, verifyPhoneOrEmail), 'The code is invalid or expired.');
 };
 
 const accountServices = {

@@ -1,4 +1,6 @@
-import { View, Text, Linking } from 'react-native'
+import {DesignIcon} from '../../../../../design/DesignIcon';
+import {View, Linking} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React, { useEffect, useState } from 'react'
 import styles from './styles'
 import Icons from '../../../../../utils/icons/icons'
@@ -42,6 +44,7 @@ export function General() {
         ]}
       >
         <>
+          {selfDriver?.role==='driver'&&<ListItem icon={<DesignIcon name="package" color={colors.text}/>} text={selfDriver?.training?.pro_driver?'Dropa2z Pro Driver · training complete':'Driver practice delivery'} color={colors.text} backgroundColor={colors.card} onPress={()=>navigation.navigate('DriverTraining' as any)} showNextIcon/>}
           <ListItem
             icon={<Icons.UserSetting color={colors.text} />}
             text={translateData.profileSettings}
@@ -77,6 +80,10 @@ export function General() {
             showNextIcon
           />
 
+          <View style={[styles.border, {borderColor: colors.border}]}/>
+          <ListItem icon={<DesignIcon name="file-text" color={colors.text}/>} text={translateData?.documents || 'Documents'} backgroundColor={isDark ? colors.background : appColors.graybackground} color={colors.text} onPress={() => navigation.navigate('DocumentDetail')} showNextIcon/>
+          <View style={[styles.border, {borderColor: colors.border}]}/>
+          <ListItem icon={<DesignIcon name="shield-check" color={colors.text}/>} text="Policies & Documents" backgroundColor={isDark ? colors.background : appColors.graybackground} color={colors.text} onPress={() => navigation.navigate('LegalDocuments')} showNextIcon/>
           {taxidoSettingData?.cabbooking_values?.activation?.driver_subscription == 1 && selfDriver?.role == 'driver' && (
             <>
               <View style={[styles.border, { borderColor: colors.border }]} />

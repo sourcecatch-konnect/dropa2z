@@ -52,7 +52,6 @@ api.interceptors.request.use(
       const defaultLng = await getValue("defaultLanguage");
       const currentLng = language || defaultLng;
 
-console.log('Tokeen',token);
 
       config.headers = config.headers || {};
 

@@ -1,4 +1,5 @@
-import { Text, View, TouchableOpacity } from 'react-native';
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React from 'react';
 import { SolidLine, Button } from '@src/commonComponent';
 import { Location, Back } from '@utils/icons';
@@ -31,7 +32,7 @@ export function LocationDetails() {
             <Text style={[styles.popupHeaderText, { color: textColorStyle }]}>
               {translateData.selectServiceLocation}
             </Text>
-            <TouchableOpacity activeOpacity={0.7}
+            <TouchableOpacity activeOpacity={0.7} onPress={() => navigate('LocationSelect', {field:'pickupLocation'})}
             >
               <Text style={styles.changeText}>{translateData.ChangeTexttt}</Text>
             </TouchableOpacity>
@@ -54,7 +55,7 @@ export function LocationDetails() {
         <View style={styles.confirmButtonContainer}>
           <Button
             title={translateData.confirmLocationText}
-            onPress={() => navigate('AddNewLocation')}
+            onPress={() => navigate('LocationSave')}
           />
         </View>
       </View>

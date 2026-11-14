@@ -1,5 +1,8 @@
-import { View, Text, Image, FlatList } from "react-native";
-import React, { useState } from "react";
+import {BrandLoader} from '../../design/BrandLogo';
+import {VehicleGraphic} from '../../design/VehicleGraphic';
+import {View, Image, FlatList, TouchableOpacity, ActivityIndicator} from 'react-native';
+import {Text} from '../../design/Typography';
+import React, { useRef, useState } from "react";
 import { appColors, windowWidth } from "@src/themes";
 import { CalenderSmall, ClockSmall, Gps, PickLocation } from "@src/utils/icons";
 import { external } from "@src/styles/externalStyle";
@@ -14,8 +17,12 @@ import { useAppNavigation } from "@src/utils/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { userRideLocation, vehicleTypeDataGet } from "@src/api/store/actions";
 import { AppDispatch } from "@src/api/store";
+import {ReferenceIcon,referenceSurfaces} from '../../design/ReferenceChrome';
+import {GET_API} from '../../api/methods';
+import {apiErrorMessage,requireApiSuccess} from '../../api/responseError';
+import {bookingStatus} from '../../utils/liveBooking';
 
-export function Recentbooking({ recentRideData }: any) {
+export function Recentbooking({ recentRideData,compact=false }: any) {
   const {
     bgFullStyle,
     textColorStyle,
@@ -26,11 +33,46 @@ export function Recentbooking({ recentRideData }: any) {
   } = useValues();
   const dispatch = useDispatch<AppDispatch>();
   const [loadingIndex, setLoadingIndex] = useState(null);
+  const detailsOpening=useRef(false);
   const { zoneValue } = useSelector((state: any) => state.zone);
   const { translateData } = useSelector((state: any) => state.setting);
   const { navigate }: any = useAppNavigation();
 
-  if (!recentRideData || recentRideData.length === 0) {
+  const navigateToDelivery=(ride:any,item:any)=>{
+      const status=bookingStatus(ride);
+      if(status==='accepted'||status==='arrived')navigate('RideActive',{activeRideOTP:ride});
+      else if(['started','in_progress','on_going'].includes(status))navigate('Payment',{rideId:Number(ride.id)});
+      else {
+        const labels:Record<string,string>={completed:'Completed',cancelled:'Cancelled',canceled:'Cancelled',scheduled:'Scheduled',pending:'Pending'};
+        navigate('PendingRideScreen',{item:ride,vehicleDetail:ride.vehicle_type??item.vehicle_type,rideStatus:labels[status]||'Delivery'});
+      }
+  };
+
+  const openDeliveryDetails=async(item:any,index:number)=>{
+    if(detailsOpening.current||!item?.id)return;
+    detailsOpening.current=true;setLoadingIndex(index);
+    let response:any;
+    try{
+      response=await GET_API(`ride/${item.id}`,{timeout:12000});
+      requireApiSuccess(response,'Could not open this delivery. Please try again.');
+      const ride=response.data?.data??response.data;
+      if(!ride?.id||String(ride.id)!==String(item.id))throw new Error('The delivery details could not be loaded. Please try again.');
+      navigateToDelivery(ride,item);
+    }catch(error){
+      const failure=response??error;
+      const networkFailure=!failure?.status&&!failure?.response?.status&&(
+        ['ERR_NETWORK','ECONNABORTED','ETIMEDOUT'].includes(failure?.code)||
+        /network error|network request failed|timeout/i.test(String(failure?.message||''))
+      );
+      const canReadHistory=['completed','cancelled','canceled'].includes(bookingStatus(item))&&
+        Array.isArray(item.locations)&&item.locations.length>=2&&item.driver&&item.rider;
+      if(networkFailure&&canReadHistory)navigateToDelivery(item,item);
+      else notificationHelper('',networkFailure?'Could not connect. Check your internet connection and tap the delivery again.':apiErrorMessage(error,'Could not open this delivery. Please try again.'),'error');
+    }
+    finally{detailsOpening.current=false;setLoadingIndex(null);}
+  };
+
+  if ((!recentRideData || recentRideData.length === 0) && !compact) {
     return null;
   }
 
@@ -96,9 +138,7 @@ export function Recentbooking({ recentRideData }: any) {
       const zoneValue = res?.data?.[0];
       const rawLocations = [
         pickupCoords,
-        stopCoords[0],
-        stopCoords[1],
-        stopCoords[2],
+        ...stopCoords,
         destinationCoords,
       ];
 
@@ -111,6 +151,20 @@ export function Recentbooking({ recentRideData }: any) {
           lng: coord.longitude,
         }));
 
+      const serviceType = item?.service?.service_type;
+      if (serviceType === 'parcel' || serviceType === 'freight') {
+        navigate("BookRide", {
+          destination, stops, pickupLocation,
+          service_ID: item.service_id,
+          service_category_ID: item.service_category_id,
+          service_name: serviceType, zoneValue, scheduleDate: null,
+          filteredLocations,
+          pickupCoords: filteredLocations[0],
+          destinationCoords: filteredLocations[filteredLocations.length - 1],
+          stopsCoords: filteredLocations.slice(1, -1),
+        });
+        return;
+      }
       const payload: any = {
         locations: filteredLocations,
         service_id: item?.service_id,
@@ -150,7 +204,7 @@ export function Recentbooking({ recentRideData }: any) {
             zoneValue,
           });
         } else if (service_name === "parcel" || service_name === "freight") {
-          navigate("Outstation", {
+          navigate("BookRide", {
             destination,
             stops,
             pickupLocation,
@@ -205,12 +259,9 @@ export function Recentbooking({ recentRideData }: any) {
                   },
                 ]}
               >
-                <Image
-                  source={{
-                    uri: item?.vehicle_type?.vehicle_image_url,
-                  }}
-                  style={styles.img}
-                />
+                <VehicleGraphic source={{
+  uri: item?.vehicle_type?.vehicle_image_url
+}} style={styles.img} vehicle={item?.vehicle_type} />
               </View>
               <View style={styles.textView}>
                 <Text
@@ -329,6 +380,18 @@ export function Recentbooking({ recentRideData }: any) {
     );
   };
 
+  if(compact)return <View style={{paddingHorizontal:16,paddingTop:6}}>
+    <Text style={{fontSize:17,fontWeight:'800',color:textColorStyle,marginBottom:12}}>Recent Deliveries</Text>
+    {(recentRideData||[]).slice(0,1).map((item:any,index:number)=>{
+      const {date,time}=formatDateTime(item?.created_at);
+      return <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`View delivery ${item.ride_number || item.id}`} disabled={loadingIndex!==null} onPress={()=>void openDeliveryDetails(item,index)} style={[referenceSurfaces.card,{backgroundColor:bgFullStyle,padding:10,marginBottom:10,flexDirection:viewRTLStyle,alignItems:'center',gap:10}]}>
+        <View style={{backgroundColor:'#EDF6F0',padding:7,borderRadius:10}}><ReferenceIcon name="package" size={20}/></View>
+        <View style={{flex:1}}><Text style={{fontSize:13,fontWeight:'700',color:textColorStyle}}>#{item.ride_number || item.id}</Text><Text style={{fontSize:17,fontWeight:'800',color:'#157A52',marginTop:3}}>{zoneValue?.currency_symbol || '₹'}{Number(item.total || 0).toFixed(2)}</Text></View>
+        {loadingIndex===index?<BrandLoader color="#157A52"/>:<View><Text style={{fontSize:11,color:'#68717A'}}>▦ {date}</Text><Text style={{fontSize:11,color:'#68717A',marginTop:6}}>◷ {time}</Text></View>}
+      </TouchableOpacity>;
+    })}
+    {!recentRideData?.length&&<View style={[referenceSurfaces.card,{padding:16,backgroundColor:bgFullStyle}]}><Text style={{color:'#68717A'}}>Your recent deliveries will appear here.</Text></View>}
+  </View>;
   return (
     <View
       style={[

@@ -1,5 +1,13 @@
+import {registerDriver} from '../../../../utils/registerDriver';
+import {validateDocumentFile} from '../../../../utils/documentUpload';
+import {registrationDocumentWarnings} from '../../../../utils/registrationDocuments';
+import {selfDriverData} from '../../../../api/store/action';
+import {setValue} from '../../../../utils/localstorage';
+import {notificationHelper} from '../../../../commonComponents';
+import {BrandLoader} from '../../../../design/BrandLogo';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ScrollView, View, Text, Platform, TouchableOpacity, BackHandler, Modal } from 'react-native';
+import {ScrollView, View, Platform, TouchableOpacity, BackHandler, Modal, ActivityIndicator} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import { ImageLibraryOptions, launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import appColors from '../../../../theme/appColors';
 import { ProgressBar } from '../component';
@@ -28,14 +36,16 @@ export function UploadedDocument() {
   const { colors } = useTheme();
   const route = useAppRoute()
   const userType = route.params?.type ?? ''
-  const { textRtlStyle, setDocumentDetail, isDark, rtl } = useValues();
-  const { documentData } = useSelector((state: any) => state.documents);
+  const { textRtlStyle, setDocumentDetail, isDark, rtl, accountDetail, vehicleDetail, setToken } = useValues();
+  const { documentData, loading: documentsLoading, success: documentsLoaded } = useSelector((state: any) => state.documents);
   const { translateData } = useSelector((state: any) => state.setting);
   const { selfDriver } = useSelector((state: any) => state.account)
   const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, any>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string | null> | any>({});
   const [showWarning, setShowWarning] = useState<Record<string, boolean> | any>({});
   const [showDatePicker, setShowDatePicker] = useState<any>({ visible: false, slug: null });
+  const [submitting,setSubmitting]=useState(false);
+  const submittingRef=useRef(false);
   const [documentType, setDocumnetType] = useState<any>()
   console.log('userType', userType);
   useEffect(() => {
@@ -44,7 +54,7 @@ export function UploadedDocument() {
     } else {
       dispatch(documentGet({ type: 'driver' }));
     }
-  }, []);
+  }, [dispatch,userType]);
 
   const navigation = useNavigation();
   useEffect(() => {
@@ -70,17 +80,20 @@ export function UploadedDocument() {
 
       if (res?.assets?.length > 0) {
         const file = res.assets[0];
+        validateDocumentFile(file);
         setUploadedDocuments((prev) => ({
           ...prev,
           [documentType]: {
             uri: file.uri!,
             type: file.type!,
             name: file.fileName || `file_${Date.now()}`,
+            size: file.fileSize,
           },
         }));
         setShowWarning((prev) => ({ ...prev, [documentType]: false }));
       }
     } catch (err) {
+      notificationHelper('', err instanceof Error ? err.message : 'Could not select this document. Please try again.', 'error');
     }
   };
 
@@ -106,23 +119,25 @@ export function UploadedDocument() {
   };
 
   const driverDocs = documentData?.data?.filter((doc: any) => doc.type === 'driver') || [];
-  const vehicleDocs = documentData?.data?.filter((doc: any) => doc.type === 'fleet_manager') || [];
+  const vehicleDocs = documentData?.data?.filter((doc: any) => (userType==='fleet'?doc.type==='fleet_manager':doc.type==='vehicle')) || [];
+  const registrationDocs=userType==='fleet'?vehicleDocs:[...driverDocs,...vehicleDocs];
 
   const gotoDocument = async () => {
-    let hasErrors = false;
-    const warnings: Record<string, boolean> = {};
+    if (documentsLoading || submittingRef.current) return;
+    if (!documentsLoaded) {
+      dispatch(documentGet({ type: userType === 'fleet' ? 'fleet_manager' : 'driver' }));
+      return;
+    }
+    if(registrationDocs.length===0){
+      notificationHelper('','Registration document setup is unavailable. Please retry or contact Dropa2z support.','error');
+      dispatch(documentGet({type:userType==='fleet'?'fleet_manager':'driver'}));
+      return;
+    }
 
-    documentData?.data?.forEach((doc) => {
-      const uploaded = uploadedDocuments[doc.slug];
-      const requiresDate = doc.need_expired_date === 1;
-      if (!uploaded || (requiresDate && !expiryDates[doc.slug])) {
-        warnings[doc.slug] = true;
-        hasErrors = true;
-      }
-    });
+    const warnings=registrationDocumentWarnings(registrationDocs,uploadedDocuments,expiryDates);
 
     setShowWarning(warnings);
-    if (hasErrors) return;
+    if (Object.keys(warnings).length>0) return;
 
     const finalData = Object.keys(uploadedDocuments).reduce((acc, key) => {
       acc[key] = {
@@ -134,14 +149,16 @@ export function UploadedDocument() {
 
     setDocumentDetail(finalData);
 
-    const userType = await getValue('userType');
-    if (userType == 'driver') {
-      navigate('VehicleRegistration');
-    } else if (userType == 'fleet') {
-      navigate('FleetDetails');
-    } else {
-      navigate('VehicleRegistration');
-    }
+    if (userType === 'fleet') {navigate('FleetDetails');return;}
+    if (!vehicleDetail?.vehicleType) {navigate('VehicleRegistration');return;}
+    submittingRef.current=true;setSubmitting(true);
+    try {
+      const data=await registerDriver(accountDetail,vehicleDetail,finalData,await getValue('fcmToken')||'');
+      await setValue('token',data.access_token);setToken(data.access_token);
+      await dispatch(selfDriverData()).unwrap();
+      (navigation as any).reset({index:0,routes:[{name:Number(data.is_verified)===1?'TabNav':'Verification'}]});
+    } catch(error:any) {notificationHelper('',error?.message||'Could not submit your documents.','error');}
+    finally {submittingRef.current=false;setSubmitting(false);}
   };
 
 
@@ -187,12 +204,42 @@ export function UploadedDocument() {
     <GestureHandlerRootView>
       <View style={{ flex: 1 }}>
         <Header backgroundColor={isDark ? colors.card : appColors.white} />
-        <ProgressBar fill={2} />
+        <ProgressBar fill={3} />
 
         <ScrollView style={styles.main} showsVerticalScrollIndicator={false}>
           <View style={[styles.sub, { backgroundColor: colors.background }]}>
 
             <View style={styles.spaceHorizantal}>
+              {documentsLoading && (
+                <View style={{ minHeight: windowHeight(24), alignItems: 'center', justifyContent: 'center' }}>
+                  <BrandLoader color={appColors.primary} />
+                  <Text style={{ color: colors.text, marginTop: windowHeight(1.5) }}>Loading required documents...</Text>
+                </View>
+              )}
+
+              {!documentsLoading && !documentsLoaded && (
+                <View style={{ minHeight: windowHeight(24), alignItems: 'center', justifyContent: 'center', paddingHorizontal: windowWidth(5) }}>
+                  <Text style={{ color: colors.text, textAlign: 'center', fontSize: fontSizes.FONT4, fontFamily: appFonts.medium }}>
+                    Could not load registration documents.
+                  </Text>
+                  <TouchableOpacity onPress={() => dispatch(documentGet({ type: userType === 'fleet' ? 'fleet_manager' : 'driver' }))} style={{ marginTop: windowHeight(2), padding: windowHeight(1) }}>
+                    <Text style={{ color: appColors.primary, fontFamily: appFonts.medium }}>Tap to retry</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {documentsLoaded && !documentsLoading && driverDocs.length === 0 && vehicleDocs.length === 0 && (
+                <View style={{ minHeight: windowHeight(24), alignItems: 'center', justifyContent: 'center', paddingHorizontal: windowWidth(5) }}>
+                  <Text style={{ color: colors.text, textAlign: 'center', fontSize: fontSizes.FONT4, fontFamily: appFonts.medium }}>
+                    Registration document setup is unavailable.
+                  </Text>
+                  <Text style={{ color: colors.text, textAlign: 'center', marginTop: windowHeight(1) }}>
+                    Please retry or contact Dropa2z support. Your details have been kept on this screen.
+                  </Text>
+                  <TouchableOpacity accessibilityRole="button" onPress={()=>dispatch(documentGet({type:userType==='fleet'?'fleet_manager':'driver'}))} style={{minHeight:44,justifyContent:'center',marginTop:8}}><Text style={{color:appColors.primary,fontFamily:appFonts.medium}}>Retry documents</Text></TouchableOpacity>
+                </View>
+              )}
+
               {driverDocs?.length > 0 && (
                 <>
                   <TitleView
@@ -208,7 +255,7 @@ export function UploadedDocument() {
                         documentType={doc.slug}
                         label={`${translateData.upload} ${doc.name}`}
                         expiryDate={expiryDates[doc.slug]}
-                        needExpiryDate={doc.need_expired_date === 1}
+                        needExpiryDate={Number(doc.need_expired_date) === 1}
                         onPressDate={(slug) =>
                           setShowDatePicker({ visible: true, slug })
                         }
@@ -227,7 +274,7 @@ export function UploadedDocument() {
                           ]}
                         >
                           {uploadedDocuments[doc.slug] &&
-                            doc.need_expired_date === 1 &&
+                            Number(doc.need_expired_date) === 1 &&
                             !expiryDates[doc.slug]
                             ? translateData.expiryDateRequired
                             : `${doc.name} ${translateData.isRequired}`}
@@ -254,7 +301,7 @@ export function UploadedDocument() {
                         documentType={doc.slug}
                         label={`${translateData.upload} ${doc.name}`}
                         expiryDate={expiryDates[doc.slug]}
-                        needExpiryDate={doc.need_expired_date === 1}
+                        needExpiryDate={Number(doc.need_expired_date) === 1}
                         onPressDate={(slug) => setShowDatePicker({ visible: true, slug })}
                         handlePresentModalPress={handlePresentModalPress}
                       />
@@ -271,7 +318,7 @@ export function UploadedDocument() {
                           ]}
                         >
                           {uploadedDocuments[doc.slug] &&
-                            doc.need_expired_date === 1 &&
+                            Number(doc.need_expired_date) === 1 &&
                             !expiryDates[doc.slug]
                             ? translateData.expiryDateRequired
                             : `${doc.name} ${translateData.isRequired}`}
@@ -289,7 +336,8 @@ export function UploadedDocument() {
         <View style={styles.buttonView}>
           <Button
             onPress={gotoDocument}
-            title={translateData.next}
+            title={submitting?'Submitting…':userType==='fleet'?translateData.next:'Submit KYC for verification'}
+            loading={submitting}
             backgroundColor={appColors.primary}
             color={appColors.white}
           />
@@ -331,7 +379,7 @@ export function UploadedDocument() {
             snapPoints={['27%']}
             handleIndicatorStyle={{ backgroundColor: appColors.primary, width: '13%' }}
             backgroundStyle={{ backgroundColor: isDark ? appColors.darkThemeSub : appColors.white }}
-          >
+           android_keyboardInputMode="adjustResize" >
             <BottomSheetView style={styles.contentContainer}>
               <View
                 style={{

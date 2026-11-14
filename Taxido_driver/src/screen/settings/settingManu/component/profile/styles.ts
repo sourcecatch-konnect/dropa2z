@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appColors from '../../../../../theme/appColors'
 import appFonts from '../../../../../theme/appFonts'
@@ -5,11 +6,13 @@ import { windowHeight, windowWidth, fontSizes } from '../../../../../theme/appCo
 
 const styles = StyleSheet.create({
   main: {
-    height: windowHeight(18.5),
+    paddingBottom: 16,
     width: '100%',
     marginVertical: windowHeight(2.3),
     borderRadius: windowHeight(0.9),
     borderWidth: windowHeight(0.1),
+  
+    ...referenceSurfaces.card,
   },
   detainContain: {
     marginHorizontal: windowWidth(4),
@@ -22,14 +25,16 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(25),
   },
   details: {
-    height: windowHeight(6.5),
-    width: windowWidth(65),
+    flex: 1,
+    minWidth: 0,
     marginHorizontal: windowWidth(3.5),
     justifyContent: 'center',
   },
   name: {
     fontFamily: appFonts.medium,
-    fontSize: fontSizes.FONT4HALF,
+    fontSize: 20,
+    fontWeight: "700",
+    flex: 1,
   },
   mail: {
     color: appColors.secondaryFont,
@@ -37,11 +42,13 @@ const styles = StyleSheet.create({
     top: windowHeight(0.5),
   },
   walletContain: {
-    height: windowHeight(6),
-    backgroundColor: appColors.primary,
+    minHeight: 52,
+    backgroundColor: "#17191C",
     marginHorizontal: windowWidth(4),
     borderRadius: windowHeight(0.8),
     marginTop: windowHeight(0.6),
+  
+    ...referenceSurfaces.control,
   },
   wallet: {
     flex: 1,
@@ -50,7 +57,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(3),
   },
   walletTitle: {
-    color: appColors.white,
+    color: "#FFBE60",
     fontFamily: appFonts.regular,
     fontSize: fontSizes.FONT3HALF,
   },

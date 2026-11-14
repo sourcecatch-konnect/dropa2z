@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { TouchableOpacity, Text, View, ScrollView, TouchableWithoutFeedback, Pressable } from 'react-native';
+import {TouchableOpacity, View, ScrollView, TouchableWithoutFeedback, Pressable} from 'react-native';
+import {Text} from '../../design/Typography';
 import { useValues } from '@src/utils/context/index';
 import { commonStyles } from '../../styles/commonStyle';
 import { styles } from './styles';

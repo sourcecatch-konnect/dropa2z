@@ -1,6 +1,7 @@
 import { useTheme } from '@react-navigation/native'
 import React from 'react'
-import { TextInput, TextInputProps, View } from 'react-native'
+import {TextInputProps, View} from 'react-native';
+import {TextInput} from '../../../../design/Typography';
 import { useValues } from '../../../../utils/context'
 import styles from './styles'
 import appColors from '../../../../theme/appColors'

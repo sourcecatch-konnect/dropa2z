@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useCallback, memo, useRef, useState } from "react";
-import { BackHandler, Image, FlatList, Text, TouchableOpacity, View, RefreshControl } from "react-native";
+import {BackHandler, Image, FlatList, TouchableOpacity, View, RefreshControl} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
 import Icons from "../../../utils/icons/icons";
 import appColors from "../../../theme/appColors";
@@ -414,7 +415,7 @@ export function ManageVehicle() {
                     backgroundStyle={{
                         backgroundColor: isDark ? appColors.bgDark : appColors.white,
                     }}
-                >
+                 android_keyboardInputMode="adjustResize" >
                     <BottomSheetView style={{ padding: windowHeight(2), paddingHorizontal: windowWidth(5) }}>
                         <Text
                             style={{

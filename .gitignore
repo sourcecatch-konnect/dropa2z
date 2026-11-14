@@ -6,6 +6,7 @@
 # Installed dependencies
 **/node_modules/
 **/vendor/
+**/.gradle/
 
 # Generated application and mobile build output
 **/build/
@@ -14,9 +15,12 @@
 **/ios/build/
 **/*.apk
 **/*.aab
+**/app-version.properties.lock
+**/app-version.properties.tmp
 
 # Local Android SDK settings and signing material
 **/local.properties
+**/google-services.json
 **/*.jks
 **/*.keystore
 
@@ -29,11 +33,23 @@ Taxido_laravel/public/db.sql
 Taxido_laravel/public/db/
 
 # Locally provisioned payment and social-login credentials
-Taxido_laravel/Modules/FlutterWave/config/payment.php
-Taxido_laravel/Modules/Stripe/config/payment.php
-Taxido_laravel/Modules/Paystack/config/payment.php
-Taxido_laravel/database/seeders/SettingSeeder.php
 **/.xcode.env.local
 
 # Source-package update archives are retained locally, not versioned
 Changed-files/*.zip
+
+# Local caches, signing credentials and test capture artifacts
+**/.metro-build-temp/
+**/.cxx/
+**/.externalNativeBuild/
+**/.kotlin/
+**/__pycache__/
+**/ios/Pods/
+**/*.p12
+**/*.pfx
+**/*.pem
+**/*credentials*.xml
+/*.zip
+/*.png
+/_stale-*/
+/DROPA2Z_fixbackup-*/

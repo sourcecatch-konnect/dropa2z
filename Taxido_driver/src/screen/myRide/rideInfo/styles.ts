@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import {
   windowHeight,
@@ -22,6 +23,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(1),
     marginVertical: windowHeight(2),
     paddingBottom: windowHeight(2),
+  
+    ...referenceSurfaces.card,
   },
   profileView: {
     marginVertical: windowWidth(3),
@@ -69,6 +72,8 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     marginVertical: windowHeight(0.5),
     borderBottomWidth: 1,
+  
+    ...referenceSurfaces.card,
   },
   priceContainer: {
     justifyContent: 'space-between',
@@ -150,6 +155,8 @@ const styles = StyleSheet.create({
     borderColor: appColors.border,
     borderRadius: windowHeight(1),
     marginTop: windowHeight(1.5),
+  
+    ...referenceSurfaces.card,
   },
   vehicleLogo: {
     height: windowHeight(18),
@@ -172,6 +179,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: windowHeight(2),
+  
+    ...referenceSurfaces.control,
   },
   timeView:{
     flexDirection: 'row', 

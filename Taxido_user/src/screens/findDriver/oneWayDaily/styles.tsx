@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import {
   windowHeight,
@@ -27,6 +28,8 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
     backgroundColor: appColors.whiteColor,
+  
+    ...riderCardFinish,
   },
   stepContainer: {
     alignItems: "center",
@@ -98,6 +101,8 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(9),
     alignSelf: "center",
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
   profileImage: {
     width: windowWidth(50),
@@ -134,6 +139,8 @@ const styles = StyleSheet.create({
     width: windowHeight(30),
     borderRadius: windowHeight(20),
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
   safetyCallView: {
     alignItems: "center",
@@ -142,6 +149,8 @@ const styles = StyleSheet.create({
     width: windowHeight(30),
     borderRadius: windowHeight(20),
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
   serviceMainView: { justifyContent: "space-between" },
   serviceView: { marginTop: windowHeight(12) },
@@ -160,6 +169,8 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
     paddingVertical: windowHeight(12),
+  
+    ...riderCardFinish,
   },
   dateContainer: {
     flex: 1,
@@ -211,6 +222,8 @@ const styles = StyleSheet.create({
     borderColor: appColors.border,
     width: "100%",
     alignSelf: "center",
+  
+    ...riderCardFinish,
   },
   carTypeName: {
     fontFamily: appFonts.medium,
@@ -228,6 +241,8 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
     paddingVertical: windowHeight(8),
+  
+    ...riderCardFinish,
   },
   selectedDriverCard: {
     borderColor: appColors.primary,

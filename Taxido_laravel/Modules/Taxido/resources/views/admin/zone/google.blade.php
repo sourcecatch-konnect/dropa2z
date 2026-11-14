@@ -29,8 +29,8 @@ src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAP_API_KEY') }}
 
     function setupMap() {
         const startLocation = {
-            lat: 20.5937,
-            lng: 78.9629
+            lat: 21.0077,
+            lng: 75.5626
         };
 
         mapInstance = new google.maps.Map(

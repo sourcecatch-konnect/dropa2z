@@ -1,4 +1,7 @@
-import { View, Text, ScrollView, Image } from 'react-native'
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import {VehicleGraphic} from '../../../design/VehicleGraphic';
+import {View, ScrollView, Image} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React from 'react'
 import { Button, Header } from '../../../commonComponents'
 import { useSelector } from 'react-redux'
@@ -23,7 +26,7 @@ export function RideInfo({ route }) {
     if (ride?.service_category?.service_category_type === 'rental') {
       navigate('RentalDetails', { ride })
     } else {
-      navigate('Ride', { ride })
+      navigate('Delivery', { ride })
     }
   }
 
@@ -79,7 +82,7 @@ export function RideInfo({ route }) {
   }
 
   return (
-    <View style={styles.container}>
+    <ReferenceScreen><View style={[styles.container, {backgroundColor:'transparent'}]}>
       <Header
         title={`${ride?.service?.name}  ${translateData.rideInfoHeaderDetails}`}
       />
@@ -167,10 +170,9 @@ export function RideInfo({ route }) {
               <View style={{ flexDirection: viewRtlStyle }}>
 
                 <View style={[styles.box, { backgroundColor: isDark ? appColors.bgDark : appColors.lightGray }]}>
-                  <Image
-                    source={{ uri: ride?.vehicle_type?.vehicle_image_url }}
-                    style={styles.carLogo}
-                  />
+                  <VehicleGraphic source={{
+  uri: ride?.vehicle_type?.vehicle_image_url
+}} style={styles.carLogo} vehicle={ride?.vehicle_type} />
                 </View>
 
                 <View style={styles.rideNoContainer}>
@@ -315,8 +317,7 @@ export function RideInfo({ route }) {
             </View>
           )}
 
-          {ride?.service?.service_type === 'package' ||
-            (ride?.service?.service_type === 'parcel' || ride?.service?.service_type === 'freight' && (
+          {(['package', 'parcel', 'freight'].includes(ride?.service?.service_type)) && (
               <View style={styles.packageContainer}>
                 <Image
                   source={{ uri: ride?.cargo_image_url }}
@@ -361,7 +362,7 @@ export function RideInfo({ route }) {
                   </>
                 )}
               </View>
-            ))}
+            )}
         </View>
       </ScrollView>
       {ride?.service?.service_type === 'rental' && (
@@ -395,6 +396,6 @@ export function RideInfo({ route }) {
           />
         </View>
       )}
-    </View>
+    </View></ReferenceScreen>
   )
 }

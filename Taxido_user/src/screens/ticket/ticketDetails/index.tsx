@@ -1,15 +1,8 @@
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  TextInput,
-  FlatList,
-  Alert,
-  Platform,
-  RefreshControl,
-} from "react-native";
+import {KeyboardViewport} from '../../../design/KeyboardViewport';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {KeyboardAvoidingView} from 'react-native';
+import {View, Image, TouchableOpacity, TouchableWithoutFeedback, FlatList, Alert, Platform, RefreshControl} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useCallback, useEffect, useState } from "react";
 import { Header, notificationHelper } from "@src/commonComponent";
 import { appColors, appFonts } from "@src/themes";
@@ -29,10 +22,11 @@ import { useNavigation } from "@react-navigation/native";
 import { AppDispatch } from "@src/api/store";
 import RNBlobUtil from "react-native-blob-util";
 
-export function TicketDetails({ route }) {
+export function TicketDetails({
+ route }) {
   const { ticketData } = route.params;
   const { translateData } = useSelector(state => state.setting);
-  const [textViewShow, setTextViewShow] = useState(false);
+  const [textViewShow, setTextViewShow] = useState(true);
   const [inputText, setInputText] = useState("");
   const [files, setFiles] = useState<DocumentPicker.DocumentPickerResponse[]>(
     [],
@@ -241,7 +235,7 @@ export function TicketDetails({ route }) {
             >
               {item?.created_by?.name}
             </Text>
-            <Text style={styles.date}>{formatDate(item?.created_at)}</Text>
+            <Text style={[styles.date,{color:isDark?"#BBC1CA":"#656C76"}]}>{formatDate(item?.created_at)}</Text>
           </View>
         </View>
         <View style={styles.ticketContainer}>
@@ -249,7 +243,7 @@ export function TicketDetails({ route }) {
         </View>
       </View>
       <View>
-        <Text style={styles.description}>{item?.message}</Text>
+        <Text style={[styles.description,{color:isDark?"#FFFFFF":"#17191C",lineHeight:23}]}>{item?.message}</Text>
         <View>
           <View
             style={[
@@ -299,7 +293,7 @@ export function TicketDetails({ route }) {
             ))}
           </View>
         </View>
-        <Text style={styles.time}>{formatTime(item?.created_at)}</Text>
+        <Text style={[styles.time,{color:isDark?"#BBC1CA":"#656C76"}]}>{formatTime(item?.created_at)}</Text>
       </View>
     </View>
   );
@@ -316,7 +310,7 @@ export function TicketDetails({ route }) {
   }, [dispatch]);
 
   return (
-    <View style={external.main}>
+    <KeyboardViewport style={{flex:1}}>
       <Header value={translateData.ticketDetails} />
       <View
         style={[
@@ -456,12 +450,12 @@ export function TicketDetails({ route }) {
                 onPress={TicketReplay}
                 activeOpacity={0.7}
               >
-                <Text style={styles.btnTitle}>{translateData.send}</Text>
+                <Text style={styles.btnTitle}>{translateData.send || "Send"}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </TouchableWithoutFeedback>
-    </View>
+    </KeyboardViewport>
   );
 }

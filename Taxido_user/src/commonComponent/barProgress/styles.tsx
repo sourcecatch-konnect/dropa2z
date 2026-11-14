@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.primary,
   },
   emptyBar: {
-    backgroundColor: '#E3F2EE',
+    backgroundColor: '#F2E9E3',
   },
 })
 export default styles;

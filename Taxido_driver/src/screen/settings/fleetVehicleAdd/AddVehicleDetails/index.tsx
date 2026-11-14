@@ -1,4 +1,5 @@
-import { View, ScrollView, Text } from 'react-native'
+import {View, ScrollView} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useState } from 'react'
 import { useValues } from '../../../../utils/context'
 import { useTheme } from '@react-navigation/native'

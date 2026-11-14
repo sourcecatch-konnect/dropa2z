@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { external } from '../../../../../../styles/externalStyle';
 import { commonStyles } from '../../../../../../styles/commonStyle';
@@ -38,6 +39,8 @@ const styles = StyleSheet.create({
     marginHorizontal: windowHeight(9),
     borderWidth: windowHeight(1),
     borderColor: appColors.lightGray,
+  
+    ...riderCardFinish,
   },
   selectedDataContainer: {
     backgroundColor: appColors.selectPrimary,
@@ -61,6 +64,8 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(10),
     alignSelf: 'center',
     marginTop: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   modalContain: {
     alignItems: 'center',
@@ -201,6 +206,8 @@ const styles = StyleSheet.create({
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
     borderRadius: windowWidth(8),
+  
+    ...riderCardFinish,
   },
   input: {
     fontFamily: appFonts.medium,
@@ -248,6 +255,8 @@ const styles = StyleSheet.create({
     marginBottom: windowHeight(5),
     borderWidth: windowHeight(1),
     borderRadius: windowWidth(8),
+  
+    ...riderCardFinish,
   },
   payment: {
     fontFamily: appFonts.medium,
@@ -396,6 +405,8 @@ const styles = StyleSheet.create({
     width: windowHeight(22),
     alignItems: 'center',
     borderRadius: windowHeight(20),
+  
+    ...riderCardFinish,
   },
   selectedText: {
     color: appColors.primary,
@@ -471,6 +482,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(4),
     justifyContent: 'center',
     marginTop: windowHeight(12),
+  
+    ...riderCardFinish,
   },
   userView: {
     paddingHorizontal: windowWidth(15),
@@ -541,6 +554,8 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(6),
     paddingHorizontal: windowWidth(16),
     borderRadius: windowHeight(25),
+  
+    ...riderCardFinish,
   },
   timerText: {
     fontSize: fontSizes.FONT20,

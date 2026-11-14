@@ -13,6 +13,7 @@
         $paymentMethodColorClasses = getPaymentStatusColorClasses();
         $ridestatuscolorClasses = getRideStatusColorClasses();
         $settings = getTaxidoSettings();
+        $training = \Modules\Taxido\Services\DriverTrainingService::status((int) $driver->id);
     @endphp
 
     <div class="row driver-dashboard">
@@ -45,6 +46,15 @@
                             </div>
                             <div class="personal-rating">
                                 <h5>{{ $driver?->name }}</h5>
+                                <p class="mt-2 mb-2">Driver training:
+                                    @if ($training['pro_driver'] ?? false)
+                                        <span class="badge bg-success">Dropa2z Pro Driver</span>
+                                    @elseif ($training['required'] ?? false)
+                                        <span class="badge bg-warning text-dark">{{ $training['completed_steps'] ?? 0 }}/{{ $training['total_steps'] ?? 6 }} practice steps complete</span>
+                                    @else
+                                        <span class="badge bg-secondary">Existing driver · optional practice</span>
+                                    @endif
+                                </p>
 
                                 <span>{{ __('taxido::static.drivers.rating') }}:
                                     @php

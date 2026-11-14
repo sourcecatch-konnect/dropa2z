@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import {
   appColors,
@@ -19,7 +20,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.whiteColor,
     borderRadius: windowHeight(1),
     padding: windowHeight(1),
-    height: windowHeight(150),
+    minHeight: 48,
+    maxHeight: 110,
   },
   border: {
     borderBottomWidth: windowHeight(0.9),
@@ -31,6 +33,8 @@ const styles = StyleSheet.create({
     marginVertical: windowHeight(15),
     margin: windowHeight(13),
     borderRadius: windowHeight(5.8),
+  
+    ...riderCardFinish,
   },
   userInfoContainer: {
     width: "75%",
@@ -118,7 +122,7 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(5),
     alignSelf: "flex-end",
     paddingVertical: windowHeight(6),
-    height: windowHeight(28),
+    minHeight: 44,
   },
   btnTitle: {
     color: appColors.whiteColor,
@@ -163,8 +167,7 @@ const styles = StyleSheet.create({
     marginVertical: windowHeight(15),
     margin: windowHeight(15),
     borderRadius: windowHeight(5),
-    position: "absolute",
-    bottom: windowHeight(5),
+    flexShrink: 0,
   },
   rowStyles: {
     marginTop: windowHeight(5),
@@ -192,6 +195,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.primary,
     alignItems: 'center',
     justifyContent: 'center'
+  ,
+    ...riderCardFinish,
   },
   user: {
     color: appColors.whiteColor,

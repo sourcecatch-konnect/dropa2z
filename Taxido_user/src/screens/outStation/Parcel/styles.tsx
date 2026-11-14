@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import {StyleSheet} from 'react-native';
 import {windowHeight} from '@src/themes';
 import { appColors } from '@src/themes'; 
@@ -10,6 +11,8 @@ const styles = StyleSheet.create({
     borderColor: appColors.primaryGray,
     borderRadius: windowHeight(5.8),
     paddingVertical: windowHeight(10),
+  
+    ...riderCardFinish,
   },
 });
 export {styles};

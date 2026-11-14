@@ -45,7 +45,7 @@
             }
 
             function setupMap() {
-                map = L.map('map_canvas').setView([21.20764938296402, 72.77381805168456], 13);
+                map = L.map('map_canvas').setView([21.0077, 75.5626], 13);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(map);

@@ -20,22 +20,30 @@ const vehicleTypeSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: builder => {
-    builder.addCase(vehicleTypeDataGet.pending, (state) => {
+    builder.addCase(vehicleTypeDataGet.pending, (state: any, action) => {
+      state.latestQuoteRequestId=action.meta.requestId;
       state.loading = true;
+      // A quote belongs to one exact itinerary. Do not leave old prices
+      // visible while a changed route is being recalculated.
+      state.vehicleTypedata = [];
+      state.success = false;
     });
 
     builder.addCase(
       vehicleTypeDataGet.fulfilled,
-      (state: any, action: PayloadAction<{ data: any; status: number }>) => {
+      (state: any, action: any) => {
+        if(state.latestQuoteRequestId!==action.meta.requestId)return;
         state.loading = false;
         state.vehicleTypedata = action.payload;
         state.statusCode = action.payload.status;
         state.success = true;
       }
     );
-    builder.addCase(vehicleTypeDataGet.rejected, (state) => {
+    builder.addCase(vehicleTypeDataGet.rejected, (state: any, action) => {
+      if(state.latestQuoteRequestId!==action.meta.requestId)return;
       state.loading = false;
       state.success = false;
+      state.vehicleTypedata = [];
     });
 
 

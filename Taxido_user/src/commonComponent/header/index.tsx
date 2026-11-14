@@ -13,7 +13,7 @@ export function Header({ value, container, backgroundColor }: HeaderTypes) {
       <View
         style={[
           styles.headerView,
-          { backgroundColor: bgFullStyle },
+          { backgroundColor: bgFullStyle, borderBottomWidth: .5, borderBottomColor: '#E5E8EB' },
           backgroundColor ? { backgroundColor } : {},
         ]}
       >

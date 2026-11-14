@@ -1,16 +1,7 @@
+import {BrandLoader} from '../../../../../../design/BrandLogo';
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from "react-native";
+import {View, TouchableOpacity, Image, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet, ScrollView, Keyboard} from 'react-native';
+import {Text, TextInput} from '../../../../../../design/Typography';
 import { WebView } from "react-native-webview";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import darkMapStyle from "@src/screens/darkMapStyle";
@@ -32,6 +23,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { userSaveLocation } from "@src/api/store/actions/saveLocationAction";
 import { external } from "@src/styles/externalStyle";
 import useStoredLocation from "@src/components/helper/useStoredLocation";
+import { indianCoordinates } from "@src/utils/deliveryPlaces";
+import {ReferenceScreen} from '../../../../../../design/ReferenceChrome';
+import { searchSavedPlaceAddresses, resolveSavedPlaceAddress, SavedPlacePrediction } from "@src/utils/savedPlaceSearch";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetView,
@@ -39,6 +33,8 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 
 interface RouteParams {
+  categoryTitle?: string;
+  categoryType?: string;
   mode?: string;
   locationID?: number;
   locationDetails?: {
@@ -79,6 +75,8 @@ const AddressInput = React.memo(
     isDark,
     darkBorder,
     primaryGray,
+    searchText,
+    onSearchChange,
   }: any) => (
     <View
       style={[
@@ -98,33 +96,34 @@ const AddressInput = React.memo(
           },
         ]}
       />
-      <Text
+      <TextInput
         style={[
           styles.textInput,
           { backgroundColor: linearColorStyle },
           { color: textColorStyle },
-        ]}>
-        {fetchingAddress
-          ? translateData.gettingAddress
-          : currentAddress
-            ? currentAddress.length > 60
-              ? currentAddress.substring(0, 60) + "..."
-              : currentAddress
-            : translateData.moveMapToSelectLocation}
-      </Text>
+        ]}
+        accessibilityLabel="Search saved-place address"
+        value={searchText ?? currentAddress}
+        onChangeText={onSearchChange}
+        placeholder={translateData?.searchAddress || "Search an address or move the map"}
+        placeholderTextColor={textColorStyle}
+        autoCorrect={false}
+        selectTextOnFocus
+        returnKeyType="search"
+      />
     </View>
   ),
 );
 
 const ConfirmButton = React.memo(
-  ({ onPress, fetchingAddress, loadingMap, translateData, whiteColor }: any) => (
+  ({ onPress, fetchingAddress, loadingMap, canConfirm = true, translateData, whiteColor }: any) => (
     <TouchableOpacity
-      style={styles.confirmButton}
+      style={[styles.confirmButton,{backgroundColor:'#157A52'}]}
       onPress={onPress}
       activeOpacity={0.7}
-      disabled={fetchingAddress || loadingMap}>
+      disabled={fetchingAddress || loadingMap || !canConfirm}>
       {fetchingAddress ? (
-        <ActivityIndicator size="large" color={whiteColor} />
+        <BrandLoader size="large" color={whiteColor} />
       ) : (
         <Text style={styles.confirmText}>{translateData.confirmLocation}</Text>
       )}
@@ -151,10 +150,10 @@ export function LocationSave() {
   const [currentAddress, setCurrentAddress] = useState("");
   const { goBack } = useNavigation();
   const route = useRoute();
-  const { mode, locationID, locationDetails } = (route.params ||
+  const { mode, locationID, locationDetails, categoryTitle, categoryType } = (route.params ||
     {}) as RouteParams;
   const [locationTitle, setLocationTitle] = useState(
-    locationDetails?.title || "",
+    locationDetails?.title || categoryTitle || "",
   );
   const dispatch = useDispatch();
   const { translateData, taxidoSettingData } = useSelector(
@@ -164,15 +163,22 @@ export function LocationSave() {
   const webViewRef = useRef<WebView>(null);
   const [loadingMap, setLoadingMap] = useState(true);
   const [isLocationInitialized, setIsLocationInitialized] = useState(false);
+  const [searchText, setSearchText] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<SavedPlacePrediction[]>([]);
+  const [searchError, setSearchError] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchCoords, setSearchCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const saveInFlight = useRef(false);
+  const searchSelection = useRef(0);
 
-  const initialLat =
+  const initialLat = searchCoords?.lat ?? (
     mode === "edit" && locationDetails?.location_coordinates?.lat
       ? locationDetails.location_coordinates.lat
-      : latitude || 21.1702;
-  const initialLng =
+      : latitude || 21.0077);
+  const initialLng = searchCoords?.lng ?? (
     mode === "edit" && locationDetails?.location_coordinates?.lng
       ? locationDetails.location_coordinates.lng
-      : longitude || 72.8311;
+      : longitude || 75.5626);
 
   const [titleError, setTitleError] = useState("");
   const [mapCenterCoords, setMapCenterCoords] = useState<{
@@ -180,10 +186,65 @@ export function LocationSave() {
     longitude: number;
   } | null>(null);
   const [fetchingAddress, setFetchingAddress] = useState(false);
+  const addressRequest = useRef(0);
   const [saveLoading, setsaveLoading] = useState(false);
   const saveLocationBottomSheetRef = useRef<BottomSheet>(null);
   const saveLocationSnapPoints = useMemo(() => ["1%", "39%"], []);
   const mapType = taxidoSettingData?.cabbooking_values?.location?.map_provider;
+
+  useEffect(() => {
+    let active = true;
+    if (searchText == null || searchText.trim().length < 3) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchSavedPlaceAddresses(searchText, Google_Map_Key);
+        if (active) setSearchResults(results);
+      } catch (error: any) {
+        if (active) setSearchError(error.message);
+      } finally {
+        if (active) setSearchLoading(false);
+      }
+    }, 350);
+    return () => { active = false; clearTimeout(timer); };
+  }, [searchText, Google_Map_Key]);
+
+  const selectSearchResult = async (item: SavedPlacePrediction) => {
+    const selection = ++searchSelection.current;
+    setSearchLoading(true);
+    try {
+      const place = await resolveSavedPlaceAddress(item.id, Google_Map_Key);
+      if (selection !== searchSelection.current) return;
+      Keyboard.dismiss();
+      ++addressRequest.current;
+      setSearchCoords({ lat: place.lat, lng: place.lng });
+      setMapCenterCoords({ latitude: place.lat, longitude: place.lng });
+      setCurrentAddress(place.fullAddress);
+      setFetchingAddress(false);
+      setSearchText(null);
+      setSearchResults([]);
+      setSearchError("");
+    } catch (error: any) {
+      if (selection === searchSelection.current) setSearchError(error.message);
+    } finally {
+      if (selection === searchSelection.current) setSearchLoading(false);
+    }
+  };
+
+  const changeSearch = (text: string) => {
+    ++searchSelection.current;
+    ++addressRequest.current;
+    setSearchText(text);
+    setCurrentAddress("");
+    setSearchResults([]);
+    setSearchError("");
+    setFetchingAddress(false);
+    setSearchLoading(false);
+  };
 
   // Memoize options to prevent re-creation on each render
   const options = useMemo(
@@ -200,7 +261,7 @@ export function LocationSave() {
   const [selectedOption, setSelectedOption] = useState(() =>
     validTypes.includes(locationDetails?.type || "")
       ? locationDetails?.type || ""
-      : options[0].value,
+      : validTypes.includes(categoryType || '') ? categoryType! : options[0].value,
   );
 
   // Memoize map HTML to prevent unnecessary re-renders
@@ -246,7 +307,7 @@ export function LocationSave() {
     </body>
     </html>
   `,
-    [latitude, longitude, Google_Map_Key, isDark],
+    [initialLat, initialLng, Google_Map_Key, isDark],
   );
 
   const OsmapHtml = useMemo(
@@ -307,35 +368,43 @@ export function LocationSave() {
   </body>
   </html>
 `,
-    [latitude, longitude, isDark],
+    [initialLat, initialLng, isDark],
   );
+  const mapSource = useMemo(() => ({ html: mapType === 'osm' ? OsmapHtml : mapHtml }), [mapType, OsmapHtml, mapHtml]);
 
   // Memoize fetchAddress to prevent recreation
   const fetchAddress = useCallback(
     async (lat: number, lng: number) => {
+      const request = ++addressRequest.current;
+      setCurrentAddress("");
+      if (!indianCoordinates(lat, lng)) {
+        setFetchingAddress(false);
+        return;
+      }
       if (!Google_Map_Key) {
         console.warn("[fetchAddress] Missing Google Map Key");
-        setCurrentAddress("Google Map Key is missing");
+        setFetchingAddress(false);
         return;
       }
 
       try {
         setFetchingAddress(true);
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${Google_Map_Key}&result_type=street_address`;
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${Google_Map_Key}`;
         const res = await fetch(url);
         const json = await res.json();
 
-        if (json?.results?.length > 0) {
-          const formattedAddress = json.results[0].formatted_address;
+        if (request !== addressRequest.current) return;
+        const result = json.results?.find((item: any) => item.address_components?.some(
+          (component: any) => component.types?.includes('country') && component.short_name === 'IN',
+        ));
+        if (json.status === 'OK' && result?.formatted_address) {
+          const formattedAddress = result.formatted_address;
           setCurrentAddress(formattedAddress);
-        } else {
-          setCurrentAddress("No address found");
         }
       } catch (err) {
         console.error("[fetchAddress] Error:", err);
-        setCurrentAddress("Address fetch failed");
       } finally {
-        setFetchingAddress(false);
+        if (request === addressRequest.current) setFetchingAddress(false);
       }
     },
     [Google_Map_Key],
@@ -352,15 +421,18 @@ export function LocationSave() {
 
   const handleWebViewMessage = useCallback(
     (event: any) => {
-      const coords = JSON.parse(event.nativeEvent.data);
-      setMapCenterCoords(coords);
-      fetchAddress(coords.latitude, coords.longitude);
+      try {
+        const coords = JSON.parse(event.nativeEvent.data);
+        if (!Number.isFinite(coords?.latitude) || !Number.isFinite(coords?.longitude)) return;
+        setMapCenterCoords(coords);
+        fetchAddress(coords.latitude, coords.longitude);
+      } catch (_) { /* Ignore map messages that are not coordinates. */ }
     },
     [fetchAddress],
   );
 
   const handleConfirmLocation = useCallback(() => {
-    if (!currentAddress || !mapCenterCoords || fetchingAddress) {
+    if (searchText !== null || searchLoading || !currentAddress || !mapCenterCoords || fetchingAddress || loadingMap) {
       Alert.alert(
         "Location Not Ready",
         "Wait for address to load or move map.",
@@ -368,23 +440,29 @@ export function LocationSave() {
       return;
     }
     saveLocationBottomSheetRef.current?.expand();
-  }, [currentAddress, mapCenterCoords, fetchingAddress]);
+  }, [currentAddress, mapCenterCoords, fetchingAddress, loadingMap, searchText, searchLoading]);
 
   const goback = useCallback(() => {
     goBack();
   }, [goBack]);
 
-  const addAddress = useCallback(() => {
+  const addAddress = useCallback(async () => {
+    if (saveInFlight.current) return;
     setsaveLoading(true);
     if (!locationTitle?.trim()) {
       setTitleError(translateData.addressRequired || "Please Enter Your Title");
       setsaveLoading(false);
       return;
     }
+    if (searchText !== null || searchLoading || !currentAddress || !indianCoordinates(mapCenterCoords?.latitude, mapCenterCoords?.longitude) || fetchingAddress || loadingMap) {
+      Alert.alert("Location Not Ready", "Please wait for a valid address before saving.");
+      setsaveLoading(false);
+      return;
+    }
     setTitleError("");
 
     const payload: SaveLocationDataInterface = {
-      title: locationTitle,
+      title: locationTitle.trim(),
       location: currentAddress,
       type: selectedOption,
       location_coordinates: {
@@ -399,28 +477,52 @@ export function LocationSave() {
         ? updateSaveLocation({ data: payload, locationID: locationID || 0 })
         : addSaveLocation(payload);
 
-    (dispatch as any)(action)
-      .unwrap()
-      .then(() => {
-        (dispatch as any)(userSaveLocation());
-        goBack();
-      })
-      .catch((error: any) => {
-        console.error(
-          `Error ${mode === "edit" ? "updating" : "adding"} location:`,
-          error,
-        );
+    saveInFlight.current = true;
+    try {
+      await (dispatch as any)(action).unwrap();
+
+      try {
+        await (dispatch as any)(userSaveLocation()).unwrap();
+      } catch (refreshError) {
+        console.error("Location saved, but saved locations failed to refresh:", refreshError);
         Alert.alert(
-          "Error",
-          `Failed to ${mode === "edit" ? "update" : "add"} location.`,
+          "Location Saved",
+          "The location was saved, but the list could not refresh. Reopen Saved Locations to try again.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                saveLocationBottomSheetRef.current?.close();
+                goBack();
+              },
+            },
+          ],
         );
-      })
-      .finally(() => {
-        saveLocationBottomSheetRef.current?.close();
-        setsaveLoading(false);
-      });
+        return;
+      }
+
+      saveLocationBottomSheetRef.current?.close();
+      goBack();
+    } catch (error: any) {
+      console.error(
+        `Error ${mode === "edit" ? "updating" : "adding"} location:`,
+        error,
+      );
+      Alert.alert(
+        "Error",
+        error?.message ||
+          `Failed to ${mode === "edit" ? "update" : "add"} location. Please try again.`,
+      );
+    } finally {
+      saveInFlight.current = false;
+      setsaveLoading(false);
+    }
   }, [
     locationTitle,
+    fetchingAddress,
+    loadingMap,
+    searchText,
+    searchLoading,
     currentAddress,
     selectedOption,
     mapCenterCoords,
@@ -588,11 +690,11 @@ export function LocationSave() {
   );
 
   return (
-    <View style={external.main}>
+    <ReferenceScreen><View style={external.main}>
       <View style={{ flexDirection: "row" }}>
         <BackButton onPress={goback} linearColorStyle={linearColorStyle} />
         <AddressInput
-          fetchingAddress={fetchingAddress}
+          fetchingAddress={fetchingAddress || searchLoading}
           currentAddress={currentAddress}
           translateData={translateData}
           linearColorStyle={linearColorStyle}
@@ -601,11 +703,28 @@ export function LocationSave() {
           isDark={isDark}
           darkBorder={appColors.darkBorder}
           primaryGray={appColors.primaryGray}
+          searchText={searchText}
+          onSearchChange={changeSearch}
         />
       </View>
+      {searchText !== null && (
+        <ScrollView keyboardShouldPersistTaps="handled" style={{ position: 'absolute', top: windowHeight(55), left: windowWidth(10), right: windowWidth(10), maxHeight: windowHeight(220), zIndex: 10, elevation: 8, borderRadius: 8, backgroundColor: bgFullStyle }}>
+          {searchLoading && <BrandLoader color={appColors.primary} />}
+          {!!searchError && <Text style={{ padding: 12, color: textColorStyle }}>{searchError}</Text>}
+          {!searchLoading && !searchError && searchText.trim().length >= 3 && searchResults.length === 0 && <Text style={{ padding: 12, color: textColorStyle }}>No matching addresses. Try a fuller address or choose on the map.</Text>}
+          {searchResults.map(item => (
+            <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Select ${item.label}`} onPress={() => selectSearchResult(item)} style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: appColors.border }}>
+              <Text style={{ color: textColorStyle }}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity onPress={() => { Keyboard.dismiss(); changeSearch(''); setSearchText(null); if (mapCenterCoords) fetchAddress(mapCenterCoords.latitude, mapCenterCoords.longitude); }} style={{ padding: 14 }}>
+            <Text style={{ color: appColors.primary }}>Choose on map</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
       <View style={styles.mapView}>
         {loadingMap && (
-          <ActivityIndicator
+          <BrandLoader
             style={StyleSheet.absoluteFill}
             size="large"
             color={appColors.primary}
@@ -613,7 +732,8 @@ export function LocationSave() {
         )}
         <WebView
           ref={webViewRef}
-          source={{ html: mapType ? mapHtml : OsmapHtml }}
+          source={mapSource}
+          onLoadStart={() => setLoadingMap(true)}
           onLoadEnd={() => setLoadingMap(false)}
           onMessage={handleWebViewMessage}
           style={{ flex: 1 }}
@@ -621,7 +741,7 @@ export function LocationSave() {
           domStorageEnabled={true}
           startInLoadingState={true}
           renderLoading={() => (
-            <ActivityIndicator
+            <BrandLoader
               style={StyleSheet.absoluteFill}
               size="large"
               color={appColors.primary}
@@ -634,7 +754,8 @@ export function LocationSave() {
       </View>
       <ConfirmButton
         onPress={handleConfirmLocation}
-        fetchingAddress={fetchingAddress}
+        fetchingAddress={fetchingAddress || searchLoading}
+        canConfirm={searchText === null && Boolean(currentAddress)}
         loadingMap={loadingMap}
         translateData={translateData}
         whiteColor={appColors.whiteColor}
@@ -658,10 +779,10 @@ export function LocationSave() {
           backgroundColor: appColors.primary,
           width: "13%",
         }}
-        backgroundStyle={{ backgroundColor: bgFullStyle }}>
+        backgroundStyle={{ backgroundColor: bgFullStyle }} android_keyboardInputMode="adjustResize" >
         {bottomSheetContent}
       </BottomSheet>
-    </View>
+    </View></ReferenceScreen>
   );
 }
 

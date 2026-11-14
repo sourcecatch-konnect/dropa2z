@@ -1,6 +1,7 @@
 import { useTheme } from '@react-navigation/native'
 import React from 'react'
-import { View, Text, Image, TouchableOpacity } from 'react-native'
+import {View, Image, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import styles from './styles'
 import CustomButtonProps from './types'
 import { useValues } from '../../../../../utils/context'

@@ -1,4 +1,6 @@
-import { View, Text, Image, TouchableOpacity, TextInput, FlatList, ScrollView } from 'react-native';
+import {CardHeading} from '../../design/CardHeading';
+import {View, Image, TouchableOpacity, FlatList, ScrollView} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import React, { useState, useEffect } from 'react';
 import { Header, Button, RadioButton, notificationHelper } from '@src/commonComponent';
 import { useValues } from "@src/utils/context/index";
@@ -419,15 +421,7 @@ export function PaymentMethod() {
             </>
           )}
 
-          <Text
-            style={[
-              styles.bill,
-              { color: textColorStyle },
-              { marginTop: couponError ? windowHeight(40) : null }
-            ]}
-          >
-            {translateData.billSummary}
-          </Text>
+          <CardHeading icon="wallet" title={translateData.billSummary || "Fare Summary"}/>
           <View
             style={[
               styles.billContainer,
@@ -534,13 +528,7 @@ export function PaymentMethod() {
             </View>
 
           </View>
-          <Text
-            style={[
-              styles.payment,
-              { color: textColorStyle, textAlign: textRTLStyle },
-            ]}>
-            {translateData.paymentMethod}
-          </Text>
+          <CardHeading icon="wallet" title={translateData.paymentMethod || "Payment"}/>
           <View
             style={{
               flexDirection: viewRTLStyle,

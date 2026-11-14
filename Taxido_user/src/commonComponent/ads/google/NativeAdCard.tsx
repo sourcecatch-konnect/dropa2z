@@ -1,6 +1,7 @@
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {View, StyleSheet} from 'react-native';
+import {Text} from '../../../design/Typography';
 import {
     NativeAd,
     NativeAdView,

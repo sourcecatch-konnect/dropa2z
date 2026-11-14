@@ -1,5 +1,8 @@
-import { View, Text, Image, TouchableOpacity, NativeModules } from 'react-native'
-import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react'
+import {View, Image, TouchableOpacity, NativeModules} from 'react-native';
+import {Text} from '../../../../design/Typography';
+import {DriverRequestCard} from '../../../../design/DriverRequestCard';
+import {offerAvailable} from '../../../../utils/driverOffer';
+import React, { useState, useImperativeHandle, forwardRef, useEffect, useRef } from 'react'
 import Icons from '../../../../utils/icons/icons'
 import styles from './styles'
 import { useValues } from '../../../../utils/context'
@@ -37,9 +40,14 @@ export const UpcomingRide = forwardRef(function UpcomingRide(
   const { navigate } = useNavigation<any>()
   const { selfDriver } = useSelector((state: any) => state.account)
   const [declined, setDeclined] = useState<boolean>(false)
+  const acceptingRideIds = useRef<Set<string>>(new Set())
   const formattedDate = formatDates(ride?.created_at)
   const { currentLatitude, currentLongitude } = useSmartLocation()
   const [distance, setDistance] = useState<string>('')
+  const routeLocations: string[] = Array.isArray(ride?.locations)
+    ? ride.locations.filter((location: any) => typeof location === 'string' && location.trim())
+    : []
+  const hasIntermediateStops = routeLocations.length > 2
 
   useEffect(() => {
     if (!ride) {
@@ -83,56 +91,67 @@ export const UpcomingRide = forwardRef(function UpcomingRide(
     }
   }
 
-  const acceptRide = (rideId: any) => {
-    const payload: any = {
-      ride_request_id: rideId,
+  const acceptRide = async (rideId: any): Promise<boolean> => {
+    const rideRequestKey = String(rideId ?? '')
+    if (!rideRequestKey || acceptingRideIds.current.has(rideRequestKey)) {
+      return false
     }
+    if(!offerAvailable(ride)){onRideDeclined?.(rideId);notificationHelper('','This booking offer is no longer available.','error');return false;}
 
-    dispatch(acceptRequestValue(payload))
-      .unwrap()
-      .then(async res => {
-        if (res?.id) {
-          dispatch(rideDataGet(res?.id))
-          const rideDetails = res
+    acceptingRideIds.current.add(rideRequestKey)
+    try {
+      const response = await dispatch(
+        acceptRequestValue({ ride_request_id: rideId }),
+      ).unwrap()
+      const rideDetails = [response?.data?.data, response?.data, response?.ride, response]
+        .find(value => value?.id)
 
-          if (
-            rideDetails?.service_category?.service_category_type === 'rental'
-          ) {
-            dispatch(rideDataGets())
-            notificationHelper(
-              translateData.rideAccepted,
-              translateData.checkRides,
-              'success',
-            )
-          } else {
-            if (ride?.service_category?.service_category_type === 'schedule') {
-              dispatch(rideDataGets())
-              if (notificationValue == true) {
-                onRideDeclined(rideId)
-              }
-              notificationHelper('', translateData.rideScheduled, 'success')
-            } else {
-              playRingtone()
-              onRideDeclined(rideId)
-              navigate('AcceptFare', {
-                ride_Id: rideDetails?.id,
-                ride_Details: rideDetails,
-              })
-              dispatch(rideDataGets())
-            }
-          }
-        } else {
-          notificationHelper('', res?.message, 'error')
-        }
-      })
-      .catch(err => {
-        console.log('error', err)
-      })
+      if (!rideDetails?.id) {
+        throw new Error(
+          response?.message || 'The server did not confirm this delivery acceptance.',
+        )
+      }
+      if(rideDetails?.driver?.id&&String(rideDetails.driver.id)!==String(selfDriver?.id))throw Error('This booking has been assigned to another driver.');
+
+      dispatch(rideDataGet(rideDetails.id))
+
+      if (rideDetails?.service_category?.service_category_type === 'rental') {
+        onRideDeclined?.(rideId)
+        dispatch(rideDataGets())
+        notificationHelper(
+          translateData.rideAccepted,
+          translateData.checkRides,
+          'success',
+        )
+      } else if (ride?.service_category?.service_category_type === 'schedule') {
+        dispatch(rideDataGets())
+        onRideDeclined?.(rideId)
+        notificationHelper('', translateData.rideScheduled, 'success')
+      } else {
+        playRingtone()
+        onRideDeclined(rideId)
+        navigate('AcceptFare', {
+          ride_Id: rideDetails.id,
+          ride_Details: rideDetails,
+        })
+        dispatch(rideDataGets())
+      }
+
+      return true
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'The delivery could not be accepted. Please try again.'
+      console.error('[UpcomingRide] Ride acceptance failed:', message)
+      if(/already.*(accept|assign)|assigned to another|offer.*expired|request.*(expired|cancelled|canceled)|no longer available/i.test(message))onRideDeclined?.(rideId)
+      notificationHelper('', message, 'error')
+      return false
+    } finally {
+      acceptingRideIds.current.delete(rideRequestKey)
+    }
   }
 
-  useImperativeHandle(ref, () => ({
-    acceptRide,
-  }))
 
   const acceptAmbulance = (rideId: any) => {
     onRideDeclined(rideId)
@@ -179,21 +198,20 @@ export const UpcomingRide = forwardRef(function UpcomingRide(
 
 
   const declineRide = async (rideId: any) => {
-    onRideDeclined(rideId)
     const driverId = selfDriver?.id
     if (!rideId || !driverId) {
       console.warn('[UpcomingRide] Missing rideId or driverId for decline', { rideId, driverId });
-      return
+      return false
     }
-    setDeclined(true)
     const payload: any = {
       ride_request_id: rideId,
     }
-    dispatch(rejectRequestValue(payload))
-      .unwrap()
-      .then(async res => {
-        console.log('[UpcomingRide] Reject API response:', res);
-      })
+    try{
+      await dispatch(rejectRequestValue(payload)).unwrap()
+      setDeclined(true)
+      onRideDeclined?.(rideId)
+      return true
+    }catch(error:any){notificationHelper('',error?.message||'Could not decline this booking. Please try again.','error');return false;}
   }
 
   const calculateDrivingDistance = () => {
@@ -258,14 +276,20 @@ export const UpcomingRide = forwardRef(function UpcomingRide(
   }
 
   const declineRideInternal = () => {
-    declineRide(ride?.id)
-    if (onRideDeclined) onRideDeclined(ride?.id)
+    return declineRide(ride?.id)
   }
 
   useImperativeHandle(ref, () => ({
+    acceptRide,
     decline: declineRideInternal,
     getRideId: () => ride?.id,
   }))
+
+  if(['parcel','freight'].includes(ride?.service?.service_type)||ride?.service_category?.service_category_type==='package')return <DriverRequestCard
+    offer={ride} dark={isDark} pickupDistance={distance&&distance!=='Error'?distance:undefined}
+    onAccept={()=>acceptRide(ride?.id)} onDecline={()=>declineRide(ride?.id)}
+    onExpired={()=>{onRideDeclined?.(ride?.id);notificationHelper('','This booking offer has expired or is no longer available.','error');}}
+    onDetails={()=>gotoInfo(ride)} bidding={taxidoSettingData?.cabbooking_values?.activation?.bidding==1&&ride?.service_category?.service_category_type!=='package'}/>
 
   return (
     <TouchableOpacity
@@ -353,7 +377,11 @@ export const UpcomingRide = forwardRef(function UpcomingRide(
                 </View>
               )}
               <View style={styles.rideContainer}>
-                <Text style={[styles.userName, { color: colors.text }]}>
+                <Text
+                  style={[styles.userName, { color: colors.text }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {ride?.rider?.name}
                 </Text>
                 <View
@@ -626,7 +654,7 @@ export const UpcomingRide = forwardRef(function UpcomingRide(
                 </>
               )}
             </View>
-            <View>
+            <View style={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
               {ride?.service?.service_type !== 'ambulance' && (
                 <>
                   <Text
@@ -634,8 +662,10 @@ export const UpcomingRide = forwardRef(function UpcomingRide(
                       styles.pickup,
                       { color: colors.text, textAlign: textRtlStyle },
                     ]}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
                   >
-                    {ride?.locations?.[0]?.substring(0, 35) + '...'}
+                    {ride?.locations?.[0]}
                   </Text>
 
                   <Text
@@ -671,15 +701,79 @@ export const UpcomingRide = forwardRef(function UpcomingRide(
                   styles.drop,
                   { color: colors.text, textAlign: textRtlStyle },
                 ]}
+                numberOfLines={2}
+                ellipsizeMode="tail"
               >
-                {ride?.locations?.[ride?.locations?.length - 1]?.substring(
-                  0,
-                  35,
-                ) + '...'}
+                {ride?.locations?.[ride?.locations?.length - 1]}
               </Text>
             </View>
           </View>
         </View>
+        {hasIntermediateStops && (
+          <View
+            style={{
+              marginTop: windowHeight(1),
+              paddingHorizontal: windowWidth(2.5),
+              paddingVertical: windowHeight(1),
+              borderRadius: windowHeight(0.8),
+              backgroundColor: isDark ? colors.background : appColors.graybackground,
+            }}
+          >
+            <Text
+              style={{
+                color: colors.text,
+                fontFamily: appFonts.medium,
+                marginBottom: windowHeight(0.4),
+              }}
+            >
+              {`Full route · ${routeLocations.length - 2} ${routeLocations.length - 2 === 1 ? 'stop' : 'stops'}`}
+            </Text>
+            {routeLocations.map((location, index) => {
+              const lastIndex = routeLocations.length - 1
+              const pointLabel = index === 0
+                ? 'P'
+                : index === lastIndex
+                  ? 'D'
+                  : String(index)
+
+              return (
+                <View
+                  key={`${index}-${location}`}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    marginTop: index === 0 ? 0 : windowHeight(0.45),
+                  }}
+                >
+                  <View
+                    style={{
+                      width: windowHeight(2.5),
+                      height: windowHeight(2.5),
+                      borderRadius: windowHeight(1.25),
+                      backgroundColor: index === lastIndex ? appColors.primary : colors.card,
+                      borderWidth: 1,
+                      borderColor: appColors.primary,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: windowWidth(2),
+                    }}
+                  >
+                    <Text style={{ color: index === lastIndex ? appColors.white : appColors.primary, fontSize: fontSizes.FONT2HALF, fontFamily: appFonts.medium }}>
+                      {pointLabel}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{ color: colors.text, flex: 1, fontFamily: appFonts.regular }}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {location}
+                  </Text>
+                </View>
+              )
+            })}
+          </View>
+        )}
         {taxidoSettingData?.cabbooking_values?.activation?.bidding == 1 &&
           ride?.service_category?.service_category_type != 'package' && ride?.service?.service_type !== 'ambulance' && (
             <Text

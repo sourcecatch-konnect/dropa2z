@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appColors } from '@src/themes';
 import { windowHeight, windowWidth } from "@src/themes";
@@ -15,7 +16,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: windowHeight(5),
-    },
+    
+    ...riderCardFinish,
+  },
     shield: {
         height: windowHeight(35),
         width: windowWidth(50),
@@ -23,7 +26,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: windowHeight(5),
-    },
+    
+    ...riderCardFinish,
+  },
 });
 
 export default styles

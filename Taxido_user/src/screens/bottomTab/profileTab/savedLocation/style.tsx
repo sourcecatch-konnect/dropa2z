@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import { StyleSheet } from "react-native";
 import { commonStyles } from "../../../../styles/commonStyle";
 import { external } from "../../../../styles/externalStyle";
@@ -6,7 +8,7 @@ import { appColors, appFonts, windowHeight, windowWidth, fontSizes } from "@src/
 const styles = StyleSheet.create({
   mainView: {
     marginTop: windowHeight(10),
-    marginBottom: windowHeight(60),
+    marginBottom:16,
   },
   container: {
     ...commonStyles.flexContainer,
@@ -16,7 +18,11 @@ const styles = StyleSheet.create({
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
     marginBottom: windowHeight(10),
-    borderRadius: windowHeight(5.5),
+    borderRadius: 14,
+  
+    ...referenceSurfaces.card,
+  
+    ...riderCardFinish,
   },
   headerContainer: {
     backgroundColor: appColors.whiteColor,
@@ -34,6 +40,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(36),
     alignItems: "center",
     justifyContent: "center",
+  
+    ...referenceSurfaces.icon,
   },
   detailsContainer: {
     ...external.mh_8,
@@ -42,9 +50,13 @@ const styles = StyleSheet.create({
   addressContainer: {
     backgroundColor: appColors.whiteColor,
     ...commonStyles.shadowContainer,
-    borderRadius: windowHeight(5.5),
+    borderRadius: 14,
     paddingHorizontal: windowWidth(24),
     paddingVertical: windowHeight(11.5),
+  
+    ...referenceSurfaces.card,
+  
+    ...riderCardFinish,
   },
   dashedLine: {
     height: windowHeight(0.1),
@@ -71,16 +83,20 @@ const styles = StyleSheet.create({
     marginHorizontal: windowWidth(20),
   },
   backButton: {
-    height: windowHeight(30),
-    width: windowHeight(30),
+    height:44,
+    width:44,
     borderWidth: windowHeight(1),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: windowHeight(4),
+    borderRadius: 14,
+  
+    ...referenceSurfaces.icon,
   },
   headerTitle: {
     fontSize: fontSizes.FONT23,
     fontFamily: appFonts.medium,
+  
+    ...referenceSurfaces.title,
   },
   noDataContainer: {
     height: "90%",
@@ -105,6 +121,8 @@ const styles = StyleSheet.create({
     width: windowWidth(260),
   },
   locationListView: {
+    flex:1,
+    minHeight:0,
     marginTop: windowHeight(10),
   },
   pickLocationView: {

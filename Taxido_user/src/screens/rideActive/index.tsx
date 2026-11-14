@@ -1,13 +1,9 @@
-import {
-  Text,
-  View,
-  TouchableOpacity,
-  Modal,
-  Linking,
-  ActivityIndicator,
-  Image,
-  Platform,
-} from "react-native";
+import {mapVehicleMarker} from '../../design/mapVehicleMarkers';
+import {BrandLoader} from '../../design/BrandLogo';
+import {PickupCard} from '../../design/PickupCard';
+import {reportBookingRouteEta} from '../../utils/bookingSignals';
+import {View, TouchableOpacity, Modal, Linking, ActivityIndicator, Image, Platform} from 'react-native';
+import {Text} from '../../design/Typography';
 import React, {
   useState,
   useEffect,
@@ -32,7 +28,9 @@ import {
   DollarCoin,
   Info,
 } from "@utils/icons";
-import { useRoute } from "@react-navigation/native";
+import {useRoute,useIsFocused} from "@react-navigation/native";
+import {resumeBooking} from "../../utils/bookingNavigation";
+import {bookingSnapshot} from "../../utils/bookingPeople";
 import {
   appColors,
   appFonts,
@@ -47,22 +45,24 @@ import { DriverData } from "./component/driverData/index";
 import { useDispatch, useSelector } from "react-redux";
 import { cancelationDataGet } from "../../api/store/actions/cancelationAction";
 import { sosData } from "../../api/store/actions/sosAction";
-import { CustomBackHandler } from "@src/components";
-import { allRide, allRides, rideDataPut } from "@src/api/store/actions/allRideAction";
+import {DeliveryBackButton} from '../../design/DeliveryBackButton';
+import { allRide, allRides } from "@src/api/store/actions/allRideAction";
 import { useAppNavigation } from "@src/utils/navigation";
-import GetLocation from "react-native-get-location";
 import { external } from "@src/styles/externalStyle";
 import Sound from "react-native-sound";
-import { requestLocationPermission } from "@src/components/helper/permissionHelper";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetModalProvider,
   BottomSheetView,
+  BottomSheetTextInput,
+  BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
-import getEchoInstance from "@src/utils/echo";
+import getEchoInstance,{releaseScopedEcho} from "@src/utils/echo";
 import { AppDispatch } from "@src/api/store";
 import NativeAdComponent from "@src/commonComponent/ads/google/NativeAdCard";
+import { cancelDelivery } from "@src/api/services/allRideService";
+import { apiErrorMessage } from "@src/api/responseError";
 
 interface Location {
   latitude: number;
@@ -74,10 +74,17 @@ interface CancelDataItem {
   title: string;
 }
 
+import {mergeBookingSnapshot, contactPhone, bookingPhoto} from '../../utils/bookingPeople';
+
 export function RideActive() {
   const dispatch = useDispatch<AppDispatch>();
   const route = useRoute();
-  const { activeRideOTP, filteredLocations }: any = route?.params;
+  const focused=useIsFocused();
+  const focusedRef=useRef(focused);focusedRef.current=focused;
+  const { activeRideOTP: routeRide, filteredLocations }: any = route?.params || {};
+  const { rideData } = useSelector((state: any) => state.allRide);
+  const [livePickup,setLivePickup]=useState<any>(null);
+  const activeRideOTP = mergeBookingSnapshot(mergeBookingSnapshot(routeRide, rideData),livePickup);
   const [driverLocation, setDriverLocation] = useState<Location | null>(
     activeRideOTP?.driver?.lat && activeRideOTP?.driver?.lng
       ? {
@@ -100,24 +107,33 @@ export function RideActive() {
     isDark,
   } = useValues();
   const [modalVisible, setModalVisible] = useState(false);
-  const { navigate }: any = useAppNavigation();
-  const { rideData } = useSelector((state: any) => state.allRide);
-  const { canceldata } = useSelector((state: any) => state.cancelationReason);
+  const navigation=useAppNavigation();
+  const {navigate}=navigation;
+  const { canceldata, loading: reasonsLoading } = useSelector((state: any) => state.cancelationReason);
+  const cancelReasons: CancelDataItem[] = Array.isArray(canceldata?.data)
+    ? canceldata.data : Array.isArray(canceldata) ? canceldata : [];
+  const [customCancelReason, setCustomCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState("");
+  const cancelInFlight = useRef(false);
   const { sosValue } = useSelector((state: any) => state.sos);
   const { translateData, taxidoSettingData } = useSelector(
     (state: any) => state.setting,
   );
-  const [location, setLocation] = useState<Location | null>(
-    activeRideOTP?.location_coordinates?.[0]
-      ? {
-        latitude: activeRideOTP.location_coordinates[0].latitude,
-        longitude: activeRideOTP.location_coordinates[0].longitude,
-      }
-      : null,
-  );
-  const [_heading, setHeading] = useState(0);
-  const markerRef = useRef<any>(null);
-  const previousLocation = useRef<Location | null>(null);
+  const location = useMemo<Location | null>(() => {
+    const pickup = activeRideOTP?.location_coordinates?.[0];
+    if (!pickup) return null;
+
+    const latitude = Number(pickup.latitude ?? pickup.lat);
+    const longitude = Number(pickup.longitude ?? pickup.lng);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
+    return { latitude, longitude };
+  }, [
+    activeRideOTP?.location_coordinates?.[0]?.latitude,
+    activeRideOTP?.location_coordinates?.[0]?.longitude,
+    activeRideOTP?.location_coordinates?.[0]?.lat,
+    activeRideOTP?.location_coordinates?.[0]?.lng,
+  ]);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const snapPointsMain = useMemo(() => {
     const adsEnabled =
@@ -136,6 +152,7 @@ export function RideActive() {
     return [collapsed, expanded];
   }, [taxidoSettingData?.cabbooking_values?.ads?.native_enable]);
   const ambulanceRef = useRef<BottomSheetModal>(null);
+  const driverInfoSheetRef = useRef<BottomSheetModal>(null);
   const sosSheetRef = useRef<BottomSheetModal>(null);
   const driverWaitSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["38%"], []);
@@ -144,19 +161,21 @@ export function RideActive() {
   const isSoundPlayingRef = useRef(false);
   const { zoneValue } = useSelector((state: any) => state.zone);
   useEffect(() => {
-    if (rideData?.ride_status?.slug == "arrived") {
+    if (activeRideOTP?.ride_status?.slug == "arrived") {
       setIsArriving(false);
-      setDriverArrivedTime(rideData?.updated_at);
-    } else if (rideData?.ride_status?.slug == "accepted") {
+      setDriverArrivedTime(activeRideOTP?.updated_at);
+    } else if (activeRideOTP?.ride_status?.slug == "accepted") {
       setIsArriving(true);
     }
-  }, [rideData]);
+  }, [activeRideOTP?.ride_status?.slug,activeRideOTP?.updated_at]);
   useEffect(() => {
-    // @ts-ignore - sosData accepts zone_id parameter
-    dispatch(sosData({ zone_id: zoneValue.id } as any));
-
+    if(!focused)return;
+    if(zoneValue?.id)dispatch(sosData({zone_id:zoneValue.id} as any));
     bottomSheetRef.current?.present();
-  }, [dispatch, zoneValue.id]);
+    return()=>{
+      [bottomSheetRef,ambulanceRef,driverInfoSheetRef,sosSheetRef,driverWaitSheetRef].forEach(ref=>ref.current?.dismiss());
+    };
+  }, [dispatch,zoneValue?.id,focused]);
 
   const playArrivalSound = useCallback(() => {
     if (isSoundPlayingRef.current) return;
@@ -220,194 +239,49 @@ export function RideActive() {
   );
 
   useEffect(() => {
-    hasNavigatedRef.current = false;
-    if (!activeRideOTP?.id) return;
-
-    let echoInstance: any = null;
-    let pollingInterval: any = null;
-
-    const setupStatusListener = async () => {
-      try {
-        echoInstance = await getEchoInstance();
-        const rideId = activeRideOTP.id;
-        const statusChannel = `ride-status.${rideId}`;
-
-        const checkRideStatus = () => {
-          dispatch(allRide({ ride_id: rideId }))
-            .unwrap()
-            .then((res: any) => {
-              const rideData = res?.data || res;
-              const status = rideData?.ride_status?.slug?.toLowerCase();
-
-              if (status === "started" && !hasNavigatedRef.current) {
-                hasNavigatedRef.current = true;
-                if (pollingInterval) clearInterval(pollingInterval);
-
-                if (rideData?.service_category?.service_category_type === "package") {
-                  stopTimer();
-                  navigate("StopTimer", { rideId: activeRideOTP?.id });
-                } else {
-                  resetTimer();
-                  navigate("Payment", { rideId: activeRideOTP?.id });
-                }
-              } else if (status === "arrived") {
-                setIsArriving(false);
-                if (rideData?.updated_at) {
-                  setDriverArrivedTime(rideData.updated_at);
-                }
-                playArrivalSound();
-              }
-            })
-            .catch((err: any) => {
-              console.error("[RideActive] Failed to poll ride state:", err);
-            });
-        };
-
-        // 1. Fetch the current ride state on mount
-        checkRideStatus();
-
-        // 2. Continuous polling fallback every 5 seconds
-        pollingInterval = setInterval(checkRideStatus, 5000);
-
-        // 3. Listen for real-time status updates
-        echoInstance
-          .private(statusChannel)
-          .listen(".ride.status", (e: any) => {
-            if (hasNavigatedRef.current) return;
-
-            const data = e.data || e;
-            const status = data?.ride_status?.slug?.toLowerCase();
-
-
-            if (status === "started") {
-              hasNavigatedRef.current = true;
-              if (pollingInterval) clearInterval(pollingInterval);
-
-              if (data?.service_category?.service_category_type === "package") {
-                stopTimer();
-                navigate("StopTimer", { rideId: activeRideOTP?.id });
-              } else {
-                resetTimer();
-                navigate("Payment", { rideId: activeRideOTP?.id });
-              }
-            } else if (status === "arrived") {
-              notificationHelper("", translateData.driverArrived, "success");
-              setIsArriving(false);
-
-              if (data?.updated_at) {
-                setDriverArrivedTime(data.updated_at);
-              } else {
-                setDriverArrivedTime(new Date().toISOString());
-              }
-
-              playArrivalSound();
-            } else if (status === "cancelled") {
-              notificationHelper("", translateData.rideCancelled, "error");
-              if (pollingInterval) clearInterval(pollingInterval);
-              dispatch(allRides());
-              resetTimer();
-              navigate("MyTabs");
-            }
-          });
-      } catch (error) {
-        console.error("Error setting up Echo listener in RideActive:", error);
+    if(!focused||!routeRide?.id)return;
+    hasNavigatedRef.current=false;
+    let disposed=false,busy=false,echoInstance:any=null;
+    const rideId=Number(routeRide.id),scope=`rider-pickup:${rideId}:${Date.now()}`;
+    const receive=(response:any)=>{
+      if(disposed||!focusedRef.current||hasNavigatedRef.current)return;
+      const current=bookingSnapshot(response);
+      if(Number(current?.id)!==rideId)return;
+      setLivePickup(previous=>mergeBookingSnapshot(Number(previous?.id)===rideId?previous:routeRide,current));
+      const status=current?.ride_status?.slug?.toLowerCase();
+      if(['started','in_progress','on_going'].includes(status)){
+        hasNavigatedRef.current=true;resetTimer();
+        bottomSheetRef.current?.dismiss();
+        resumeBooking(navigation,'Payment',{rideId});
+      }else if(status==='arrived'){
+        setIsArriving(false);setDriverArrivedTime(current.updated_at);playArrivalSound();
+      }else if(['cancelled','canceled','completed'].includes(status)){
+        hasNavigatedRef.current=true;resetTimer();bottomSheetRef.current?.dismiss();
+        dispatch(allRides());navigation.navigate('MyTabs');
       }
     };
-
-    setupStatusListener();
-
-    return () => {
-      if (pollingInterval) clearInterval(pollingInterval);
-      if (echoInstance && activeRideOTP?.id) {
-        echoInstance.leave(`ride-status.${activeRideOTP.id}`);
-      }
+    const refresh=async()=>{
+      if(disposed||busy)return;busy=true;
+      try{
+        const result=await dispatch(allRide({ride_id:rideId})).unwrap();
+        if(result?.status>=200&&result.status<300)receive(result.data);
+      }catch{/* Preserve the last confirmed pickup during a connection failure. */}
+      finally{busy=false;}
     };
-  }, [
-    activeRideOTP?.id,
-    dispatch,
-    navigate,
-    playArrivalSound,
-  ]);
+    void refresh();
+    const timer=setInterval(refresh,5000);
+    void(async()=>{
+      try{
+        const echo=await getEchoInstance(scope);
+        if(disposed){releaseScopedEcho(scope,echo);return;}
+        echoInstance=echo;
+        echo?.private(`ride-status.${rideId}`).listen('.ride.status',receive);
+      }catch{/* The focused polling fallback remains available. */}
+    })();
+    return()=>{disposed=true;clearInterval(timer);releaseScopedEcho(scope,echoInstance);};
+  },[routeRide?.id,focused,dispatch,navigation,playArrivalSound]);
 
-  const calculateBearing = useCallback(
-    (startLat: number, startLng: number, endLat: number, endLng: number) => {
-      const toRadians = (degree: number) => degree * (Math.PI / 180);
-      const toDegrees = (radian: number) => radian * (180 / Math.PI);
-
-      const lat1 = toRadians(startLat);
-      const lat2 = toRadians(endLat);
-      const dLng = toRadians(endLng - startLng);
-
-      const y = Math.sin(dLng) * Math.cos(lat2);
-      const x =
-        Math.cos(lat1) * Math.sin(lat2) -
-        Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-
-      const bearing = toDegrees(Math.atan2(y, x));
-      return (bearing + 360) % 360;
-    },
-    [],
-  );
-
-  const getCurrentLocation = useCallback(() => {
-    GetLocation.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 15000,
-    })
-      .then(loc => {
-        const newLocation: Location = {
-          latitude: loc.latitude,
-          longitude: loc.longitude,
-        };
-
-        if (previousLocation.current) {
-          const newHeading = calculateBearing(
-            previousLocation.current.latitude,
-            previousLocation.current.longitude,
-            newLocation.latitude,
-            newLocation.longitude,
-          );
-          setHeading(newHeading);
-        }
-
-        animateMarker(newLocation);
-        setLocation(newLocation);
-        previousLocation.current = newLocation;
-      })
-      .catch(_error => {
-        // Prefix with _ to indicate unused
-        // const { code, message } = error;
-      });
-  }, [calculateBearing]);
-
-  const startTrackingLocation = useCallback(() => {
-    getCurrentLocation();
-    const locationInterval = setInterval(() => {
-      getCurrentLocation();
-    }, 1000);
-    return () => clearInterval(locationInterval);
-  }, [getCurrentLocation]);
-
-  const requestAndTrackLocation = useCallback(async () => {
-    const granted = await requestLocationPermission();
-    if (granted) {
-      startTrackingLocation();
-    } else {
-      console.warn("Location permission denied");
-    }
-  }, [startTrackingLocation]);
-
-  const animateMarker = (newLocation: Location) => {
-    if (markerRef.current) {
-      markerRef.current.animateMarkerToCoordinate(newLocation, 500);
-    }
-  };
-
-  useEffect(() => {
-    requestAndTrackLocation();
-  }, [requestAndTrackLocation]);
-
-  const zoneId = rideData?.zone?.id || activeRideOTP?.zone?.id;
+  const zoneId = activeRideOTP?.zone?.id;
 
   useEffect(() => {
     if (zoneId) {
@@ -437,13 +311,11 @@ export function RideActive() {
     [],
   );
 
-  // Calculate arrival time based on distance
-  const calculateArrivalTime = useCallback((distanceKm: number) => {
-    const avgSpeed = 25; // km/h average city speed
-    const timeHours = distanceKm / avgSpeed;
-    const timeMinutes = Math.ceil(timeHours * 60);
-    return Math.max(1, timeMinutes); // Minimum 1 minute
-  }, []);
+  const handlePickupDuration = useCallback((seconds: number) => {
+    reportBookingRouteEta(activeRideOTP?.id,'pickup',seconds);
+    if (typeof seconds === 'number' && Number.isFinite(seconds) && seconds >= 0) setArrivalTime(`${Math.max(1, Math.ceil(seconds / 60))} min`);
+    else setArrivalTime('ETA unavailable');
+  }, [activeRideOTP?.id]);
 
   // Function to calculate estimated arrival time
   const calculateEstimatedArrivalTime = useCallback(
@@ -478,46 +350,16 @@ export function RideActive() {
     [],
   );
 
-  // Update the arrival time calculation to also set estimated arrival time
-  const updateArrivalTime = useCallback(() => {
-    if (!driverLocation || !location) return;
-
-    // Check for valid coordinates
-    if (
-      isNaN(driverLocation.latitude) ||
-      isNaN(driverLocation.longitude) ||
-      isNaN(location.latitude) ||
-      isNaN(location.longitude)
-    ) {
-      return;
-    }
-
-    const distance = calculateDistance(
-      location.latitude,
-      location.longitude,
-      driverLocation.latitude,
-      driverLocation.longitude,
-    );
-
-    if (isNaN(distance)) return;
-
-    const minutes = calculateArrivalTime(distance);
-
-    if (isNaN(minutes)) return;
-
-    setArrivalTime(`${minutes} min`);
-  }, [driverLocation, location, calculateDistance, calculateArrivalTime]);
-
-  useEffect(() => {
-    updateArrivalTime();
-  }, [driverLocation, location, updateArrivalTime]);
-
   const handlePreeCancel = () => {
+    if (!cancelInFlight.current) {
+      setLoader(false);
+      setCancelError("");
+    }
     ambulanceRef.current?.present();
   };
 
   const driverData = () => {
-    navigate("DriverInfos", { driverInfo: activeRideOTP?.driver });
+    navigate("DriverInfos", { driverInfo: activeRideOTP?.driver, rideInfo: activeRideOTP });
   };
 
   const gotoChat = (activeRideOTP: any) => {
@@ -531,8 +373,8 @@ export function RideActive() {
   };
 
   const handleCall = (activeRideOTP: any) => {
-    const phoneNumber = `${activeRideOTP?.driver?.phone}`;
-    Linking.openURL(`tel:${phoneNumber}`);
+    const phoneNumber = contactPhone(activeRideOTP?.driver);
+    if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`).catch(() => undefined);
   };
 
   const handleSOSPress = () => {
@@ -548,44 +390,33 @@ export function RideActive() {
 
   const [loader, setLoader] = useState<boolean>(false);
 
-  const gotoHome = (selectedItem: any) => {
+  const gotoHome = async () => {
+    if (cancelInFlight.current) return;
+    const reason = customCancelReason.trim() || selectedItem?.title?.trim();
+    if (!reason) {
+      setCancelError("Select a reason or enter your reason below.");
+      return;
+    }
+    cancelInFlight.current = true;
+    setCancelError("");
     setLoader(true);
-
-    const ride_id = activeRideOTP?.id;
-    let payload: any = {
-      status: "cancelled",
-      cancellation_reason: selectedItem.title,
-      end_time: "",
-      distance: 8,
-      distance_unit: "km",
-    };
-
-    dispatch(rideDataPut({ payload, ride_id }))
-      .unwrap()
-      .then((res: any) => {
-        if (res?.ride_status?.slug == "cancelled") {
-          const rideId = activeRideOTP?.id;
-          if (rideId) {
-            setLoader(false);
-            ambulanceRef.current?.close();
-            resetTimer();
-            navigate("MyTabs");
-            dispatch(allRides());
-          } else {
-            setLoader(false);
-            console.warn("rideId not found");
-          }
-        }
-      })
-      .catch(_error => {
-        // Prefix with _ to indicate unused
-        setLoader(false);
-        ambulanceRef.current?.close();
-      });
+    try {
+      await cancelDelivery(activeRideOTP?.id, reason);
+      ambulanceRef.current?.dismiss();
+      resetTimer();
+      dispatch(allRides());
+      navigate("MyTabs");
+    } catch (error) {
+      setCancelError(apiErrorMessage(error, "Could not cancel this delivery. Please try again."));
+    } finally {
+      cancelInFlight.current = false;
+      setLoader(false);
+    }
   };
 
   const bottomSheetClose = () => {
-    setLoader(false);
+    if (cancelInFlight.current) return;
+    setCancelError("");
     ambulanceRef.current?.close();
   };
   const [selectedId, setSelectedId] = useState(null);
@@ -593,24 +424,28 @@ export function RideActive() {
   const [arrivalTime, setArrivalTime] = useState("Calculating...");
 
   const handleSelect = (item: any) => {
+    if (cancelInFlight.current) return;
+    setCustomCancelReason("");
+    setCancelError("");
     if (selectedId === item.id) {
       setSelectedId(null);
+      setSelectedItem(null);
     } else {
       setSelectedId(item.id);
+      setSelectedItem(item);
     }
-    setSelectedItem(item);
   };
 
   const handleConfirm = () => {
-    gotoHome(selectedItem);
+    gotoHome();
   };
 
   const [waitingTime, setWaitingTime] = useState("1 min");
   const intervalRef = useRef<any>(null);
 
   useEffect(() => {
-    const status = rideData?.ride_status?.slug;
-    const updatedAt = rideData?.updated_at;
+    const status = activeRideOTP?.ride_status?.slug;
+    const updatedAt = activeRideOTP?.updated_at;
 
     // Clear previous timer
     if (intervalRef.current) {
@@ -698,16 +533,17 @@ export function RideActive() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [rideData?.ride_status?.slug, rideData?.updated_at]);
+  }, [activeRideOTP?.ride_status?.slug, activeRideOTP?.updated_at]);
 
   const handleDriverTime = () => {
     bottomSheetRef.current?.close();
     driverWaitSheetRef.current?.present();
   };
 
+  if(!focused)return null;
   return (
     <View style={external.main}>
-      <CustomBackHandler />
+        <DeliveryBackButton />
       <TouchableOpacity
         onPress={handleSOSPress}
         style={{
@@ -740,11 +576,12 @@ export function RideActive() {
       <View style={styles.mapSection}>
         {activeRideOTP?.location_coordinates?.[0] ? (
           <Map
-            markerImage={rideData?.vehicle_type?.vehicle_map_icon_url}
+            markerImage={mapVehicleMarker(activeRideOTP?.vehicle_type,activeRideOTP?.vehicle_type?.vehicle_map_icon_url)}
             userLocation={activeRideOTP?.location_coordinates?.[0] || ""}
-            driverId={rideData?.driver?.id || activeRideOTP?.driver?.id || ""}
+            driverId={activeRideOTP?.driver?.id || ""}
             driverLocation={driverLocation}
             setDriverLocation={setDriverLocation}
+            onDurationChange={handlePickupDuration}
           />
         ) : (
           <View
@@ -755,7 +592,7 @@ export function RideActive() {
               backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor,
             }}
           >
-            <ActivityIndicator size="large" color={appColors.primary} />
+            <BrandLoader size="large" color={appColors.primary} />
           </View>
         )}
       </View>
@@ -765,6 +602,7 @@ export function RideActive() {
           ref={bottomSheetRef}
           index={1}
           snapPoints={snapPointsMain}
+          enableDynamicSizing={false}
           enablePanDownToClose={false}
           enableDismissOnClose={false}
           handleIndicatorStyle={{
@@ -774,8 +612,15 @@ export function RideActive() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor,
           }}
-        >
-          <BottomSheetView>
+         android_keyboardInputMode="adjustResize" >
+          <BottomSheetScrollView contentContainerStyle={{padding:14,paddingBottom:28,gap:12}} keyboardShouldPersistTaps="handled">
+            {activeRideOTP?.ride_status?.slug==='arrived' ? <>
+              <PickupCard role="rider" dark={isDark} name={activeRideOTP?.driver?.name} photo={bookingPhoto(activeRideOTP?.driver)} rating={Number(activeRideOTP?.driver?.rating_count)} vehicle={activeRideOTP?.vehicle_type?.name} plate={activeRideOTP?.plate_number||activeRideOTP?.vehicle_type?.plate_number} pickup={activeRideOTP?.locations?.[0]} onPerson={driverData} onCall={contactPhone(activeRideOTP?.driver)?()=>handleCall(activeRideOTP):undefined} onMessage={activeRideOTP?.driver?.id?()=>gotoChat(activeRideOTP):undefined}>
+                <TexiDetail compact otp={activeRideOTP?.otp} vehicleData={activeRideOTP}/>
+              </PickupCard>
+              <Button title={translateData.cancelRide||'Cancel delivery'} backgroundColor={isDark?appColors.darkHeader:appColors.primaryGray} textColor={appColors.regularText} onPress={handlePreeCancel}/>
+            </> : <>
+
             <View
               style={{
                 width: "100%",
@@ -1019,12 +864,14 @@ export function RideActive() {
                 </View>
               </View>
             </View>
-          </BottomSheetView>
+
+            </>}
+          </BottomSheetScrollView>
         </BottomSheetModal>
       </BottomSheetModalProvider>
       <BottomSheetModalProvider>
         <BottomSheetModal
-          ref={ambulanceRef}
+          ref={driverInfoSheetRef}
           index={1}
           enablePanDownToClose
           handleIndicatorStyle={{
@@ -1038,7 +885,7 @@ export function RideActive() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.lightGray,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView>
             <View
               style={[styles.subContainer, { backgroundColor: bgFullStyle }]}
@@ -1124,7 +971,7 @@ export function RideActive() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView>
             <View style={styles.modalBg}>
               <View style={[styles.modalBgMain]}>
@@ -1146,7 +993,13 @@ export function RideActive() {
                     <CloseIcon fill={appColors.blackColor} />
                   </TouchableOpacity>
                 </View>
-                {canceldata?.data?.map((item: CancelDataItem) => (
+                {reasonsLoading && <BrandLoader color={appColors.primary} />}
+                {!reasonsLoading && cancelReasons.length === 0 && (
+                  <Text style={{ color: textColorStyle, marginBottom: 8 }}>
+                    Please enter your cancellation reason below.
+                  </Text>
+                )}
+                {cancelReasons.map((item: CancelDataItem) => (
                   <TouchableOpacity
                     activeOpacity={0.7}
                     key={item.id}
@@ -1185,13 +1038,29 @@ export function RideActive() {
                   </TouchableOpacity>
                 ))}
 
+                <BottomSheetTextInput
+                  accessibilityLabel="Cancellation reason"
+                  placeholder={cancelReasons.length ? "Or enter another reason" : "Enter your cancellation reason"}
+                  placeholderTextColor={appColors.regularText}
+                  value={customCancelReason}
+                  editable={!loader}
+                  maxLength={500}
+                  onChangeText={value => {
+                    setCustomCancelReason(value);
+                    setSelectedId(null);
+                    setSelectedItem(null);
+                    setCancelError("");
+                  }}
+                  style={{ color: textColorStyle, borderColor: appColors.border, borderWidth: 1, borderRadius: 8, padding: 12, marginTop: 8, minHeight: 48 }}
+                />
+                {!!cancelError && <Text accessibilityRole="alert" style={{ color: appColors.alertRed, marginTop: 8 }}>{cancelError}</Text>}
                 <View style={{ marginTop: windowHeight(8) }}>
                   <Button
                     backgroundColor={appColors.primary}
-                    width={350}
-                    title={translateData.confirm}
+                    title={translateData.confirm || "Confirm cancellation"}
                     onPress={handleConfirm}
                     loading={loader}
+                    disabled={!customCancelReason.trim() && !selectedItem?.title}
                   />
                 </View>
               </View>
@@ -1222,7 +1091,7 @@ export function RideActive() {
             borderTopRightRadius: 16,
             backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={{ width: "100%" }}>
             <Text
               style={{
@@ -1315,7 +1184,7 @@ export function RideActive() {
             borderTopRightRadius: 16,
             backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView
             style={{ width: "100%", paddingHorizontal: windowWidth(15) }}
           >

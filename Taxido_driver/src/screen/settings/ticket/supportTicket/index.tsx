@@ -1,13 +1,9 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  FlatList,
-  Image,
-  BackHandler,
-  RefreshControl,
-} from 'react-native'
+import {DriverEmptyState} from '../../../../design/DriverEmptyState';
+import {CardHeading} from '../../../../design/CardHeading';
+import {Header} from '../../../../commonComponents/header';
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
+import {View, TouchableOpacity, TouchableWithoutFeedback, FlatList, Image, BackHandler, RefreshControl} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useEffect } from 'react'
 import appColors from '../../../../theme/appColors'
 import Icons from '../../../../utils/icons/icons'
@@ -151,37 +147,8 @@ export function SupportTicket() {
   }
 
   return (
-    <View style={styles.mainContainer}>
-      <View style={{ backgroundColor: colors.card }}>
-        <View style={[styles.headerContainer, { flexDirection: viewRtlStyle }]}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => navigation.goBack()}
-            style={[styles.header, { borderColor: colors.border }]}
-          >
-            <Icons.Back
-              color={isDark ? appColors.white : appColors.primaryFont}
-            />
-          </TouchableOpacity>
-          <Text
-            style={[
-              styles.text,
-              { color: isDark ? colors.text : appColors.primaryFont },
-            ]}
-          >
-            {translateData.supportTicket}
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.header, { borderColor: colors.border }]}
-            onPress={gotoAdd}
-          >
-            <Icons.Add
-              color={isDark ? appColors.white : appColors.primaryFont}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+    <ReferenceScreen><View style={[styles.mainContainer, {backgroundColor:'transparent'}]}>
+      <Header title={translateData.supportTicket} rightAction={<TouchableOpacity accessibilityRole="button" accessibilityLabel="Create support ticket" onPress={gotoAdd} style={{width:44,height:44,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:colors.border,borderRadius:14}}><Icons.Add color={colors.text}/></TouchableOpacity>}/>
       {loading ? (
         [...Array(2)].map((_, index) => <TicketLoader key={index} />)
       ) : ticketData?.data?.length > 0 ? (
@@ -190,7 +157,8 @@ export function SupportTicket() {
           renderItem={renderTicketItem}
           keyExtractor={item => item.id.toString()}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.contentContainerStyle}
+          ListHeaderComponent={<CardHeading icon="message-circle" title="Your Support Tickets"/>}
+          contentContainerStyle={[styles.contentContainerStyle,{padding:20,paddingBottom:32}]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -200,26 +168,8 @@ export function SupportTicket() {
           }
         />
       ) : (
-        <View style={styles.imgContainer}>
-          <Image
-            source={isDark ? Images.noTicketDark : Images.noTicket}
-            style={styles.image}
-          />
-          <View style={[styles.textContainer, { flexDirection: viewRtlStyle }]}>
-            <Text
-              style={[
-                styles.emptyTicket,
-                {
-                  color: isDark ? appColors.white : appColors.primaryFont,
-                },
-              ]}
-            >
-              {translateData.emptyTicket}
-            </Text>
-          </View>
-          <Text style={styles.noTicketText}>{translateData.noTicket}</Text>
-        </View>
+        <DriverEmptyState icon="message-circle" title={translateData.emptyTicket || "No support tickets"} description={translateData.noTicket}/>
       )}
-    </View>
+    </View></ReferenceScreen>
   )
 }

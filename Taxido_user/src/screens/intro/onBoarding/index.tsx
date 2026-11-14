@@ -1,20 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  ImageBackground,
-  Keyboard,
-  Platform,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
+import {BrandLogo,BrandLoader} from '../../../design/BrandLogo';
+import React, { useState, useEffect, useRef } from "react";
+import {Image, ScrollView, TouchableOpacity, View, useWindowDimensions} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {DesignIcon} from '../../../design/DesignIcon';
+import {Text} from '../../../design/Typography';
 import Swiper from "react-native-swiper";
 import DropDownPicker from "react-native-dropdown-picker";
 import { useDispatch, useSelector } from "react-redux";
-import { useFocusEffect, useTheme } from "@react-navigation/native";
-import { setValue } from "@src/utils/localstorage";
+import { getValue, setValue } from "@src/utils/localstorage";
 import {
   languageDataGet,
   settingDataGet,
@@ -22,21 +15,18 @@ import {
   translateDataGet,
 } from "@src/api/store/actions";
 import { useAppNavigation } from "@src/utils/navigation";
-import { BackArrow } from "@utils/icons";
 import Images from "@utils/images";
 import { styles } from "./styles";
-import { external } from "../../../styles/externalStyle";
-import { appColors, windowHeight, windowWidth } from "@src/themes";
 import { useValues } from "@src/utils/context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppDispatch } from "@src/api/store";
 
 export function Onboarding() {
-  const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
   const { navigate } = useAppNavigation();
   const swiperRef = useRef<Swiper | null>(null);
-  const hasNavigated = useRef(false);
+  const insets=useSafeAreaInsets(),{width}=useWindowDimensions();
+  const [activeIndex,setActiveIndex]=useState(0);
 
   const { settingData, languageData, translateData, taxidoSettingData } =
     useSelector((state: any) => state.setting);
@@ -44,7 +34,12 @@ export function Onboarding() {
   const { isDark, bgFullStyle, textColorStyle, viewRTLStyle, setIsRTL } =
     useValues();
 
-  const imageDarkBottom = isDark ? Images.bgDarkOnboard : Images.bgOnboarding;
+  const configuredSlides = taxidoSettingData?.cabbooking_values?.onboarding;
+  const slides = Array.isArray(configuredSlides) && configuredSlides.length ? configuredSlides : [
+    { title: "Send with Dropa2z", description: "Book a bike or auto for local parcel delivery in your city.", image: Images.dropa2zLogo },
+    { title: "Choose your delivery", description: "Add pickup, destination and extra stops, then review your price.", image: Images.bike },
+    { title: "Follow your parcel", description: "Track your delivery and share the pickup code when your driver arrives.", image: Images.autoRickshaw },
+  ];
 
   const [open, setOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
@@ -70,15 +65,15 @@ export function Onboarding() {
       const formattedItems = languageData.data.map((lang: any) => ({
         label: lang.name,
         value: lang.locale,
-        icon: () => (
-          <Image source={{ uri: lang.flag }} style={styles.flagImage} />
-        ),
+        icon: () => lang.flagEmoji ? <Text style={{fontSize:20,width:28,textAlign:'center'}}>{lang.flagEmoji}</Text> : <Image source={{ uri: lang.flag }} style={styles.flagImage} />,
       }));
 
       setItems(formattedItems);
-      const firstLanguage = formattedItems[0]?.value;
-      setSelectedLanguage(firstLanguage);
-      handleLanguageChange(firstLanguage);
+      getValue("selectedLanguage").then(saved => {
+        const locale = formattedItems.some((item: any) => item.value === saved)
+          ? saved : settingData?.values?.general?.default_language?.locale || formattedItems[0]?.value;
+        setSelectedLanguage(locale);
+      });
     }
   }, [languageData]);
 
@@ -135,148 +130,61 @@ export function Onboarding() {
   };
 
   const handleIndexChanged = (index: number) => {
-    if (index === 2 && !hasNavigated.current) {
-      hasNavigated.current = true;
-      setTimeout(handleNavigation, 300);
-    }
+    setActiveIndex(index);
   };
 
   const handleNext = (index: number) => {
-    if (index < taxidoSettingData?.cabbooking_values?.onboarding?.length - 1) {
+    if (index < slides.length - 1) {
       swiperRef.current?.scrollBy(1);
     } else {
       handleNavigation();
     }
   };
 
-  return (
-    <Swiper
-      ref={swiperRef}
-      loop={false}
-      autoplayTimeout={3}
-      onIndexChanged={handleIndexChanged}
-      activeDotStyle={styles.activeStyle}
-      removeClippedSubviews
-      dotColor={isDark ? appColors.dotDark : appColors.dotLight}
-      dotStyle={styles.dotStyles}
-      paginationStyle={styles.paginationStyle}>
-      {Array.isArray(taxidoSettingData?.cabbooking_values?.onboarding) &&
-        taxidoSettingData.cabbooking_values.onboarding.map(
-          (slide: any, index: number) => (
-            <TouchableWithoutFeedback
-              key={index}
-              onPress={() => {
-                setOpen(false);
-                Keyboard.dismiss();
-              }}>
-              <View
-                style={[
-                  styles.slideContainer,
-                  {
-                    backgroundColor: isDark
-                      ? appColors.bgDark
-                      : appColors.lightGray,
-                  },
-                ]}>
-                <View
-                  style={[
-                    styles.languageContainer,
-                    { flexDirection: viewRTLStyle },
-                  ]}>
-                  <DropDownPicker
-                    open={open}
-                    value={selectedLanguage}
-                    items={items}
-                    setOpen={setOpen}
-                    setValue={setSelectedLanguage}
-                    setItems={setItems}
-                    placeholder={"Select Language"}
-
-                    onSelectItem={item => handleLanguageChange(item?.value)}
-                    onChangeValue={handleLanguageChange}
-                    onOpen={handleOpenDropdown}
-                    loading={loading}
-                    listMode="SCROLLVIEW"
-                    dropDownContainerStyle={[
-                      styles.dropdownManu,
-                      { backgroundColor: bgFullStyle },
-                    ]}
-                    labelStyle={[styles.labelStyle, { color: textColorStyle }]}
-                    containerStyle={styles.dropdownContainer}
-                    style={styles.dropdown}
-                    textStyle={{ color: textColorStyle }}
-                    theme={isDark ? "DARK" : "LIGHT"}
-                    ActivityIndicatorComponent={({ color }) => (
-                      <ActivityIndicator color={color} size="small" />
-                    )}
-                  />
-                  <TouchableOpacity
-                    style={{
-                      borderWidth: windowHeight(1),
-                      borderColor: colors.border,
-                      justifyContent: "center",
-                      paddingHorizontal: windowWidth(12),
-                      paddingVertical: windowHeight(8),
-                      borderRadius: windowHeight(4),
-                      marginHorizontal: windowWidth(15),
-                    }}
-                    activeOpacity={0.7}
-                    onPress={handleNavigation}>
-                    <Text
-                      style={[styles.skipText, { color: appColors.regularText }]}>
-                      {translateData?.skip || "Skip"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View
-                  style={{
-                    height:
-                      Platform.OS === "ios"
-                        ? windowHeight(370)
-                        : windowHeight(435),
-                  }}>
-                  <Image
-                    style={styles.imageBackground}
-                    source={{ uri: slide?.onboarding_image_url }}
-                  />
-                </View>
-
-                <View
-                  style={[
-                    styles.imageBgView,
-                    {
-                      backgroundColor: isDark
-                        ? appColors.bgDark
-                        : appColors.lightGray,
-                    },
-                  ]}>
-                  <ImageBackground
-                    resizeMode="stretch"
-                    style={styles.img}
-                    source={imageDarkBottom}>
-                    <Text style={[styles.title, { color: textColorStyle }]}>
-                      {slide?.title}
-                    </Text>
-                    <Text style={[styles.description, external.as_center]}>
-                      {slide?.description}
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.backArrow}
-                      onPress={() => handleNext(index)}
-                      activeOpacity={0.7}>
-                      <BackArrow
-                        colors={appColors.whiteColor}
-                        width={21}
-                        height={21}
-                      />
-                    </TouchableOpacity>
-                  </ImageBackground>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          ),
-        )}
+  const ink=isDark?'#FFFFFF':'#17191C',muted=isDark?'#C5CAD0':'#656C76';
+  const illustrations=[require('../../../design/assets/brand-20261105/delivery-partner.png'),require('../../../design/assets/brand-20261105/banner-handoff.png'),require('../../../design/assets/brand-20261105/banner-packed-parcel.png')];
+  const slideImage=(slide:any,index:number)=>{
+    if(Array.isArray(configuredSlides)&&configuredSlides.length){
+      const image=slide.image || slide.onboarding_image_url;
+      if(typeof image==='string' && image.trim())return {uri:image};
+      if(typeof image==='number' || (image && typeof image.uri==='string'))return image;
+    }
+    return illustrations[index%illustrations.length];
+  };
+  return <View style={[styles.page,{backgroundColor:isDark?'#17191C':'#FAFAF9',paddingTop:insets.top,paddingBottom:Math.max(insets.bottom,12)}]}>
+    <View style={[styles.brandRow,{flexDirection:viewRTLStyle}]}>
+      <BrandLogo width={150}/>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Skip introduction" onPress={handleNavigation} style={styles.skipButton}><Text style={{color:ink,fontSize:15,fontWeight:'700'}}>{translateData.skip || 'Skip'}</Text></TouchableOpacity>
+    </View>
+    <View style={[styles.languageContainer,{zIndex:20}]}>
+      <DropDownPicker open={open} value={selectedLanguage} items={items} setOpen={setOpen} setValue={setSelectedLanguage} setItems={setItems}
+        placeholder="Select Language" onChangeValue={handleLanguageChange} onOpen={handleOpenDropdown} loading={loading} listMode="SCROLLVIEW"
+        dropDownContainerStyle={[styles.dropdownManu,{backgroundColor:bgFullStyle,borderColor:isDark?'#444A46':'#E5E7EB'}]}
+        labelStyle={[styles.labelStyle,{color:ink}]} containerStyle={styles.dropdownContainer} style={[styles.dropdown,{backgroundColor:bgFullStyle,borderColor:isDark?'#444A46':'#E5E7EB'}]}
+        textStyle={{color:ink,fontFamily:'GlacialIndifference-Regular'}} theme={isDark?'DARK':'LIGHT'}
+        ActivityIndicatorComponent={({color})=><BrandLoader color={color} size="small"/>}/>
+    </View>
+    <Swiper ref={swiperRef} loop={false} onIndexChanged={handleIndexChanged} showsPagination={false} removeClippedSubviews={false}>
+      {slides.map((slide:any,index:number)=><ScrollView key={index} contentContainerStyle={styles.slideContent} showsVerticalScrollIndicator={false}>
+        <View style={[styles.artwork,{height:Math.min(300,Math.max(190,width*.64)),backgroundColor:isDark?'#33291E':'#FFF2DF'}]}>
+          <View pointerEvents="none" style={styles.orbit}/>
+          <Image accessible={false} source={slideImage(slide,index)} resizeMode="contain" style={{width:'100%',height:'100%'}}/>
+          <View style={styles.artBadge}><DesignIcon name={index%3===0?'package':index%3===1?'navigation':'shield-check'} color="#A64B00" width={26} height={26}/></View>
+        </View>
+        <View style={[styles.copyCard,{backgroundColor:isDark?'#202422':'#FFFFFF',borderColor:isDark?'#444A46':'#E5E7EB'}]}>
+          <Text style={[styles.eyebrow,{color:isDark ? "#FFBE60" : "#A65B00"}]}>DROPA2Z DELIVERY</Text>
+          <Text accessibilityRole="header" style={[styles.title,{color:ink}]}>{slide.title}</Text>
+          <Text style={[styles.description,{color:muted}]}>{slide.description}</Text>
+        </View>
+      </ScrollView>)}
     </Swiper>
-  );
+    <View style={styles.footer}>
+      <View accessibilityLabel={'Introduction '+(activeIndex+1)+' of '+slides.length} style={styles.progress}>
+        {slides.map((_:any,index:number)=><View key={index} style={{width:index===activeIndex?26:7,height:7,borderRadius:4,backgroundColor:index===activeIndex?'#FC9F03':isDark?'#555C58':'#D7DCD8'}}/>) }
+      </View>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={activeIndex===slides.length-1?'Get started':'Next introduction'} onPress={()=>handleNext(activeIndex)} style={styles.nextButton} activeOpacity={.8}>
+        <Text style={styles.nextText}>{activeIndex===slides.length-1 ? translateData.getStarted || 'Get Started' : translateData.next || 'Next'}</Text><DesignIcon name="arrow-right" color="#17191C" width={23} height={23}/>
+      </TouchableOpacity>
+    </View>
+  </View>;
 }

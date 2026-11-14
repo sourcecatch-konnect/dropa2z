@@ -1,4 +1,6 @@
-import { View, Text, ScrollView, TouchableOpacity, BackHandler } from 'react-native'
+import {DeliveryBackButton} from '../../../design/DeliveryBackButton';
+import {View, ScrollView, TouchableOpacity, BackHandler} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigation, useRoute, useTheme } from '@react-navigation/native'
 import styles from './styles'
@@ -76,7 +78,7 @@ export function RideDetails() {
   const [istrue, setIstrue] = useState<boolean>(true)
 
   return (
-    <ScrollView style={commanStyle.main} showsVerticalScrollIndicator={false}>
+    <View style={{flex:1}}><DeliveryBackButton/><ScrollView style={[commanStyle.main,{paddingTop:64}]} contentContainerStyle={{paddingBottom:80}} showsVerticalScrollIndicator={false}>
       <View
         style={{
           height: windowHeight(9.5),
@@ -88,7 +90,7 @@ export function RideDetails() {
         </Text>
       </View>
       <View style={[styles.contain, { backgroundColor: colors.background }]}>
-        <Profile userDetails={rideData?.rider} rideDetails={rideData} istrue={istrue} />
+        <Profile userDetails={rideData?.rider} rideDetails={rideData} istrue={true} />
         <Address rideDetails={rideData} />
         <View style={styles.spaceTop}>
           {rideData?.payment_status == 'PENDING' ? (
@@ -234,6 +236,6 @@ export function RideDetails() {
         <Payment rideDetails={rideData} />
       </View>
 
-    </ScrollView >
+    </ScrollView ></View>
   )
 }

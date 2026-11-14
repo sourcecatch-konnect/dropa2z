@@ -1,11 +1,7 @@
-import {
-  Image,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-  Text,
-  BackHandler,
-} from 'react-native'
+import {CardHeading} from '../../../design/CardHeading';
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import {Image, TouchableOpacity, TouchableWithoutFeedback, View, BackHandler} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { LanguageModal, Notification, DarkTheme, Rtl } from './component/'
 import styles from './styles'
@@ -108,9 +104,10 @@ export function AppSettings() {
   }, [navigation])
 
   return (
-    <View style={[styles.main, { backgroundColor: colors.background }]}>
+    <ReferenceScreen><View style={[[styles.main, { backgroundColor: colors.background }], {backgroundColor:'transparent'}]}>
       <Header title={translateData.appSetting} />
       <View style={styles.container}>
+        <CardHeading icon="settings-2" title="Preferences" subtitle="Make Dropa2z work your way"/>
         <View
           style={[
             styles.listContainer,
@@ -139,7 +136,7 @@ export function AppSettings() {
           width: '13%',
         }}
         backgroundStyle={{ backgroundColor: colors.card }}
-      >
+       android_keyboardInputMode="adjustResize" >
         <BottomSheetView style={{ paddingHorizontal: windowHeight(2) }}>
           <View>
             <Text
@@ -164,10 +161,7 @@ export function AppSettings() {
                   <View
                     style={[styles.selection, { flexDirection: viewRtlStyle }]}
                   >
-                    <Image
-                      source={{ uri: item.flag }}
-                      style={styles.imageCountry}
-                    />
+                    {item.flagEmoji ? <Text style={{fontSize:24,width:34,textAlign:'center'}}>{item.flagEmoji}</Text> : <Image source={{ uri: item.flag }} style={styles.imageCountry}/>} 
                     <Text
                       style={[
                         styles.name,
@@ -180,7 +174,7 @@ export function AppSettings() {
                         },
                       ]}
                     >
-                      {item.name.toLowerCase()}
+                      {item.name}
                     </Text>
                   </View>
                   <View style={{ left: windowHeight(1.5) }}>
@@ -205,6 +199,6 @@ export function AppSettings() {
           </View>
         </BottomSheetView>
       </BottomSheet>
-    </View>
+    </View></ReferenceScreen>
   )
 }

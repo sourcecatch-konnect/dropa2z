@@ -1,4 +1,5 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
+import {FlatList, Pressable, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useState } from 'react';
 import { commonStyles } from '../../../styles/commonStyle';
 import { HeaderContainer, SolidLine, IconBackground } from '@src/commonComponent';
@@ -11,12 +12,13 @@ import Contacts from 'react-native-contacts';
 import { useAppNavigation } from '@src/utils/navigation';
 import { useSelector } from 'react-redux';
 import { useRoute } from '@react-navigation/native';
+import { receiverContacts } from '../../../utils/receiverContacts';
 
 export function ChooseRiderScreen() {
   const { bgFullStyle, linearColorStyle, textColorStyle, isDark } = useValues();
   const { navigate, replace } = useAppNavigation();
   const [selected, setSelected] = useState<number | null>(null);
-  const [contacts, setContacts] = useState([]);
+  const [contacts, setContacts] = useState<any[]>([]);
   const { translateData } = useSelector((state) => state.setting);
   const route = useRoute();
   const { destination, stops, pickupLocation, service_ID, zoneValue, scheduleDate, service_category_ID, selectedImage, parcelWeight, pickupCoords, destinationCoords } = route.params || {};
@@ -29,7 +31,7 @@ export function ChooseRiderScreen() {
   const fetchContacts = () => {
     Contacts.getAll()
       .then((contactsList) => {
-        setContacts(contactsList);
+        setContacts(receiverContacts(contactsList));
       })
       .catch((error) => {
       });
@@ -38,6 +40,7 @@ export function ChooseRiderScreen() {
   const handleChange = (index: number, item: any) => {
     setSelected(selected === index ? null : index);
     replace("BookRide", {
+      ...route.params,
       destination,
       stops,
       pickupLocation,
@@ -45,8 +48,12 @@ export function ChooseRiderScreen() {
       zoneValue,
       scheduleDate,
       service_category_ID,
-      otherContect: item?.phoneNumbers[0]?.number,
-      otherName: item?.givenName,
+      otherContect: item.phone,
+      otherName: item.name,
+      recipientMode: 'other',
+      receiverName: item.name,
+      phoneNumber: item.phone,
+      countryCode: item.countryCode,
       selectedImage,
       parcelWeight,
       pickupCoords,
@@ -64,11 +71,9 @@ export function ChooseRiderScreen() {
             <ProfileSetting />
           </View>
           <View style={[external.ai_center, { flexDirection: viewRTLStyle }]}>
-            <Pressable onPress={() => handleChange(index, item)}>
               <Text style={[styles.titleStyle, { color: textColorStyle, textAlign: textRTLStyle }]}>
-                {item?.givenName}
+                {item.name}
               </Text>
-            </Pressable>
             {selected === index && <Correct />}
           </View>
         </Pressable>
@@ -86,6 +91,7 @@ export function ChooseRiderScreen() {
               backgroundColor={linearColorStyle}
               icon={<UserPlus />}
               onPress={() => navigate('AddNewRider', {
+                  ...route.params,
                 destination,
                 stops,
                 pickupLocation,

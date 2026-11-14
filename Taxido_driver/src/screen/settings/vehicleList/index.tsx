@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Image, FlatList } from 'react-native'
+import {View, TouchableOpacity, Image, FlatList} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useState } from 'react'
 import Icons from '../../../utils/icons/icons'
 import appColors from '../../../theme/appColors'

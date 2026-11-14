@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
 import { commonStyles } from '@src/styles/commonStyle';
@@ -8,6 +10,8 @@ const styles = StyleSheet.create({
     height: windowHeight(80),
     backgroundColor: appColors.lightGray,
     alignItems: 'center',
+  
+    ...referenceSurfaces.card,
   },
   imgContainer: {
     width: windowWidth(80),
@@ -22,6 +26,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: windowHeight(4),
     marginTop: windowHeight(8),
+  
+    ...referenceSurfaces.card,
   },
   vehicleContainer1: {
     backgroundColor: appColors.whiteColor,
@@ -30,6 +36,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: windowHeight(15),
+  
+    ...riderCardFinish,
   },
 
   imgContainer1: {

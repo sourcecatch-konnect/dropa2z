@@ -1,3 +1,4 @@
+import {requireApiSuccess} from '../responseError'
 import { dashBoard } from '../endpoints/dashboardEndPoint'
 import { GET_API } from '../methods'
 
@@ -12,10 +13,10 @@ export const dashBoardData = async ({
 }) => {
   return GET_API(`${dashBoard}?unit=${unit}&zoneId=${zoneId}&driver_id=${driver_id}`)
     .then(res => {
-      return res
+      return requireApiSuccess(res, 'Unable to load dashboard.')
     })
     .catch(e => {
-      return e?.response
+      throw e
     })
 }
 const dashBoardService = {

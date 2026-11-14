@@ -1,11 +1,6 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  ScrollView,
-} from 'react-native'
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import {View, TouchableOpacity, FlatList, Image, ScrollView} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useState } from 'react'
 import { Header } from '../../../commonComponents'
 import appColors from '../../../theme/appColors'
@@ -143,11 +138,11 @@ export function Incentive() {
   const hasValidDates = dates.some(item => Object.keys(item).length > 0)
 
   return (
-    <View
-      style={{
+    <ReferenceScreen><View
+      style={[{
         flex: 1,
         backgroundColor: isDark ? appColors.bgDark : appColors.lightGray,
-      }}
+      }, {backgroundColor:'transparent'}]}
     >
       <Header title={translateData?.incentive} />
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -521,6 +516,6 @@ export function Incentive() {
           {translateData.incentiveTagLine}
         </Text>
       </ScrollView>
-    </View>
+    </View></ReferenceScreen>
   )
 }

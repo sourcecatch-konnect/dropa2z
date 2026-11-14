@@ -1,5 +1,6 @@
 import React from "react";
-import { TouchableOpacity, View, Text, Image } from "react-native";
+import {TouchableOpacity, View, Image} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import { appColors } from "@src/themes";
 import { RadioButton } from "@src/commonComponent";
 import { styles } from "../../styles";

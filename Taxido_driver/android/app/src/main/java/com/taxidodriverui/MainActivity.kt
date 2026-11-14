@@ -1,4 +1,4 @@
-package com.taxidodriver.webiots
+package com.dropa2z.driver
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

@@ -22,12 +22,13 @@ class DriverSelfResource  extends BaseResource
         $driverSelf = [
             'id' => $this->id,
             'name' => $this->name,
-            'role' => $this->role?->name,
+            'role' => \Modules\Taxido\Enums\RoleEnum::DRIVER,
             'email' => $this->email,
             'profile_image_url' => $this->profile_image?->original_url,
 
             'phone' => $this->phone,
             'is_verified' => $this->is_verified,
+            'training' => \Modules\Taxido\Services\DriverTrainingService::status((int) $this->id),
             'country_code' => $this->country_code,
             'is_online' => $this->is_online,
             'is_on_ride' => $this->is_on_ride,

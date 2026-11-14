@@ -1,5 +1,7 @@
+import {VehicleGraphic} from '../../../../../../design/VehicleGraphic';
 import React from 'react';
-import { ScrollView, View, Text, Image } from 'react-native';
+import {ScrollView, View, Image} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import { Header } from '@src/commonComponent';
 import { useValues } from '@src/utils/context/index';
 import { useRoute } from '@react-navigation/native';
@@ -33,10 +35,9 @@ export function DriverRequestDetailsScreen() {
                     <View style={[styles.driverInfoInner, { flexDirection: viewRTLStyle }]}>
                         <View style={{ flexDirection: viewRTLStyle }}>
                             <View style={[styles.vehicleImageContainer, { backgroundColor: isDark ? appColors.bgDark : appColors.lightGray }]}>
-                                <Image
-                                    source={{ uri: item?.vehicle_type?.vehicle_image_url }}
-                                    style={styles.vehicleImage}
-                                />
+                                <VehicleGraphic source={{
+  uri: item?.vehicle_type?.vehicle_image_url
+}} style={styles.vehicleImage} vehicle={item?.vehicle_type} />
                             </View>
                             <View style={styles.vehicleDetails}>
                                 <Text style={[styles.vehicleName, { color: textColorStyle }]}>
@@ -66,7 +67,7 @@ export function DriverRequestDetailsScreen() {
                         <View style={styles.locationTextContainer}>
                             <View>
                                 <View style={styles.locationLabelContainer}>
-                                    <PickLocation color={"#00A88F"} />
+                                    <PickLocation color={"#A83E00"} />
                                     <Text style={[styles.locationLabel, { color: isDark ? appColors.darkText : appColors.regularText }]}>Pickup Location</Text>
                                 </View>
                                 <Text style={[styles.locationValue, { color: textColorStyle }]} numberOfLines={2}>

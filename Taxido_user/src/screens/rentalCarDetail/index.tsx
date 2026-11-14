@@ -1,4 +1,5 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, BackHandler } from "react-native";
+import {View, Image, ScrollView, TouchableOpacity, BackHandler} from 'react-native';
+import {Text} from '../../design/Typography';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Ac, Back, Bag, Right, Star1 } from "@src/utils/icons";
 import { CarType } from "@src/assets/icons/carType";
@@ -528,7 +529,7 @@ export function RentalCarDetails() {
             <View style={[style, { backgroundColor: appColors.modelBg }]} />
           )}
           backgroundStyle={{ backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={{ paddingHorizontal: windowHeight(14) }}>
             <View style={styles.imageWrapper}>
               <AnimatedCircularProgress

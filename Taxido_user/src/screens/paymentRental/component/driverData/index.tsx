@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, Modal, Linking, Share } from "react-native";
+import {View, Image, TouchableOpacity, Modal, Linking, Share} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useState } from "react";
 import styles from "../../styles";
 import { useValues } from "@src/utils/context/index";
@@ -35,7 +36,7 @@ export function DriverData({ driverDetails }: { driverDetails: any }) {
   const handleShare = async () => {
     try {
       const message =
-        `🚖 Taxido Ride Details
+        `🚖 DropA2Z Ride Details
 
 📍 Pickup        : ${driverDetails?.locations?.[0] ?? "N/A"}
 👨‍✈️ Driver Name   : ${driverDetails?.driver?.name ?? "N/A"}

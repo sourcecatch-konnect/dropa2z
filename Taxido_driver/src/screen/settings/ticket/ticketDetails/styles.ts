@@ -16,7 +16,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: windowHeight(1),
     padding: windowHeight(1),
-    height: windowHeight(150),
+    minHeight: 48,
+    maxHeight: 110,
   },
   border: {
     borderBottomColor: appColors.border,
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(4),
     alignSelf: 'flex-end',
     paddingVertical: windowHeight(6),
-    height: windowHeight(28),
+    minHeight: 44,
     top: windowHeight(2),
   },
   line: {
@@ -175,8 +176,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   textViewShow: {
-    position: 'absolute',
-    bottom: windowHeight(10),
+    flexShrink: 0,
     marginVertical: windowHeight(3),
     borderRadius: windowHeight(8),
     borderWidth: windowHeight(0.1),

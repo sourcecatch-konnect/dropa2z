@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, windowHeight, windowWidth, appFonts } from '@src/themes';
 
@@ -15,6 +16,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.whiteColor,
     marginTop: windowHeight(5),
     marginBottom: windowHeight(5),
+  
+    ...riderCardFinish,
   },
   titleContainer: {
     height: windowHeight(20),
@@ -59,15 +62,11 @@ const styles = StyleSheet.create({
     marginHorizontal: windowWidth(14),
   },
   payBottomView: {
-    position: 'absolute',
     width: '100%',
-    height: windowHeight(70),
-    bottom: 0,
+    paddingTop: 12,
     backgroundColor: appColors.whiteColor,
   },
   addBtn: {
-    position: 'absolute',
-    bottom: windowHeight(15),
     width: '90%',
     alignSelf: 'center',
   },

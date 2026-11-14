@@ -1,17 +1,24 @@
-import { View, Text, Image, Platform, PermissionsAndroid, Keyboard, TouchableOpacity, Alert, BackHandler } from 'react-native'
+import {DeliveryBackButton} from '../../../design/DeliveryBackButton';
+import {useKeyboardState} from '../../../utils/useKeyboardState';
+import {View, Image, Platform, PermissionsAndroid, Keyboard, TouchableOpacity, Alert, BackHandler, Linking, AppState} from 'react-native';
+import {PickupCard} from '../../../design/PickupCard';
+import {pickupStartedAt} from '../../../utils/journeyPresentation';
+import {mergeBookingSnapshot,contactPhone,parcelReceiver,bookingPhoto} from '../../../utils/bookingPeople';
+import {rideDataGet as readPickupRide} from '../../../api/services/rideService';
+import {pickupRoute,startedPickup} from '../../../utils/pickupVerification';
+import {Text} from '../../../design/Typography';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import appColors from '../../../theme/appColors'
-import { useNavigation, useTheme, useRoute, useFocusEffect } from '@react-navigation/native'
+import { useNavigation, useTheme, useRoute, useFocusEffect, useIsFocused } from '@react-navigation/native'
 import styles from './styles'
-import { BackButton, Button, DriverProfile, notificationHelper } from '../../../commonComponents'
+import { BackButton, Button, notificationHelper } from '../../../commonComponents'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/main/types'
 import { useValues } from '../../../utils/context'
-import OTPTextView from 'react-native-otp-textinput'
 import { useDispatch, useSelector } from 'react-redux'
 import { cancelationDataGet, rideDataGets, rideDataPut, rideStartData } from '../../../api/store/action/index'
 import GetLocation from 'react-native-get-location'
-import BottomSheet, { BottomSheetBackdrop, BottomSheetModal, BottomSheetView, BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import BottomSheet, { BottomSheetBackdrop, BottomSheetModal, BottomSheetView, BottomSheetScrollView, BottomSheetTextInput, BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import appFonts from '../../../theme/appFonts'
 import { fontSizes, windowHeight, windowWidth } from '../../../theme/appConstant'
 import images from '../../../utils/images/images'
@@ -47,7 +54,17 @@ export function OtpRide() {
   const { colors } = useTheme()
   const { viewRtlStyle, isDark } = useValues()
   const route = useRoute()
-  const { rideData, ride_Id }: any = route.params
+  const {ride: routeRide,id: ride_Id} = pickupRoute(route.params)
+  const [pickupSnapshot,setPickupSnapshot]=useState<any>(null)
+  const rideData=mergeBookingSnapshot(routeRide||{id:ride_Id},pickupSnapshot)
+  const focused=useIsFocused()
+  const verifyInFlight=useRef(false)
+  const arrival=useRef<{id:any;since?:number}>({id:ride_Id})
+  if(arrival.current.id!==ride_Id)arrival.current={id:ride_Id}
+  if(!arrival.current.since)arrival.current.since=pickupStartedAt(rideData)
+  const receiver=parcelReceiver(rideData),receiverPhone=contactPhone(receiver)
+  const senderPhone=contactPhone(rideData?.rider)
+  const goods=rideData?.delivery_details?.goods_type||rideData?.description
   const [enteredOtp, setEnteredOtp] = useState('')
   const dispatch = useDispatch<AppDispatch>()
   const [startTime, setStartTime] = useState<Date | null>(null)
@@ -58,7 +75,7 @@ export function OtpRide() {
   const { selfDriver } = useSelector((state: any) => state.account)
   const Driver_Id = selfDriver?.id
   const [driverTrack, setDriverTrack] = useState<any>()
-  const updatedLocation = rideData?.location_coordinates.map((coord: any) => ({
+  const updatedLocation = rideData?.location_coordinates?.map((coord: any) => ({
     latitude: parseFloat(coord.lat),
     longitude: parseFloat(coord.lng),
   }))
@@ -68,24 +85,32 @@ export function OtpRide() {
   const { canceldata } = useSelector((state: any) => state.cancelationReason)
   const snapCancelReason = useMemo(() => ['40%'], [])
   const cancelReasonRef = useRef<BottomSheetModal>(null)
-  let otpInput = useRef<any>(null)
+  const otpInputs = useRef<Array<any>>([])
+  const pickupScrollRef=useRef<any>(null)
+  const pickupContentRef=useRef<View>(null)
+  const pickupPinRef=useRef<View>(null)
+  const revealPickupPin=useCallback(()=>{
+    requestAnimationFrame(()=>{
+      const parent=pickupContentRef.current;
+      if(parent)pickupPinRef.current?.measureLayout(parent,(_x,y)=>pickupScrollRef.current?.scrollTo({y:Math.max(0,y-12),animated:true}),()=>{});
+    });
+  },[])
   const [selectedReason, setSelectedReason] = useState<any>(null)
   const [cancelLoaders, setCancelLoaders] = useState<boolean>(false)
-  const [sheetExpend, setSheetExpand] = useState<boolean>(false)
+  const {visible:sheetExpend}=useKeyboardState();
 
 
-  const otpSnapPoints = useMemo(() => {
-    const adsEnabled = taxidoSettingData?.cabbooking_values?.ads?.native_enable == 1;
-    const extra = adsEnabled ? 24 : 0; // add 24% if ads enabled
+  const otpSnapPoints = useMemo(() => ['50%', '82%'], []);
 
-    const collapsed = Platform.OS === 'ios' ? `${47}%` : `${45}%`;
-    const expanded = Platform.OS === 'ios' ? `${56 + extra}%` : `${54 + extra}%`;
+  useEffect(()=>{
+    if(!ride_Id||!focused)return;
+    let alive=true,busy=false;
+    const refresh=async()=>{if(busy||AppState.currentState!=='active')return;busy=true;try{const response=await readPickupRide(Number(ride_Id));if(alive)setPickupSnapshot(previous=>mergeBookingSnapshot(Number(previous?.id)===ride_Id?previous:{id:ride_Id},response));}catch{/* Keep the last confirmed pickup on connection failure. */}finally{busy=false;}};
+    void refresh();const timer=setInterval(refresh,15000);const listener=AppState.addEventListener('change',state=>{if(state==='active')void refresh();});
+    return()=>{alive=false;clearInterval(timer);listener.remove();};
+  },[ride_Id,focused]);
 
-    return sheetExpend
-      ? [`77.5%`, `77.5%`]
-      : [collapsed, expanded];
-
-  }, [sheetExpend, taxidoSettingData]);
+  useEffect(()=>{setEnteredOtp('');setPickupSnapshot(null);},[ride_Id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -103,28 +128,39 @@ export function OtpRide() {
     }, [navigation]),
   )
 
-  useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', () => {
-      setSheetExpand(true)
-    })
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setSheetExpand(false)
-    })
-
-    return () => {
-      showSub.remove()
-      hideSub.remove()
-    }
-  }, [])
+  useEffect(()=>{if(sheetExpend)revealPickupPin();},[sheetExpend,revealPickupPin]);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => <CustomBackdrop {...props} />,
     [],
   )
 
-  const clearText = () => {
-    otpInput.current.clear()
-  }
+  const updatePickupPin = useCallback((value: string, position: number) => {
+    // Android pastes the whole PIN into the focused field. Split it across
+    // the four visible boxes so a copied PIN stays readable and usable.
+    const digits = value.replace(/\D/g, '').slice(0, 4 - position)
+    setEnteredOtp(previous => {
+      const next = Array.from({ length: 4 }, (_item, index) =>
+        index < position ? previous[index] || '' : '',
+      )
+      digits.split('').forEach((digit, offset) => {
+        next[position + offset] = digit
+      })
+      return next.join('')
+    })
+    if (digits.length) {
+      const nextPosition = Math.min(position + digits.length, 3)
+      requestAnimationFrame(() => otpInputs.current[nextPosition]?.focus?.())
+    } else if (position > 0) {
+      requestAnimationFrame(() => otpInputs.current[position - 1]?.focus?.())
+    }
+  }, [])
+
+  const handlePickupPinKeyPress = useCallback((key: string, position: number) => {
+    if (key === 'Backspace' && !enteredOtp[position] && position > 0) {
+      otpInputs.current[position - 1]?.focus?.()
+    }
+  }, [enteredOtp])
 
   useEffect(() => {
     const ride_start = 'before'
@@ -144,12 +180,14 @@ export function OtpRide() {
 
         echoInstance.private(`ride-status.${ride_Id}`)
           .listen('.ride.status', (data: any) => {
-            const statusData = data?.ride || data;
+            const statusData = data?.ride || data?.data?.data || data?.data || data;
+            if(String(statusData?.id)!==String(ride_Id))return;
+            setPickupSnapshot(previous=>mergeBookingSnapshot(previous||routeRide,statusData));
 
             if (statusData?.ride_status?.slug === 'cancelled' || statusData?.status === 'cancelled') {
               navigation.navigate('TabNav');
               dispatch(rideDataGets());
-              notificationHelper('', translateData.rideCancelled || 'Ride Cancelled', 'error');
+              notificationHelper('', translateData.rideCancelled || 'Delivery Cancelled', 'error');
             }
           });
       } catch (err) {
@@ -248,13 +286,9 @@ export function OtpRide() {
     return () => clearInterval(startTrackingLocation)
   }, [])
 
-  const handleChange = (otp: string) => {
-    setEnteredOtp(otp)
-    if (otp?.length == 4) {
-      Keyboard.dismiss()
-      verifyOTP(otp)
-    }
-  }
+  useEffect(() => {
+    if (enteredOtp.length === 4) Keyboard.dismiss()
+  }, [enteredOtp])
 
   useEffect(() => {
     if (isRunning && startTime) {
@@ -317,6 +351,10 @@ export function OtpRide() {
   }
 
   const verifyOTP = async (otp: string) => {
+    if(verifyInFlight.current)return;
+    if(!ride_Id){notificationHelper('','Could not identify this delivery. Open it again from Active deliveries.','error');return;}
+    if(!/^\d{4}$/.test(otp||'')){notificationHelper('',translateData.otpInvalid||'Enter the 4-digit pickup PIN.','error');return;}
+    verifyInFlight.current=true
     setVerifyLoader(true)
 
     const now = startTimer()
@@ -331,7 +369,7 @@ export function OtpRide() {
       ride_id: ride_Id,
       otp: otp,
       start_time: formatTime(startTime || now),
-      start_ride_locations: ["Start Ride"],
+      start_ride_locations: ["Start Delivery"],
       start_ride_coordinates: [driverLocation],
     }
 
@@ -339,7 +377,8 @@ export function OtpRide() {
       .unwrap()
       .then(async res => {
 
-        if (res?.id) {
+        if (startedPickup(res,ride_Id)) {
+          setPickupSnapshot(previous=>mergeBookingSnapshot(previous||{id:ride_Id},res?.data||res))
           setVerifyLoader(false)
           closeOtpSheet()
           if (rideData?.service?.service_type == 'finddriver') {
@@ -351,14 +390,14 @@ export function OtpRide() {
           }
         } else {
           setVerifyLoader(false)
-          notificationHelper('', translateData.otpInvalid, 'error')
-          setEnteredOtp('')
-          clearText()
+          notificationHelper('', 'The server did not confirm that this delivery started. Please refresh the delivery and try again.', 'error')
         }
       })
       .catch(error => {
         setVerifyLoader(false)
+        notificationHelper('',error?.message||translateData.otpInvalid||'Could not verify the pickup PIN. Please try again.','error')
       })
+      .finally(()=>{verifyInFlight.current=false;setVerifyLoader(false)})
   }
 
   const cancelOpen = () => {
@@ -389,32 +428,24 @@ export function OtpRide() {
     <View style={styles.container}>
       <View style={styles.mapSection}>
         <ArrivedMap
-          Pickuplocation={rideData?.location_coordinates[0]}
+          Pickuplocation={rideData?.location_coordinates?.[0]}
           driverId={Driver_Id}
         />
       </View>
       <View style={styles.extraSection}></View>
-      <View style={styles.backButton}>
-        <BackButton />
-      </View>
+      <DeliveryBackButton/>
       {/* <View style={styles.greenSection}> */}
       <BottomSheet
         ref={otpSheetRef}
         index={1}
         snapPoints={otpSnapPoints}
+        enableDynamicSizing={false}
+        keyboardBehavior="fillParent"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
         enablePanDownToClose={false}
         enableHandlePanningGesture={true}
-        enableContentPanningGesture={false}
-        onChange={index => {
-          if (index === 0) {
-            otpSheetRef.current?.snapToIndex(1)
-          }
-        }}
-        onAnimate={(fromIndex, toIndex) => {
-          if (toIndex === 0) {
-            otpSheetRef.current?.snapToIndex(1)
-          }
-        }}
+        enableContentPanningGesture={true}
         handleIndicatorStyle={{
           backgroundColor: appColors.primary,
           width: '13%',
@@ -424,74 +455,49 @@ export function OtpRide() {
           backgroundColor: isDark ? appColors.bgDark : appColors.white,
         }}
       >
-        <BottomSheetView
-          style={[
-            styles.additionalSection,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
+        <BottomSheetScrollView
+          ref={pickupScrollRef}
+          style={{flex:1}}
+          contentContainerStyle={styles.additionalSection}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
         >
-          <View style={{ paddingHorizontal: windowHeight(0.5) }}>
-            <View style={{ alignSelf: 'center', left: windowHeight(0), height: windowHeight(15) }}>
-              <DriverProfile
-                iconColor={appColors.primary}
-                backgroundColor={colors.card}
-                borderRadius={windowHeight(25)}
-                showInfoIcon={true}
-                rideDetails={rideData}
-                userDetails={rideData?.rider}
-              />
+          <View ref={pickupContentRef} collapsable={false}>
+          <PickupCard role="driver" dark={isDark} name={rideData?.rider?.name} photo={bookingPhoto(rideData?.rider)} pickup={rideData?.locations?.[0]} since={arrival.current.since} onCall={senderPhone?()=>Linking.openURL('tel:'+senderPhone).catch(()=>undefined):undefined} onMessage={rideData?.rider?.id?()=>navigation.navigate('Chat',{driverId:rideData?.driver?.id||Driver_Id,riderId:rideData?.rider?.id,rideId:rideData?.id,riderName:rideData?.rider?.name,riderImage:rideData?.rider?.profile_image_url}):undefined}>
+            {!!goods&&<Text style={{fontSize:13,lineHeight:20,color:colors.text}}>Goods: {goods}</Text>}
+            {!!receiver&&<View style={{gap:5,marginTop:8}}><Text style={{fontSize:13,color:colors.text}}>Receiver: {receiver.name||receiver.receiver_name||'Not provided'}</Text>{!!receiverPhone&&<TouchableOpacity accessibilityRole="button" accessibilityLabel="Call parcel receiver" onPress={()=>Linking.openURL('tel:'+receiverPhone).catch(()=>undefined)} style={{minHeight:40,justifyContent:'center'}}><Text style={{color:appColors.primary}}>Call receiver ? {receiverPhone}</Text></TouchableOpacity>}</View>}
+          <View ref={pickupPinRef} collapsable={false} style={{padding:16,borderWidth:1,borderColor:colors.border,borderRadius:20,gap:12,backgroundColor:colors.card}}>
+            <Text style={[styles.timing,{color:colors.text,fontFamily:appFonts.bold,fontSize:18}]}>{translateData.otpVerification}</Text>
+            <View style={{flexDirection:'row',gap:10,width:'100%'}}>
+              {[0,1,2,3].map(position=><BottomSheetTextInput
+                key={position}
+                ref={node=>{otpInputs.current[position]=node}}
+                accessibilityLabel={`Pickup PIN digit ${position+1}`}
+                value={enteredOtp[position]||''}
+                onChangeText={value=>updatePickupPin(value,position)}
+                onKeyPress={({nativeEvent})=>handlePickupPinKeyPress(nativeEvent.key,position)}
+                onFocus={()=>{otpSheetRef.current?.expand();revealPickupPin()}}
+                keyboardType="number-pad"
+                maxLength={4-position}
+                textAlign="center"
+                selectionColor={appColors.primary}
+                placeholderTextColor={isDark?'#C8BCAB':'#6D6255'}
+                autoCorrect={false}
+                textContentType={position===0?'oneTimeCode':'none'}
+                autoComplete={position===0?'one-time-code':'off'}
+                returnKeyType="done"
+                onSubmitEditing={()=>Keyboard.dismiss()}
+                style={{flex:1,minHeight:54,borderWidth:enteredOtp.length===position?2:1,borderColor:enteredOtp.length===position?appColors.primary:colors.border,borderRadius:12,color:colors.text,fontFamily:appFonts.bold,fontSize:25,backgroundColor:colors.card,padding:0}}
+              />)}
             </View>
-            <Text
-              style={[
-                styles.timing,
-                {
-                  color: colors.text,
-                  marginTop: windowHeight(1),
-                  marginHorizontal: windowWidth(3),
-                },
-              ]}
-            >
-              {translateData.otpVerification}
-            </Text>
-            <OTPTextView
-              ref={ref => (otpInput.current = ref)}
-              containerStyle={[
-                styles.otpContainer,
-                { flexDirection: viewRtlStyle, marginTop: windowHeight(0) },
-              ]}
-              textInputStyle={[styles.otpInputs, { color: isDark ? appColors.white : appColors.black }]}
-              handleTextChange={handleChange}
-              inputCount={4}
-              keyboardType="numeric"
-              defaultValue={enteredOtp}
-              tintColor={appColors.primary}
-              offTintColor={colors.border}
-            />
           </View>
-        </BottomSheetView>
-        <View style={{ marginTop: windowHeight(33) }}>
-          <Button
-            backgroundColor={appColors.primary}
-            color={appColors.white}
-            title={translateData.verifyOTP}
-            onPress={verifyOTP}
-            loading={verifyLoader}
-          />
-        </View>
-        {taxidoSettingData?.cabbooking_values?.ads?.native_enable == 1 && (
-          <View style={{ marginBottom: windowHeight(-5) }}>
-            <NativeAdComponent adsHeight={windowHeight(10)} heights={windowHeight(28)} />
+          <Button backgroundColor={appColors.primary} color="#17191C" title={verifyLoader?'Verifying?':'Verify PIN & start delivery'} onPress={() => verifyOTP(enteredOtp)} loading={verifyLoader}/>
+
+          </PickupCard>
           </View>
-        )}
-        <View style={{ marginTop: windowHeight(3) }}>
-          <Button
-            backgroundColor={isDark ? appColors.darkThemeSub : appColors.lightGray}
-            color={isDark ? appColors.white : appColors.iconColor}
-            title={translateData.cancelTextT}
-            onPress={cancelOpen}
-            loading={cancelLoader}
-          />
-        </View>
+          {taxidoSettingData?.cabbooking_values?.ads?.native_enable == 1 && <NativeAdComponent adsHeight={windowHeight(10)} heights={windowHeight(28)}/>}
+          <Button backgroundColor={isDark?appColors.darkThemeSub:appColors.lightGray} color={isDark?appColors.white:appColors.iconColor} title={translateData.cancelTextT} onPress={cancelOpen} loading={cancelLoader}/>
+        </BottomSheetScrollView>
       </BottomSheet>
 
       <BottomSheet
@@ -509,7 +515,7 @@ export function OtpRide() {
         backgroundStyle={{
           backgroundColor: isDark ? appColors.bgDark : appColors.white,
         }}
-      >
+       android_keyboardInputMode="adjustResize" >
         <BottomSheetView style={{ alignItems: 'center' }}>
           <View style={[styles.model, { marginTop: windowHeight(8) }]}>
             <View style={styles.imageView}>
@@ -570,7 +576,7 @@ export function OtpRide() {
         backgroundStyle={{
           backgroundColor: isDark ? appColors.bgDark : appColors.white,
         }}
-      >
+       android_keyboardInputMode="adjustResize" >
         <BottomSheetView style={{ padding: windowHeight(2) }}>
           <Text
             style={{

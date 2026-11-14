@@ -90,6 +90,10 @@ class Rider extends User implements HasMedia
             $model->created_by_id = getCurrentUserId() ?? getAdmin()?->id;
         });
 
+        static::creating(function ($model) {
+            \Modules\Taxido\Services\RiderDeletionPolicy::assertRegistrationAllowed($model->email,$model->phone,$model->country_code);
+        });
+
         static::deleted(function ($rider) {
             $rider->reviews()->delete();
             $rider->payment_account()->delete();
@@ -122,6 +126,18 @@ class Rider extends User implements HasMedia
     public function getMorphClass()
     {
         return 'App\Models\User';
+    }
+
+    public function getFcmTokenAttribute($value)
+    {
+        return array_key_exists('rider_fcm_token', $this->attributes)
+            ? $this->attributes['rider_fcm_token'] : $value;
+    }
+
+    public function setFcmTokenAttribute($value): void
+    {
+        $this->attributes['fcm_token'] = $value;
+        $this->attributes['rider_fcm_token'] = $value;
     }
 
     /**

@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Keyboard, Alert } from 'react-native'
+import {View, TouchableOpacity, Keyboard, Alert, StyleSheet} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import styles from './styles'
 import { Button, notificationHelper } from '../../../../../commonComponents'
@@ -7,10 +8,11 @@ import OTPTextView from 'react-native-otp-textinput'
 import { LineAnimation } from '../../../login/component'
 import { useNavigation, useTheme, useRoute, useIsFocused } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../../../navigation/main/types'
 import { useValues } from '../../../../../utils/context'
 import { DriverLoginInterface, FleetVerifyOtpInterface, VerifyOtpInterface } from '../../../../../api/interface/authInterface'
-import { selfDriverData, settingDataGet, userVerifyOtp, userLogin, fleetsVerifyOtp } from '../../../../../api/store/action/index'
+import { selfDriverData, settingDataGet, userVerifyOtp, userLogin, fleetsLogin, fleetsVerifyOtp } from '../../../../../api/store/action/index'
 import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch } from '../../../../../api/store/index'
 import { getValue, setValue } from '../../../../../utils/localstorage/index'
@@ -19,8 +21,8 @@ import messaging from '@react-native-firebase/messaging';
 
 type navigation = NativeStackNavigationProp<RootStackParamList>
 
-const OtpView: React.FC = () => {
-  const route = useRoute()
+const OtpView: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
+  const route = useRoute<RouteProp<RootStackParamList, 'Otp'>>()
   const demouser = route.params || {}
   const { confirmation }: any = route.params
   const { translateData, settingData } = useSelector((state: any) => state.setting)
@@ -32,8 +34,8 @@ const OtpView: React.FC = () => {
   const { textRtlStyle, isDark, setToken, token } = useValues()
   const countryCode = route.params?.countryCode ?? '91'
   const phoneNumber = route.params?.phoneNumber ?? '1234567890'
-  const cca2 = route?.params?.cca2 ?? 'US'
-  const userType = route?.params?.userType ?? ''
+  const cca2 = route?.params?.cca2 ?? 'IN'
+  const userType = route?.params?.userType ?? 'driver'
 
   const [message, setMessage] = useState<string>('')
   const [fcmToken, setFcmToken] = useState('')
@@ -45,7 +47,9 @@ const OtpView: React.FC = () => {
   const isEmail = emailOrPhone.includes('@')
   const input = useRef<OTPTextView>(null)
   const isFocused = useIsFocused()
-  const [resendTimer, setResendTimer] = useState(0);
+  const [resendTimer, setResendTimer] = useState(30);
+  const resendInFlight = useRef(false);
+  const verificationInFlight = useRef(false)
   const formattedCountryCode = useMemo(() => {
     if (!countryCode) return '';
     return countryCode.startsWith('+') ? countryCode : `+${countryCode}`;
@@ -54,29 +58,13 @@ const OtpView: React.FC = () => {
 
   const handleChange = (otp: string) => {
     setEnteredOtp(otp)
+    setMessage('')
+    setWarning('')
     if (otp.length === 6) {
       Keyboard.dismiss()
       setWarning('')
     }
-    else {
-      setWarning(translateData?.validOtpEnter)
-    }
   }
-
-  useEffect(() => {
-    if (enteredOtp.length === 6) {
-      Keyboard.dismiss()
-      setWarning('')
-
-      if (userType == 'fleet') {
-        handleVerifyFleet(enteredOtp);
-      } else if (userType == 'driver') {
-        handleVerify(enteredOtp);
-      }
-    }
-    else {
-    }
-  }, [enteredOtp, fcmToken])
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -89,6 +77,9 @@ const OtpView: React.FC = () => {
   }, [isFocused])
 
   const handleVerify = async () => {
+    if (verificationInFlight.current) return
+    if (!/^\d{6}$/.test(enteredOtp)) { setWarning('Enter the 6-digit code.'); return }
+    verificationInFlight.current = true
     setLoading(true)
     const formatCountryCode = (code: string): string => {
       if (code.startsWith('+')) {
@@ -97,7 +88,7 @@ const OtpView: React.FC = () => {
       return code
     }
     let payload: VerifyOtpInterface = {
-      email_or_phone: phoneNumber,
+      email_or_phone: emailOrPhone,
       country_code: formatCountryCode(countryCode),
       token: enteredOtp,
       email: null,
@@ -122,6 +113,18 @@ const OtpView: React.FC = () => {
           } else {
             navigate('TabNav')
           }
+          if (res?.needs_mobile_update) {
+            setTimeout(() => {
+              Alert.alert(
+                'Add your mobile number',
+                'Add and verify a mobile number to make it easier to reach you about deliveries. You can do this now or later in Profile Settings.',
+                [
+                  { text: 'Later', style: 'cancel' },
+                  { text: 'Update now', onPress: () => navigate('ProfileSetting') },
+                ],
+              )
+            }, 500)
+          }
           dispatch(selfDriverData())
         } else if (res.success && !res.is_registered) {
           messaging()
@@ -134,7 +137,9 @@ const OtpView: React.FC = () => {
             countryCode,
             phoneNumber,
             cca2,
-            userType
+            userType,
+            verifiedChannel: res?.registration_proof?.type,
+            registrationProof: res?.registration_proof,
           })
           dispatch(settingDataGet())
           setSuccess(false)
@@ -147,16 +152,20 @@ const OtpView: React.FC = () => {
       .catch((error: any) => {
         setLoading(false)
         setSuccess(false)
-        setMessage(translateData?.verifyWarn)
+        setMessage(error?.message || 'The code is invalid or expired. Please try again.')
       })
+      .finally(() => { verificationInFlight.current = false; setLoading(false) })
   }
 
 
   const handleVerifyFleet = async () => {
+    if (verificationInFlight.current) return
     if (!enteredOtp || enteredOtp.length < 6) {
       setWarning(translateData?.validOtpEnter)
       return
     }
+    verificationInFlight.current = true
+    setLoading(true)
 
     const formatCountryCode = (code: string): string => {
       if (code.startsWith('+')) {
@@ -214,8 +223,9 @@ const OtpView: React.FC = () => {
       })
       .catch((error: any) => {
         setSuccess(false)
-        setMessage(translateData?.verifyWarn)
+        setMessage(error?.message || 'The code is invalid or expired. Please try again.')
       })
+      .finally(() => { verificationInFlight.current = false; setLoading(false) })
   }
 
   useEffect(() => {
@@ -239,16 +249,18 @@ const OtpView: React.FC = () => {
 
 
   const handelGetOtp = async () => {
-    setResendTimer(15)
+    if (resendTimer > 0 || resendInFlight.current) return;
+    resendInFlight.current = true;
     const payload: DriverLoginInterface = {
-      email_or_phone: phoneNumber,
+      email_or_phone: emailOrPhone,
       country_code: formattedCountryCode,
       fcm_token: fcmToken
     };
 
     try {
-      const res = await dispatch(userLogin(payload)).unwrap();
+      const res = await dispatch(userType === 'fleet' ? fleetsLogin(payload) : userLogin(payload)).unwrap();
       if (res?.success) {
+        setEnteredOtp(''); setMessage(''); setWarning(''); input.current?.clear(); setResendTimer(30);
         await setValue('userType', userType);
         notificationHelper('', translateData?.otpSent, 'success');
       } else {
@@ -256,6 +268,8 @@ const OtpView: React.FC = () => {
       }
     } catch (error) {
       notificationHelper('', translateData?.loginFailed, 'error');
+    } finally {
+      resendInFlight.current = false;
     }
   }
 
@@ -271,11 +285,12 @@ const OtpView: React.FC = () => {
       ]}
     >
       <View style={styles.subView}>
-        <View style={styles.space} />
-        <LineAnimation />
+        {!compact && <View style={styles.space} />}
+        {!compact && <LineAnimation />}
         <Text
           style={[
             styles.otpVef,
+            compact && { marginTop: 0 },
             { color: colors.text, textAlign: textRtlStyle },
           ]}
         >
@@ -285,13 +300,14 @@ const OtpView: React.FC = () => {
 
         <Text style={[styles.subtitle, { textAlign: textRtlStyle }]}>
           {isEmail
-            ? `${translateData?.enterOtp} ${emailOrPhone}`
-            : `${translateData?.enterOtp} ${formattedCountryCode} ${emailOrPhone}`}
+            ? `${(translateData?.verificationCodeSentTo || 'Enter the 6-digit code sent to')} ${emailOrPhone}`
+            : `${(translateData?.verificationCodeSentTo || 'Enter the 6-digit code sent to')} ${formattedCountryCode} ${emailOrPhone}`}
         </Text>
 
         <Text
           style={[
             styles.title,
+            compact && { marginTop: 8 },
             { color: colors.text, textAlign: textRtlStyle },
           ]}
         >
@@ -299,16 +315,17 @@ const OtpView: React.FC = () => {
         </Text>
         <View style={[styles.inputContainer, { flexDirection: viewRtlStyle }]}>
           <OTPTextView
-            containerStyle={[
+            ref={input}
+            containerStyle={StyleSheet.flatten([
               styles.otpContainer,
               { flexDirection: viewRtlStyle },
-            ]}
-            textInputStyle={[
+            ]) as any}
+            textInputStyle={StyleSheet.flatten([
               styles.otpInput,
               {
                 color: colors.text,
               },
-            ]}
+            ]) as any}
             handleTextChange={handleChange}
             inputCount={6}
             keyboardType="numeric"
@@ -318,9 +335,10 @@ const OtpView: React.FC = () => {
           />
         </View>
         {warning !== '' && <Text style={styles.warningText}>{warning}</Text>}
+        {message !== '' && <Text accessibilityRole="alert" style={styles.warningText}>{message}</Text>}
       </View>
 
-      <View style={styles.buttonView}>
+      <View style={[styles.buttonView, compact && { marginTop: 16 }]}>
         <Button
           title={translateData?.verify}
           onPress={() => {
@@ -350,7 +368,7 @@ const OtpView: React.FC = () => {
             disabled={resendTimer !== 0}
           >
             <Text style={[styles.resend, { color: resendTimer === 0 ? colors.text : 'gray' }]}>
-              {resendTimer === 0 ? translateData?.resendIt : `${translateData?.resendOtp} ${resendTimer}s`}
+              {resendTimer === 0 ? 'Resend OTP' : `Resend OTP in ${resendTimer}s`}
             </Text>
           </TouchableOpacity>
         </View>

@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { fontSizes, windowHeight, windowWidth } from '@src/themes';
 import { external } from '../../../../styles/externalStyle';
@@ -21,6 +22,8 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(5),
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   dashedBorder: {
     borderStyle: 'dashed',
@@ -32,13 +35,15 @@ const styles = StyleSheet.create({
     marginHorizontal: windowHeight(6),
     alignItems: 'center',
     justifyContent: 'center',
+  
+    ...riderCardFinish,
   },
   uploadText: {
     ...commonStyles.regularText,
     ...external.mt_3,
   },
   selectedImage: {
-    width: windowWidth(440),
+    width: '100%',
     height: windowHeight(80),
     borderRadius: windowHeight(4.9),
     resizeMode: 'cover',

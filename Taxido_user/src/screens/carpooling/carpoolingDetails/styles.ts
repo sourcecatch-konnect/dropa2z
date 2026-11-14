@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { StyleSheet } from "react-native";
 
@@ -71,7 +72,9 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOpacity: 0.1,
         shadowRadius: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     safetyCallView: {
         alignItems: "center",
         justifyContent: "center", height: windowHeight(30),
@@ -83,7 +86,9 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOpacity: 0.1,
         shadowRadius: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     starContainer: { alignItems: "flex-end", justifyContent: "center" },
     viewDetails: {
         color: appColors.whiteColor, textAlign: 'center', fontFamily: appFonts.medium,
@@ -135,7 +140,9 @@ const styles = StyleSheet.create({
         marginHorizontal: windowHeight(1),
     },
     scrollView: { marginHorizontal: windowWidth(20), marginVertical: windowHeight(17) },
-    scrollMainView: { backgroundColor: appColors.whiteColor, padding: windowHeight(10), borderRadius: windowHeight(5), borderWidth: windowHeight(1), borderColor: appColors.border },
+    scrollMainView: { backgroundColor: appColors.whiteColor, padding: windowHeight(10), borderRadius: windowHeight(5), borderWidth: windowHeight(1), borderColor: appColors.border ,
+    ...riderCardFinish,
+  },
     container: { flexDirection: 'row', justifyContent: 'space-between' },
     authBg: { height: windowHeight(45), width: windowHeight(45), borderRadius: windowHeight(5) },
     platNumberView: { flexDirection: 'row', width: windowWidth(120), justifyContent: 'space-between', alignItems: 'center', marginTop: windowHeight(5) },
@@ -220,9 +227,13 @@ const styles = StyleSheet.create({
     dotMainView:{ flexDirection: "row", alignItems: "center", paddingHorizontal: windowHeight(7), marginTop: windowHeight(0) },
     viewDot:{ flexDirection: "row", alignItems: "center", paddingHorizontal: windowHeight(7), marginTop: windowHeight(5), top: windowHeight(2) },
     toyotaView:{ marginHorizontal: windowHeight(2), flexDirection: 'row', justifyContent: "space-between" },
-    cityStatusesView:{ height: windowHeight(28), width: windowHeight(64), borderRadius: windowHeight(5), backgroundColor: appColors.primary, bottom: windowHeight(5), justifyContent: "center", paddingHorizontal: windowHeight(2) },
+    cityStatusesView:{ height: windowHeight(28), width: windowHeight(64), borderRadius: windowHeight(5), backgroundColor: appColors.primary, bottom: windowHeight(5), justifyContent: "center", paddingHorizontal: windowHeight(2) ,
+    ...riderCardFinish,
+  },
     cityStatusesViewLabel:{ color: appColors.whiteColor, textAlign: 'center', fontFamily: appFonts.medium, fontSize: fontSizes.FONT16 },
-    citiesMainContainer:{ backgroundColor: appColors.whiteColor, padding: windowHeight(10), borderRadius: windowHeight(5), borderWidth: windowHeight(1), borderColor: appColors.border, marginBottom: windowHeight(0) },
+    citiesMainContainer:{ backgroundColor: appColors.whiteColor, padding: windowHeight(10), borderRadius: windowHeight(5), borderWidth: windowHeight(1), borderColor: appColors.border, marginBottom: windowHeight(0) ,
+    ...riderCardFinish,
+  },
     citiesContainer:{ paddingHorizontal: windowWidth(0), marginBottom: windowHeight(0) },
     citiesDate:{ color: appColors.primary, fontFamily: appFonts.medium, fontSize: fontSizes.FONT22 },
     stepType:{ marginBottom: windowHeight(17) },

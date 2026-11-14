@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { commonStyles } from '../../styles/commonStyle';
 import { windowHeight, windowWidth } from '@src/themes';
@@ -16,6 +17,8 @@ const styles = StyleSheet.create({
     borderWidth: windowHeight(1),
     borderColor: appColors.primaryGray,
     ...commonStyles.shadowContainer,
+  
+    ...riderCardFinish,
   },
   img: {
     width: windowWidth(70),
@@ -31,6 +34,8 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(10),
     ...external.mt_20,
     ...external.mh_20,
+  
+    ...riderCardFinish,
   },
   fareStyle: {
     ...commonStyles.mediumTextBlack12,
@@ -54,6 +59,8 @@ const styles = StyleSheet.create({
     height: windowHeight(79),
     backgroundColor: appColors.modelBg,
     borderRadius: windowHeight(4),
+  
+    ...riderCardFinish,
   },
 });
 

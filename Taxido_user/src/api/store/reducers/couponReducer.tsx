@@ -23,7 +23,7 @@ const couponSlice = createSlice({
             state.statusCode = action.payload.status;
             state.loading = false;
         });
-        builder.addCase(couponListData.rejected, (state: any) => {
+        builder.addCase(couponListData.rejected, (state: any, action) => {
             state.loading = false;
             state.success = false;
             state.statusCode = action.payload?.status || 500;

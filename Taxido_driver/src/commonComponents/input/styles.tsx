@@ -9,12 +9,13 @@ const styles = StyleSheet.create({
   },
   subContainer: {
     borderWidth: windowHeight(0.1),
-    borderRadius: windowHeight(0.8),
+    borderRadius: 14,
     overflow: 'hidden',
   },
   inputContainer: {
     alignItems: 'center',
     height: windowHeight(6),
+    minHeight: 52,
   },
   iconContainer: {
     marginHorizontal: windowWidth(2.5),
@@ -24,7 +25,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   input: {
-    color: appColors.secondaryFont,
+    color: appColors.primaryFont,
     paddingHorizontal: windowWidth(0.7),
     fontFamily: appFonts.regular,
     fontSize: fontSizes.FONT4,

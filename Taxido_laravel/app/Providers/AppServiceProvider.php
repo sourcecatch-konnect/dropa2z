@@ -62,42 +62,26 @@ class AppServiceProvider extends ServiceProvider
 
             $limiterName = 'api';
             $limitType = 'ip';
-            $ip = $request->ip();
-            $key = "{$limiterName}:{$limitType}:{$ip}";
-            $violationKey = "{$key}:violations";
+            $authenticatedUser = $request->user();
+            $subject = $authenticatedUser
+                ? get_class($authenticatedUser) . ':' . $authenticatedUser->getAuthIdentifier()
+                : 'ip:' . $request->ip();
+            $key = "{$limiterName}:{$limitType}:{$subject}";
 
             $config = config("rate-limiting.limiters.{$limiterName}");
-            $maxAttempts = $config['limits']['ip']['max_attempts'] ?? 60;
-            $growthStrategy = $config['growth_strategy'] ?? 'fibonacci';
-            $maxSuspensionTime = config('rate-limiting.max_suspension_time', 3600);
+            // Ride tracking polls several API endpoints and Rider and Driver
+            // may be used on the same network. Give each signed-in account its
+            // own reasonable per-minute budget; unauthenticated calls remain
+            // grouped by IP.
+            $maxAttempts = $config['limits']['ip']['max_attempts'] ?? 240;
 
             $currentAttempts = RateLimiter::attempts($key);
 
             if ($currentAttempts >= $maxAttempts) {
-                // Increment violations
-                RateLimiter::hit($violationKey, 3600);
-                $violationCount = RateLimiter::attempts($violationKey);
-                $decay = match ($growthStrategy) {
-                    'exponential' => min($maxSuspensionTime, 60 * 2 ** $violationCount),
-                    'fibonacci' => min($maxSuspensionTime, 60 * (function($n) {
-                        if ($n <= 0) return 1;
-                        if ($n === 1) return 1;
-                        if ($n === 2) return 2;
-                        $a = 1; $b = 2;
-                        for ($i = 3; $i <= $n; $i++) {
-                            $tmp = $a + $b; $a = $b; $b = $tmp;
-                        }
-                        return $b;
-                    })($violationCount)),
-                    default => min($maxSuspensionTime, 60 * $violationCount),
-                };
-
-                RateLimiter::clear($key);
-                for ($i = 0; $i < $maxAttempts; $i++) {
-                    RateLimiter::hit($key, $decay);
-                }
-
-                $waitMinutes = ceil($decay / 60);
+                // Return the remaining window without increasing a penalty on
+                // every retry. Repeated blocked polls must not extend the ban.
+                $decay = max(1, RateLimiter::availableIn($key));
+                $waitMinutes = max(1, ceil($decay / 60));
                 $messageTemplate = config("rate-limiting.messages.{$limiterName}.{$limitType}")
                     ?? config('rate-limiting.messages.default', 'Too many attempts. Please wait :minutes minutes.');
 

@@ -1,0 +1,30 @@
+// Allocate one monotonically increasing version per APK/AAB build invocation.
+// Read-only Gradle tasks (help, dependencies, IDE sync) never consume a version.
+def versionFile = new File(project.projectDir, 'app-version.properties')
+def packagingTasks = ['assemble', 'assembleDebug', 'assembleRelease', 'bundle', 'bundleDebug', 'bundleRelease', 'installDebug', 'installRelease', 'packageDebug', 'packageRelease', 'build']
+def bumpVersion = gradle.startParameter.taskNames.any { task -> packagingTasks.contains(task.tokenize(':').last()) }
+def lockHandle = new RandomAccessFile(new File(project.projectDir, 'app-version.properties.lock'), 'rw')
+def versionLock = lockHandle.channel.lock()
+try {
+    if (!versionFile.exists()) throw new GradleException('Missing app-version.properties; refusing to reset the Android version.')
+    def values = new Properties()
+    versionFile.withInputStream { values.load(it) }
+    def code = Integer.parseInt(values.getProperty('versionCode'))
+    def name = values.getProperty('versionName')
+    if (!(name ==~ /\d+\.\d+\.\d+/) || code < 1) throw new GradleException('Invalid Android app version.')
+    if (bumpVersion) {
+        if (code >= 2100000000) throw new GradleException('Android versionCode limit reached.')
+        def segments = name.tokenize('.').collect { Integer.parseInt(it) }
+        code++
+        name = "${segments[0]}.${segments[1]}.${segments[2] + 1}"
+        def temp = new File(project.projectDir, 'app-version.properties.tmp')
+        temp.setText("versionCode=${code}\nversionName=${name}\n", 'UTF-8')
+        java.nio.file.Files.move(temp.toPath(), versionFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+        logger.lifecycle("Dropa2z ${project.rootProject.name}: allocated version ${name} (${code})")
+    }
+    project.ext.dropa2zVersionCode = code
+    project.ext.dropa2zVersionName = name
+} finally {
+    versionLock.release()
+    lockHandle.close()
+}

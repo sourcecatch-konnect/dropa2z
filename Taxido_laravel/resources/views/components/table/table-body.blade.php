@@ -273,8 +273,27 @@
                                                         <a
                                                             href="{{ $route }}"><span>{{ $action['title'] }}</span></a>
                                                     @else
-                                                        <a
-                                                            href="{{ route($action['route'], $row['id']) }}"><span>{{ $action['title'] }}</span></a>
+                                                        @php
+                                                            $isProtectedStateAction =
+                                                                str_ends_with($action['route'], '.destroy') ||
+                                                                str_ends_with($action['route'], '.forceDelete') ||
+                                                                str_ends_with($action['route'], '.restore');
+                                                            $stateActionMethod = str_ends_with($action['route'], '.restore')
+                                                                ? 'PATCH'
+                                                                : 'DELETE';
+                                                        @endphp
+                                                        @if ($isProtectedStateAction)
+                                                            <button type="button" class="secure-action-btn"
+                                                                data-bs-toggle="modal" data-bs-target="#secureActionConfirmation"
+                                                                data-url="{{ route($action['route'], $row['id']) }}"
+                                                                data-method="{{ $stateActionMethod }}"
+                                                                data-action-label="{{ $action['title'] }}">
+                                                                <span>{{ $action['title'] }}</span>
+                                                            </button>
+                                                        @else
+                                                            <a
+                                                                href="{{ route($action['route'], $row['id']) }}"><span>{{ $action['title'] }}</span></a>
+                                                        @endif
                                                         {{--
                                                  @if ($action['class'] == 'delete')
                                                 <a href="button" class="permanentDeleteBtn" data-bs-toggle="modal" data-bs-target="#deletePermanentConfirmation" data-url="{{ route($action['route'], $row['id']) }}"><span>{{ $action['title'] }}</span></a>

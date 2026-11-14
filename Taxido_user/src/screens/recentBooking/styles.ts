@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { Platform, StyleSheet } from "react-native";
 import { appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { commonStyles } from "../../styles/commonStyle";
@@ -76,6 +77,8 @@ const styles = StyleSheet.create({
     margin: windowHeight(12),
     borderRadius: windowHeight(5),
     marginBottom: windowHeight(0),
+  
+    ...riderCardFinish,
   },
   viewWidth: { width: "65%" },
   viewWidth1: { width: "35%" },

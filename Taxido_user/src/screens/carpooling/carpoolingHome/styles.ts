@@ -1,10 +1,13 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { appColors } from "@src/themes";
 
 export const styles = StyleSheet.create({
   mainView: { flex: 1, backgroundColor: appColors.whiteColor },
-  back: { height: windowHeight(35), width: windowHeight(35), borderWidth: windowHeight(1), borderColor: appColors.border, borderRadius: windowHeight(5), alignItems: 'center', justifyContent: 'center' },
+  back: { height: windowHeight(35), width: windowHeight(35), borderWidth: windowHeight(1), borderColor: appColors.border, borderRadius: windowHeight(5), alignItems: 'center', justifyContent: 'center' ,
+    ...riderCardFinish,
+  },
   iconContainer: {
     height: windowHeight(35),
     width: windowHeight(35),
@@ -60,14 +63,20 @@ export const styles = StyleSheet.create({
   },
   headerView: { height: windowHeight(60), backgroundColor: appColors.whiteColor, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: windowWidth(20), alignItems: 'center' },
   headerText: { color: appColors.primaryText, fontFamily: appFonts.semiBold, fontSize: fontSizes.FONT22 },
-  add: { height: windowHeight(35), width: windowHeight(35), borderWidth: windowHeight(1), borderColor: appColors.border, borderRadius: windowHeight(5), alignItems: 'center', justifyContent: 'center' },
+  add: { height: windowHeight(35), width: windowHeight(35), borderWidth: windowHeight(1), borderColor: appColors.border, borderRadius: windowHeight(5), alignItems: 'center', justifyContent: 'center' ,
+    ...riderCardFinish,
+  },
   mapView: { height: windowHeight(100) },
   view: { marginTop: '43%' },
   searchRide: { textAlign: 'center', color: appColors.gray, fontFamily: appFonts.medium },
   createRide: { textAlign: 'center', color: appColors.whiteColor, fontFamily: appFonts.medium },
   lineContainer: { marginHorizontal: windowHeight(20), bottom: windowHeight(1), height: windowHeight(12) },
-  createRideView: { borderRadius: windowHeight(6), height: windowHeight(40), width: '47.7%', justifyContent: 'center', backgroundColor: appColors.primary },
-  searchRideView: { borderRadius: windowHeight(6), height: windowHeight(40), width: '47.7%', borderColor: appColors.border, borderWidth: windowHeight(1.5), justifyContent: 'center' },
+  createRideView: { borderRadius: windowHeight(6), height: windowHeight(40), width: '47.7%', justifyContent: 'center', backgroundColor: appColors.primary ,
+    ...riderCardFinish,
+  },
+  searchRideView: { borderRadius: windowHeight(6), height: windowHeight(40), width: '47.7%', borderColor: appColors.border, borderWidth: windowHeight(1.5), justifyContent: 'center' ,
+    ...riderCardFinish,
+  },
   rideView: { flexDirection: 'row', marginHorizontal: windowHeight(10), justifyContent: 'space-between', paddingHorizontal: windowHeight(3) },
   buttonView: { width: '92%', alignSelf: 'center', top: windowHeight(8) },
   recent: {
@@ -77,7 +86,9 @@ export const styles = StyleSheet.create({
     marginTop: windowHeight(18)
   },
   locationView: { top: windowHeight(0) },
-  locationMainView: { borderRadius: windowHeight(6), paddingVertical: windowHeight(20), width: '92%', borderColor: appColors.border, borderWidth: windowHeight(1.5), alignSelf: 'center' },
+  locationMainView: { borderRadius: windowHeight(6), paddingVertical: windowHeight(20), width: '92%', borderColor: appColors.border, borderWidth: windowHeight(1.5), alignSelf: 'center' ,
+    ...riderCardFinish,
+  },
   textView: { flexDirection: 'row', alignItems: "center", marginTop: windowHeight(3) },
   addressView: {
     borderBottomWidth: windowHeight(1),

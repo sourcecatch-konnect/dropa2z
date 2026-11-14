@@ -6,17 +6,50 @@
     Log::info($menuItems->toJson()); 
 @endphp
 <!-- Sidebar Start-->
+<style>
+    .page-sidebar .sidebar-top .logo-wrapper .admin-brand-mark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 144px;
+        height: 42px;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .page-sidebar .sidebar-top .logo-wrapper .admin-brand-mark .main-logo {
+        display: block;
+        width: 144px;
+        height: 32px;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
+    @media (min-width: 992px) {
+        .page-sidebar.open .sidebar-top .logo-wrapper .admin-brand-mark {
+            width: 38px;
+            padding: 0;
+        }
+
+        .page-sidebar.open:hover .sidebar-top .logo-wrapper .admin-brand-mark {
+            width: 144px;
+            padding: 0;
+        }
+    }
+</style>
 <div class="page-sidebar">
     <div class="sidebar">
         <div class="sidebar-top">
             <div class="logo-wrapper">
-                <a href="{{ route('admin.dashboard.index') }}">
+                <a class="admin-brand-mark" href="{{ route('admin.dashboard.index') }}">
                     @if (isset(getSettings()['general']['dark_logo_image']))
                         <img src="{{ getSettings()['general']['dark_logo_image']?->original_url }}" class="main-logo"
-                            alt="logo">
-                        <img src="{{ asset('images/favicon.svg') }}" alt="favicon" class="sm-logo">
+                            alt="Dropa2z">
+                        <img src="{{ asset('images/favicon.svg') }}" alt="Dropa2z" class="sm-logo">
                     @else
-                        <img src="{{ asset('images/logo.svg') }}" alt="logo">
+                        <img src="{{ asset('images/logo.svg') }}" alt="Dropa2z">
                     @endif
                 </a>
             </div>

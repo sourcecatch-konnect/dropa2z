@@ -1,14 +1,8 @@
-import {
-  View,
-  Text,
-  TextInput,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Keyboard,
-  ScrollView,
-} from "react-native";
+import {CardHeading} from '../../design/CardHeading';
+import {ReferenceScreen} from '../../design/ReferenceChrome';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {View, FlatList, Image, TouchableOpacity, TouchableWithoutFeedback, Keyboard, ScrollView} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import React, { useState } from "react";
 import { Header, notificationHelper } from "@src/commonComponent";
 import { commonStyles } from "@src/styles/commonStyle";
@@ -27,6 +21,7 @@ import { useAppNavigation } from "@src/utils/navigation";
 import Images from "@src/utils/images";
 
 export function TopUpWallet() {
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const {
     viewRTLStyle,
@@ -169,13 +164,13 @@ export function TopUpWallet() {
   };
 
   return (
-    <View
-      style={[
+    <ReferenceScreen><View
+      style={[[
         commonStyles.flexContainer,
         { backgroundColor: isDark ? appColors.primaryText : appColors.lightGray },
-      ]}>
+      ], {backgroundColor:'transparent'}]}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={{ flex: 0.9 }}>
+        <View style={{ flex: 1 }}>
           <Header value={translateData.topupWallet} />
           <ScrollView
             style={[
@@ -235,7 +230,7 @@ export function TopUpWallet() {
                       },
                     ]}
                     placeholder={translateData.amount}
-                    placeholderTextColor={appColors.regularText}
+                    placeholderTextColor={isDark ? "#BBC1CA" : appColors.regularText}
                     keyboardType="numeric"
                     value={amount}
                     onChangeText={text => setAmount(text)}
@@ -243,13 +238,7 @@ export function TopUpWallet() {
                 </View>
 
                 <View style={styles.titleContainer}>
-                  <Text
-                    style={[
-                      styles.title,
-                      { color: textColorStyle, textAlign: textRTLStyle },
-                    ]}>
-                    {translateData.selectMethod}
-                  </Text>
+                  <CardHeading icon="wallet" title={translateData.selectMethod || "Choose Payment Method"}/>
                 </View>
 
                 <View
@@ -300,7 +289,7 @@ export function TopUpWallet() {
       <View
         style={[
           styles.payBottomView,
-          ,
+          { paddingBottom: Math.max(insets.bottom, 12) },
           {
             backgroundColor: isDark
               ? appColors.darkHeader
@@ -315,6 +304,6 @@ export function TopUpWallet() {
           />
         </View>
       </View>
-    </View>
+    </View></ReferenceScreen>
   );
 }

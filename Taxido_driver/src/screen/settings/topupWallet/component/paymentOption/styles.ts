@@ -1,18 +1,17 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appColors from '../../../../../theme/appColors'
 import { windowHeight, windowWidth } from '../../../../../theme/appConstant'
-import { useValues } from '../../../../../utils/context'
-
-const { viewRtlStyle } = useValues()
 
 const styles = StyleSheet.create({
   main: {
     alignItems: 'center',
     marginTop: windowHeight(1.2),
     justifyContent: 'space-between',
+  
+    ...referenceSurfaces.card,
   },
   imgMaincontainer: {
-    flexDirection: viewRtlStyle,
     alignItems: 'center',
     justifyContent: 'center',
   },

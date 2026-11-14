@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, Platform } from "react-native";
+import {View, Image, TouchableOpacity, Platform, Alert} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useState } from "react";
 import Images from "@utils/images";
 import styles from "./styles";
@@ -8,12 +9,15 @@ import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/
 import { WalletEye } from "@src/assets/icons/walletEye";
 import { Gift, TopUp } from "@src/utils/icons";
 import { WalletEyeClose } from "@src/assets/icons/walletEyeClose";
+import {BrandSymbol} from '../../../../design/BrandLogo';
+import {useValues} from '../../../../utils/context';
 
 interface BalanceTopupProps {
   balance: number | any;
 }
 
 export function BalanceTopup({ balance }: BalanceTopupProps) {
+  const {isDark} = useValues();
   const { navigate } = useAppNavigation();
   const { translateData } = useSelector((state: any) => state.setting);
   const { zoneValue } = useSelector((state: any) => state.zone);
@@ -39,8 +43,9 @@ export function BalanceTopup({ balance }: BalanceTopupProps) {
   });
 
   return (
-    <View style={styles.mainBalance}>
-      <Image source={Images.cardBackground} style={styles.walletImage} />
+    <View style={[styles.mainBalance, {borderColor: isDark ? '#41464E' : '#E5E7EB'}]}>
+      <View pointerEvents="none" style={{position:'absolute',right:-35,top:-50,width:210,height:210,borderRadius:105,borderWidth:28,borderColor:'#FC9F0324'}}/>
+      <View pointerEvents="none" style={{position:'absolute',right:20,top:20,opacity:.2}}><BrandSymbol size={56} color="#FC9F03"/></View>
       <View style={[styles.subBalance]}>
         <View style={{ marginHorizontal: windowWidth(18) }}>
           <View style={styles.balanceView}>
@@ -51,7 +56,7 @@ export function BalanceTopup({ balance }: BalanceTopupProps) {
               borderBottomWidth: 1,
               borderStyle: Platform.OS === 'ios' ? 'solid' : "dashed",
               width: "100%",
-              borderColor: "#81BFAF",
+              borderColor: "#BF9881",
             }}
           />
           <View
@@ -72,12 +77,14 @@ export function BalanceTopup({ balance }: BalanceTopupProps) {
             </Text>
 
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={isVisible?'Hide wallet balance':'Show wallet balance'}
               onPress={() => setIsVisible(prev => !prev)}
               style={{
                 marginHorizontal: windowWidth(10),
                 alignItems: "center",
                 justifyContent: "center",
-                height: windowHeight(21),
+                minWidth:44,minHeight:44,
               }}>
               {isVisible ? <WalletEye /> : <WalletEyeClose />}
             </TouchableOpacity>
@@ -88,8 +95,8 @@ export function BalanceTopup({ balance }: BalanceTopupProps) {
               activeOpacity={0.9}
               onPress={gotoTopUp}
               style={{
-                backgroundColor: appColors.whiteColor,
-                height: windowHeight(28),
+                backgroundColor: isDark ? '#3B2B19' : appColors.whiteColor,
+                minHeight:44,
                 width: "47.5%",
                 flexDirection: "row",
                 alignItems: "center",
@@ -99,7 +106,7 @@ export function BalanceTopup({ balance }: BalanceTopupProps) {
               <TopUp />
               <Text
                 style={{
-                  color: appColors.primary,
+                  color: isDark ? '#FFBE60' : '#A64B00',
                   marginHorizontal: windowWidth(8),
                   fontFamily: appFonts.medium,
                 }}>
@@ -108,9 +115,12 @@ export function BalanceTopup({ balance }: BalanceTopupProps) {
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.9}
+              accessibilityRole="button"
+              accessibilityLabel="Gift cards, coming soon"
+              onPress={() => Alert.alert('Gift cards', 'Gift cards are not available yet. You can use Top Up to add money to your wallet.')}
               style={{
-                backgroundColor: appColors.whiteColor,
-                height: windowHeight(28),
+                backgroundColor: isDark ? '#3B2B19' : appColors.whiteColor,
+                minHeight:44,
                 width: "47.5%",
                 flexDirection: "row",
                 alignItems: "center",
@@ -133,7 +143,7 @@ export function BalanceTopup({ balance }: BalanceTopupProps) {
               <Gift />
               <Text
                 style={{
-                  color: appColors.primary,
+                  color: isDark ? '#FFBE60' : '#A64B00',
                   marginHorizontal: windowWidth(8),
                   fontFamily: appFonts.medium,
                 }}>
@@ -145,7 +155,7 @@ export function BalanceTopup({ balance }: BalanceTopupProps) {
       </View>
       <Text
         style={{
-          color: "#B7C7C4",
+          color: "#FFE6BC",
           fontFamily: appFonts.regular,
           fontSize: fontSizes.FONT19,
           textAlign: "center",

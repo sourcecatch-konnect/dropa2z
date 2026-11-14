@@ -1,11 +1,5 @@
-import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native'
+import {View, FlatList, Image, TouchableOpacity, ScrollView} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { paymentsData, purchaseData } from '../../../api/store/action'

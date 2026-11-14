@@ -4,21 +4,23 @@ import appFonts from '../../theme/appFonts'
 
 const styles = StyleSheet.create({
   header: {
-    alignItems: 'center',
-    height: windowHeight(9.5),
+    minHeight:104,
+    justifyContent:'center',
+    paddingVertical:10,
+    borderBottomWidth:.5,
+    borderBottomColor:'#E5E8EB',
     paddingHorizontal: windowWidth(3),
   },
   activeRide: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: fontSizes.FONT5,
+    textAlign: 'left',
+    fontSize:24,
+    fontWeight:'700',
     fontFamily: appFonts.medium,
-    position: 'absolute',
   },
   headerTitle: {
-    alignItems: 'center',
     justifyContent: 'center',
-    width: '76%',
+    flex:1,
+    marginHorizontal:12,
   },
 })
 export default styles

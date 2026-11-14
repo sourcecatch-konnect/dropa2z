@@ -9,6 +9,7 @@ use Modules\Taxido\Models\Bid;
 use Modules\Taxido\Models\Ride;
 use Modules\Taxido\Models\Driver;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Exceptions\ExceptionHandler;
 use Modules\Taxido\Models\RideRequest;
 use Modules\Taxido\Enums\ServicesEnum;
@@ -255,13 +256,13 @@ trait RideTrait
                     'payment_method' => $rideRequest?->payment_method,
                     'currency_symbol' => $rideRequest?->currency_symbol,
                     'description' => $rideRequest?->description,
+                    'delivery_details' => $rideRequest?->delivery_details,
                     'cargo_image_id' => $rideRequest?->cargo_image_id,
                     'ride_status_id' => getRideStatusIdByName(RideStatusEnum::ACCEPTED),
                     'ride_fare' => $rideRequest?->ride_fare,
                     'tax' => $rideRequest?->tax,
                     'preference_charge' => $rideRequest?->preference_charge ?? 0,
                     'weight' => $rideRequest?->weight,
-                    'parcel_delivered_otp' => $rideRequest?->parcel_delivered_otp,
                     'parcel_receiver' => $rideRequest->parcel_receiver,
                     'platform_fees' => $rideRequest?->platform_fee,
                     'sub_total' => $rideRequest?->sub_total,
@@ -286,7 +287,8 @@ trait RideTrait
                 $bids = Bid::where('ride_request_id', $rideRequest->id)->whereNull('deleted_at')->pluck('id')->toArray();
                 $ride->bids()->attach($bids);
                 DB::commit();
-                if (!$settings['activation']['ride_otp']) {
+                $requiresGoodsPickupOtp = in_array($rideRequest->service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true);
+                if (!$settings['activation']['ride_otp'] && ! $requiresGoodsPickupOtp) {
                     $ride->update([
                         'is_otp_verified' => true,
                         'ride_status_id' => getRideStatusIdByName(RideStatusEnum::STARTED),
@@ -345,10 +347,30 @@ trait RideTrait
                 ];
 
                 if ($driver?->id) {
-                    $this->broadcastRideAcceptance($rideRequest, $ride, $driver, $bid);
+                    try {
+                        $this->broadcastRideAcceptance($rideRequest, $ride, $driver, $bid);
+                    } catch (\Throwable $broadcastError) {
+                        // The ride is already committed. A realtime transport
+                        // outage must not turn a successful acceptance into an
+                        // HTTP 500 and leave both apps showing different states.
+                        Log::warning('Ride acceptance broadcast failed after ride creation', [
+                            'ride_request_id' => $rideRequest->id,
+                            'ride_id' => $ride->id,
+                            'driver_id' => $driver->id,
+                            'error' => $broadcastError->getMessage(),
+                        ]);
+                    }
                 }
 
-                event(new RideStatusEvent($ride));
+                try {
+                    event(new RideStatusEvent($ride));
+                } catch (\Throwable $statusEventError) {
+                    Log::warning('Ride status event failed after ride creation', [
+                        'ride_request_id' => $rideRequest->id,
+                        'ride_id' => $ride->id,
+                        'error' => $statusEventError->getMessage(),
+                    ]);
+                }
                 return $ride;
             }
 

@@ -1,3 +1,4 @@
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
 import { BackHandler, SafeAreaView, ScrollView } from "react-native";
 import React, { useCallback } from "react";
 import { external } from "../../../../styles/externalStyle";
@@ -36,7 +37,7 @@ export function CategoryScreen() {
   const { translateData } = useSelector((state: any) => state.setting);
 
   return (
-    <SafeAreaView style={[external.fx_1, { backgroundColor: bgFullStyle }]}>
+    <ReferenceScreen><SafeAreaView style={[[external.fx_1, { backgroundColor: bgFullStyle }], {backgroundColor:'transparent'}]}>
       <HeaderTab tabName={translateData?.services} />
       <ScrollView
         contentContainerStyle={[external.Pb_10]}
@@ -50,6 +51,6 @@ export function CategoryScreen() {
         <CategoryDetail />
 
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView></ReferenceScreen>
   );
 }

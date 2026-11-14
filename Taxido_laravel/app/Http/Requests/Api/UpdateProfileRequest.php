@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api;
 use App\Exceptions\ExceptionHandler;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Validation\Rule;
 
 class UpdateProfileRequest extends FormRequest
 {
@@ -25,11 +26,27 @@ class UpdateProfileRequest extends FormRequest
      */
     public function rules()
     {
-        $id = auth('sanctum')->user()->id;
+        $user = $this->user('sanctum');
+        $id = $user->getKey();
+        $emailRules = ['sometimes', 'email'];
+        $phoneRules = ['sometimes', 'nullable'];
+
+        // Existing role-specific accounts can share an identity. Re-saving that
+        // identity must not fail because another role already uses it.
+        if (strcasecmp(trim((string) $this->input('email')), trim((string) $user->email)) !== 0) {
+            $emailRules[] = Rule::unique('users', 'email')->ignore($id)->whereNull('deleted_at');
+        }
+        if ((string) $this->input('phone') !== (string) $user->phone) {
+            $phoneRules[] = 'digits_between:6,15';
+            if (!empty($user->phone)) {
+                $phoneRules[] = 'required';
+            }
+            $phoneRules[] = Rule::unique('users', 'phone')->ignore($id)->whereNull('deleted_at');
+        }
         return [
             'name'  => ['max:255'],
-            'email' => ['email', 'unique:users,email,'.$id.',id,deleted_at,NULL'],
-            'phone' => ['required', 'digits_between:6,15','unique:users,phone,'.$id.',id,deleted_at,NULL'],
+            'email' => $emailRules,
+            'phone' => $phoneRules,
         ];
     }
 

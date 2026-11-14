@@ -17,7 +17,6 @@ use Modules\Taxido\Enums\ServicesEnum;
 use Modules\Taxido\Events\RideRequestEvent;
 use Modules\Taxido\Http\Resources\Drivers\RideRequestResource;
 use Modules\Taxido\Jobs\AssignNextDriverJob;
-use Modules\Taxido\Jobs\FindDriverGlobalTimeoutJob;
 use Modules\Taxido\Models\Driver;
 use Modules\Taxido\Models\Ride;
 use Modules\Taxido\Models\Rider;
@@ -26,20 +25,27 @@ use Modules\Taxido\Models\VehicleType;
 use Modules\Taxido\Models\VehicleTypeZone;
 use Illuminate\Http\Request;
 use Modules\Taxido\Notifications\RideRequestNotification;
+use Modules\Taxido\Notifications\RiderRideStatusNotification;
 
 trait RideRequestTrait
 {
     use BiddingTrait, RideTrait;
 
-    public function verifyRideWalletBalance($rider_id)
+    public function verifyRideWalletBalance($rider_id, $paymentMethod = 'cash', $amount = 0)
     {
+        // Previous wallet debt should not block cash or online bookings.
+        if (strtolower(trim((string) $paymentMethod)) !== 'wallet') {
+            return true;
+        }
+
         $roleName = getCurrentRoleName();
         if ($roleName == EnumsRoleEnum::RIDER) {
             $rider_id = $rider_id ?? getCurrentUserId();
         }
         $rider = Rider::findOrFail($rider_id);
-        if ($rider?->wallet?->balance < 0) {
-            throw new Exception(__('taxido::static.rides.negative_wallet_balance'), 400);
+        $walletBalance = (float) ($rider?->wallet?->balance ?? 0);
+        if ($walletBalance < (float) $amount) {
+            throw new Exception(__('taxido::static.wallets.wallet_balance_not_sufficient'), 400);
         }
 
         return true;
@@ -56,8 +62,19 @@ trait RideRequestTrait
 
     public function verifyVehicleType($request)
     {
-        $vehicleType = VehicleType::where('id', $request->vehicle_type_id)?->whereNull('deleted_at')?->first();
-        if (! in_array($request?->service_id, [$vehicleType?->service_id])) {
+        $vehicleType = VehicleType::where('id', $request->vehicle_type_id)->where('status', 1)->first();
+        if (! $vehicleType) {
+            throw new Exception('This delivery vehicle is unavailable.', 422);
+        }
+        $service = getServiceById($request->service_id);
+        $category = getServiceCategoryById($request->service_category_id);
+        if (! $service || ! $service->status || ! $category || ! $category->status ||
+            (int) $category->service_id !== (int) $service->id) {
+            throw new Exception('This delivery service is unavailable.', 422);
+        }
+        $supportsService = (int) $vehicleType->service_id === (int) $request->service_id ||
+            $vehicleType->services()->where('services.id', $request->service_id)->exists();
+        if (! $supportsService) {
             throw new Exception(__('taxido::static.rides.service_not_allow_for_vehicle', ['vehicleType' => $vehicleType?->name]), 400);
         }
         $allowed = $vehicleType?->service_categories?->pluck('id')?->toArray();
@@ -95,7 +112,17 @@ trait RideRequestTrait
                     $rideRequest?->zones()?->attach($zones);
 
                     $vehicleTypeId = $rideRequest->vehicle_type_id;
-                    $driverIds = Driver::whereNull('deleted_at')?->where('is_verified', true)?->where('service_id', $rideRequest->service_id);
+                    $driverIds = Driver::whereNull('deleted_at')->where('is_verified', true)->where('status', true);
+                    if (\Illuminate\Support\Facades\Schema::hasTable('driver_training_progress')) {
+                        $driverIds->whereNotIn('id', \Illuminate\Support\Facades\DB::table('driver_training_progress')
+                            ->where('is_required', true)->whereNull('completed_at')->select('driver_id'));
+                    }
+                    // Parcel and Freight share the same verified Bike/Auto pool.
+                    // The selected vehicle has already been checked against the
+                    // service/category, so an old cab service_id must not hide it.
+                    if (! in_array($rideRequest->service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true)) {
+                        $driverIds->where('service_id', $rideRequest->service_id);
+                    }
                     $driverIds = $driverIds->whereHas('vehicle_info', function (Builder $vehicleInfo) use ($vehicleTypeId) {
                         $vehicleInfo->where('vehicle_type_id', $vehicleTypeId);
                     });
@@ -108,9 +135,11 @@ trait RideRequestTrait
                     }
 
                     $taxidoSettings = getTaxidoSettings();
-                    $minWalletBalance = $taxidoSettings['wallet']['driver_min_wallet_balance'] ?? 0;
+                    $minWalletBalance = \Modules\Taxido\Services\DriverWalletPolicy::minimumRequired($taxidoSettings);
                     $driverIds = $driverIds->whereHas('wallet', function (Builder $wallet) use ($minWalletBalance) {
-                        $wallet->where('balance', '>=', $minWalletBalance);
+                        if ($minWalletBalance !== null) {
+                            $wallet->where('balance', '>=', $minWalletBalance);
+                        }
                     });
 
                     if (in_array(getServiceCategoryTyeById($rideRequest->service_category_id), [ServiceCategoryEnum::RENTAL, ServiceCategoryEnum::PACKAGE, ServiceCategoryEnum::OUTSTATION, ServiceCategoryEnum::DAILY, ServiceCategoryEnum::ONEWAY, ServiceCategoryEnum::ROUNDTRIP])) {
@@ -167,9 +196,9 @@ trait RideRequestTrait
             $rideRequest  = $biddingData;
 
         } else {
-            $acceptanceSeconds = (int) ($taxidoAppSettings['ride']['ride_request_time_driver'] ?? 30);
-
             $instantRideRequest = RideRequest::where('ride_type', 'instant')
+                ->where('current_driver_id', $driverId)
+                ->where('driver_acceptance_expires_at', '>', now())
                 ->whereHas('drivers', function ($q) use ($driverId) {
                     $q->where('driver_id', $driverId);
                 })
@@ -180,7 +209,6 @@ trait RideRequestTrait
                 ->whereHas('ride_status_activities', function ($q) use ($activeStatuses) {
                     $q->whereIn('status', $activeStatuses)->latest('changed_at')->limit(1);
                 })
-                ->where('created_at', '>=', now()->subSeconds($acceptanceSeconds))
                 ->latest('created_at')
                 ->first();
 
@@ -188,7 +216,7 @@ trait RideRequestTrait
                 $data                                 = (new RideRequestResource($instantRideRequest))->toArray($request);
                 $data['type']                         = 'request';
                 $data['driver_id']                    = $driverId;
-                $data['driver_acceptance_expires_at'] = $instantRideRequest->created_at->addSeconds($acceptanceSeconds)->toISOString();
+                $data['driver_acceptance_expires_at'] = $instantRideRequest->driver_acceptance_expires_at?->toISOString();
                 $rideRequest                          = $data;
             }
         }
@@ -202,6 +230,9 @@ trait RideRequestTrait
 
             $serviceCategory = getServiceCategoryById($request->service_category_id);
             $service = getServiceById($request->service_id);
+            if (in_array($service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true)) {
+                app(\Modules\Taxido\Services\IndiaLocalDeliveryPolicy::class)->assertLocalRoute($request->location_coordinates);
+            }
             if ($serviceCategory?->type == ServiceCategoryEnum::SCHEDULE && $request->start_time) {
                 $hours = (int) (getTaxidoSettings()['ride']['schedule_min_hour_limit'] ?? 0);
                 if ($hours > 0 && Carbon::parse($request->start_time)->lte(now()->addHours($hours))) {
@@ -253,19 +284,22 @@ trait RideRequestTrait
                     }
 
                     $roleName = getCurrentRoleName();
-                    $rider = $request->new_rider ?? getCurrentRider();
-                    $rider_id = $rider?->id ?? $request->rider_id;
+                    $authenticatedRider = getCurrentRider();
+                    $rider = $request->new_rider ?? $authenticatedRider;
+                    $rider_id = $authenticatedRider?->id ?? $request->rider_id ?? ($rider instanceof Rider ? $rider->id : null);
                     if ($roleName != RoleEnum::RIDER && $roleName != RoleEnum::DRIVER) {
                         $rider = Rider::where('id', $request->rider_id)?->whereNull('deleted_at')->first();
+                        $rider_id = $rider?->id;
                     }
 
                     if (!$rider) {
                         throw new Exception('Rider not found!', 404);
                     }
 
-                    if ($this->verifyRideWalletBalance($rider_id)) {
+                    $this->verifyRideWalletBalance($rider_id, $request->payment_method ?? 'cash', $total);
                         $taxidoSettings = getTaxidoSettings();
                         $isBiddingEnabled = (bool) (int) ($taxidoSettings['activation']['bidding'] ?? 0);
+                        $findDriverLimit = max(1, (int) ($taxidoSettings['ride']['find_driver_time_limit'] ?? 3));
                         $rideRequest = RideRequest::create([
                             'ride_number' => 100000 + ((RideRequest::max('id') + 1) + Ride::max('id') + 1),
                             'rider_id' => $rider_id,
@@ -275,6 +309,7 @@ trait RideRequestTrait
                             'service_category_id' => $request->service_category_id,
                             'rider' => $rider,
                             'description' => $request->description,
+                            'delivery_details' => $request->input('delivery_details'),
                             'duration' => $zoneRideDistance?->ride_distance['duration'] ?? $request?->duration,
                             'distance' => $zoneRideDistance?->ride_distance['distance_value'] ?? $request?->distance,
                             'distance_unit' => $zoneRideDistance?->ride_distance['distance_unit'] ?? $request?->distance_unit,
@@ -295,7 +330,6 @@ trait RideRequestTrait
                             'hourly_package_id' => $request->hourly_package_id,
                             'weight' => $request->weight,
                             'parcel_receiver' => $request->parcel_receiver,
-                            'parcel_delivered_otp' => rand(1000, 9999),
                             'start_time' => $request->start_time,
                             'bid_extra_amount' => $total - $charges['total'],
                             'no_of_days' => $this->getNoOfDaysAttribute($request?->start_time, $request?->end_time),
@@ -304,6 +338,7 @@ trait RideRequestTrait
                             'peak_zone_charge' => $charges['peak_zone_charge'] ?? 0,
                             'driver_id' => $request->drivers ?? $request->driver_id,
                             'ride_type'=> $request->ride_type ?? ($isBiddingEnabled ? 'bidding' : 'instant'),
+                            'find_driver_expires_at' => now()->addMinutes($findDriverLimit),
                         ]);
 
                         if ($request->hasFile('cargo_image')) {
@@ -381,10 +416,20 @@ trait RideRequestTrait
                         }
    
                         Log::info('Ride request created', ['ride_request_id' => $rideRequest->id]);
+                        // The passenger/contact snapshot can be an array. Always
+                        // notify the persisted rider account, and do not fail an
+                        // already-created ride request if notification storage fails.
+                        try {
+                            $notificationRider = Rider::find($rider_id);
+                            $notificationRider?->notify(new RiderRideStatusNotification($rideRequest, 'requested'));
+                        } catch (\Throwable $notifyEx) {
+                            Log::warning('RideRequestTrait: rider request notification failed', [
+                                'ride_request_id' => $rideRequest->id,
+                                'rider_id' => $rider_id,
+                                'error' => $notifyEx->getMessage(),
+                            ]);
+                        }
                         event(new RideRequestEvent($rideRequest));
-                        $findDriverLimit = (int) ($taxidoSettings['ride']['find_driver_time_limit'] ?? 3);
-                        FindDriverGlobalTimeoutJob::dispatch($rideRequest->id)?->delay(now()->addMinutes($findDriverLimit));
-
                         $resource = new RideRequestResource($rideRequest);
 
                         return [
@@ -393,8 +438,6 @@ trait RideRequestTrait
                             'drivers' => $drivers,
                             'preferences' => $request->preferences,
                         ];
-                    }
-
                 } catch (Exception $e) {
                     DB::rollback();
                     throw new ExceptionHandler($e->getMessage(), $e->getCode());

@@ -5,7 +5,7 @@ export function Gift() {
     return (
         <Svg width={22} height={22} fill="none">
             <G
-                stroke="#199675"
+                stroke="#FC9F03"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeMiterlimit={10}

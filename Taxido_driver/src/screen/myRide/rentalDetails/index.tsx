@@ -1,4 +1,6 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, Modal } from 'react-native'
+import {VehicleGraphic} from '../../../design/VehicleGraphic';
+import {View, Image, TouchableOpacity, ScrollView, Modal} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useState } from 'react'
 import { Button, Header, notificationHelper } from '../../../commonComponents'
 import appColors from '../../../theme/appColors'
@@ -183,7 +185,9 @@ export function RentalDetails({ route }: any) {
             >
               <View style={{ flexDirection: viewRtlStyle }}>
                 <View style={{ height: windowHeight(7), width: windowHeight(7), backgroundColor: isDark ? appColors.bgDark : appColors.lightGray, borderRadius: windowWidth(2), alignItems: 'center', justifyContent: 'center' }}>
-                  <Image source={{ uri: ride?.vehicle_type?.vehicle_image_url }} style={styles.carLogo1} />
+                  <VehicleGraphic source={{
+  uri: ride?.vehicle_type?.vehicle_image_url
+}} style={styles.carLogo1} vehicle={ride?.vehicle_type} />
                 </View>
                 <View style={styles.rideNoContainer}>
                   <Text

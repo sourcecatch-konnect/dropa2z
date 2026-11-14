@@ -1,3 +1,4 @@
+import {useKeyboardState} from '../../../../utils/useKeyboardState';
 import React, { useEffect, useState } from 'react'
 import { Keyboard, View } from 'react-native'
 import { AuthTemplate } from '../component/authTemplate'
@@ -22,6 +23,7 @@ export function OtpVerify() {
   const { navigate } = useAppNavigation()
   const { isDark, viewRtlStyle } = useValues()
   const [warning, setWarning] = useState('')
+  const {visible:keyboardVisible}=useKeyboardState();
   const route = useRoute<any>()
   const email = route.params?.email ?? ''
   const demouser = route.params || {}
@@ -34,6 +36,8 @@ export function OtpVerify() {
   const [message, setMessage] = useState<string>('')
   const { loading } = useSelector((state: any) => state.auth)
   const { translateData } = useSelector((state: any) => state.setting)
+
+  
 
   const handleChange = (otp: string) => {
     setEnteredOtp(otp)
@@ -98,7 +102,7 @@ export function OtpVerify() {
   }
 
   return (
-    <AuthTemplate image={Images.otpVerify}>
+    <AuthTemplate image={Images.otpVerify} keyboardVisible={keyboardVisible}>
       <AuthTitle
         title={translateData.otpVerification}
         subTitle={`${translateData.enterOtp} ${email}`}
@@ -124,7 +128,7 @@ export function OtpVerify() {
           defaultValue={enteredOtp}
         />
       </View>
-      <View style={style.sendBtn}>
+      <View style={[style.sendBtn,{position:'relative',bottom:0,width:'100%',marginHorizontal:0,marginTop:20,marginBottom:16}]}>
         <Button
           backgroundColor={appColors.primary}
           title={translateData.verify}

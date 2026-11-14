@@ -1,4 +1,5 @@
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import {View, TouchableOpacity} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Header, notificationHelper, SwitchComponent } from '@src/commonComponent';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';

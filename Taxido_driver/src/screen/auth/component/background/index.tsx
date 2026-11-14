@@ -1,3 +1,4 @@
+import {DeliveryArtwork} from '../../../../design/DeliveryArtwork';
 import { View, Image } from 'react-native'
 import React from 'react'
 import styles from './styles'
@@ -16,17 +17,7 @@ export function Background() {
         },
       ]}
     >
-      {isDark ? (
-        <Image
-          source={images.cityBackGroundDark}
-          style={[styles.backgroundImage]}
-        />
-      ) : (
-        <Image
-          source={images.cityBackGround}
-          style={[styles.backgroundImage]}
-        />
-      )}
+      <DeliveryArtwork height={190}/>
     </View>
   )
 }

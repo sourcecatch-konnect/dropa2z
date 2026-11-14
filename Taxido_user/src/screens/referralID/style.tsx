@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../design/ReferenceChrome';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { StyleSheet } from "react-native";
 
@@ -21,7 +23,7 @@ const styles = StyleSheet.create({
         fontFamily: appFonts.semiBold,
         fontSize: fontSizes.FONT21,
         width: windowWidth(250),
-        color: "#BADFD6",
+        color: "#DFC8BA",
     },
     button: {
         height: windowHeight(30),
@@ -48,7 +50,11 @@ const styles = StyleSheet.create({
         borderRadius: windowWidth(4),
         paddingHorizontal: windowWidth(15),
 
-    },
+    
+    ...referenceSurfaces.card,
+  
+    ...riderCardFinish,
+  },
     que: {
         fontFamily: appFonts.bold,
         fontSize: fontSizes.FONT20,

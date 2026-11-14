@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
-import { Image, Text, View } from "react-native";
+import {Image, View} from 'react-native';
+import {Text} from '../../design/Typography';
 import styles from "./styles";
 import { useValues } from "../../utils/context";
 

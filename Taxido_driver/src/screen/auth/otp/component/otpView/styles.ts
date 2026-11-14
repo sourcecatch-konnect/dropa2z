@@ -1,15 +1,12 @@
-import { Platform, StyleSheet } from 'react-native'
+import { StyleSheet } from 'react-native'
 import appColors from '../../../../../theme/appColors'
 import { fontSizes, SCREEN_WIDTH, windowHeight, windowWidth } from '../../../../../theme/appConstant'
 import appFonts from '../../../../../theme/appFonts'
 
 const styles = StyleSheet.create({
   otpView: {
-    position: 'absolute',
-    bottom: windowHeight(0),
-    left: windowHeight(0),
-    right: windowHeight(0),
-    height: Platform.OS === 'ios' ? windowHeight(41) : windowHeight(45),
+    width: '100%',
+    paddingBottom: 20,
     borderTopRightRadius: windowHeight(3),
     borderTopLeftRadius: windowHeight(3),
   },
@@ -22,7 +19,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textAlignVertical: 'center',
     borderWidth: windowHeight(0.2),
-    borderRadius: windowHeight(0.9),
+    borderRadius: 14,
     paddingVertical: 0,
     paddingHorizontal: 0,
     fontSize: windowWidth(4.9),

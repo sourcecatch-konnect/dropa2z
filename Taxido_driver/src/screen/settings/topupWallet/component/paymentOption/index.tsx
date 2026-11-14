@@ -1,6 +1,7 @@
 import { useTheme } from '@react-navigation/native'
 import React from 'react'
-import { View, Text, Image } from 'react-native'
+import {View, Image} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import { CustomRadioButton } from '../../../../../commonComponents'
 import { useValues } from '../../../../../utils/context'
 import styles from './styles'
@@ -24,7 +25,7 @@ export function PaymentOption({
 
   return (
     <View style={[styles.main, { flexDirection: viewRtlStyle }]}>
-      <View style={styles.imgMaincontainer}>
+      <View style={[styles.imgMaincontainer, {flexDirection: viewRtlStyle}]}>
         <View style={styles.imageContainer}>
           <Image source={imageSource} style={styles.imageView} />
         </View>

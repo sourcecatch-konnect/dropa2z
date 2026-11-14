@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Image, FlatList } from 'react-native';
+import {View, ScrollView, Image, FlatList} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import { commonStyles } from '../../../../styles/commonStyle';
 import { external } from '../../../../styles/externalStyle';
 import { Header, SolidLine, LineContainer, LocationDetails, ProgressBar, Button } from '@src/commonComponent';

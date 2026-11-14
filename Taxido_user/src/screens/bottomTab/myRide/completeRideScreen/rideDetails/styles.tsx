@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native';
 import { commonStyles } from '../../../../../styles/commonStyle';
 import { appColors, windowHeight, windowWidth } from '@src/themes';
@@ -13,6 +14,8 @@ export const styles = StyleSheet.create({
   billSummaryContainer: {
     paddingHorizontal: windowWidth(52),
     marginTop: windowHeight(9),
+  
+    ...referenceSurfaces.card,
   },
   billSummaryText: {
     ...commonStyles.extraBold,
@@ -34,6 +37,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(52),
     marginBottom: windowHeight(18),
     paddingTop: windowHeight(9),
+  
+    ...referenceSurfaces.card,
   },
   paymentMethodText: {
     ...commonStyles.extraBold,

@@ -2,15 +2,11 @@ import {
    cancellationReason
   } from "../endpoints/cancelationEndPoint";
   import { GET_API } from "../methods";
+  import { requireApiSuccess } from "../responseError";
   
   export const cancelationData = async () => {
-    return GET_API(cancellationReason)
-      .then((res) => {
-        return res;
-      })
-      .catch((e) => {
-        return e?.response;
-      });
+    return requireApiSuccess(await GET_API(cancellationReason, { timeout: 10000 }),
+      "Could not load cancellation reasons. You can enter your own reason.");
   };
   
 

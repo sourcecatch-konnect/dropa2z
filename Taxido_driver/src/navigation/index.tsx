@@ -1,3 +1,5 @@
+import {LegalDocuments} from '../screen/settings/legalDocuments';
+import {DriverTraining} from '../screen/driverTraining';
 import React, { useEffect, useState } from 'react'
 import {
   DefaultTheme,
@@ -70,6 +72,7 @@ import { navigationRef } from '../commonComponents/helper/navigationService'
 import { FleetDetails, UploadedDocument } from '../screen'
 import { TotalEarnings } from '../screen/fleet'
 import { MapWebView } from '../commonComponents'
+import {DeliveryNavigation} from '../screen/deliveryNavigation';
 import { DashBoard } from '../screen/dashBoard'
 import { PdfViewer } from '../screen/myRide'
 import { Login } from '../screen'
@@ -124,6 +127,7 @@ function Navigation() {
           <RootStack.Screen name="NoInternet" component={NoInternet} />
         ) : (
           <>
+            <RootStack.Screen name="DriverTraining" component={DriverTraining} />
             <RootStack.Screen name="Splash" component={Splash} />
             <RootStack.Screen name="OnBoarding" component={OnBoarding} />
             <RootStack.Screen name="Login" component={Login} />
@@ -160,7 +164,7 @@ function Navigation() {
             <RootStack.Screen name="ActiveRide" component={ActiveRide} />
             <RootStack.Screen name="EndRide" component={EndRide} />
             <RootStack.Screen name="OtpRide" component={OtpRide} />
-            <RootStack.Screen name="Ride" component={Ride} />
+            <RootStack.Screen name="Delivery" component={Ride} />
             <RootStack.Screen name="RideComplete" component={RideComplete} />
             <RootStack.Screen name="RideDetails" component={RideDetails} />
             <RootStack.Screen
@@ -176,6 +180,7 @@ function Navigation() {
               name="DocumentDetail"
               component={DocumentDetail}
             />
+            <RootStack.Screen name="LegalDocuments" component={LegalDocuments} />
             <RootStack.Screen name="BankDetails" component={BankDetails} />
             <RootStack.Screen name="VehicleDetail" component={VehicleDetail} />
             <RootStack.Screen name="Notification" component={Notification} />
@@ -206,6 +211,7 @@ function Navigation() {
             <RootStack.Screen name="TotalEarnings" component={TotalEarnings} />
             <RootStack.Screen name="DashBoard" component={DashBoard} />
             <RootStack.Screen name="MapWebView" component={MapWebView} />
+            <RootStack.Screen name="DeliveryNavigation" component={DeliveryNavigation} />
             <RootStack.Screen name="PdfViewer" component={PdfViewer} />
             <RootStack.Screen
               name="AddVehicleDetails"

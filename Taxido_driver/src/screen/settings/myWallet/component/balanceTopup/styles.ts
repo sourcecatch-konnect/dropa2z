@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appColors from '../../../../../theme/appColors'
 import appFonts from '../../../../../theme/appFonts'
@@ -6,21 +7,23 @@ import { fontSizes, windowHeight, windowWidth } from '../../../../../theme/appCo
 const styles = StyleSheet.create({
   mainBalance: {
     marginTop: windowHeight(2),
-    borderRadius: windowHeight(1.2),
+    borderRadius: 22,
     overflow: 'hidden',
     marginHorizontal: windowWidth(4),
-    height: windowHeight(23.5),
-    backgroundColor: appColors.darkPrimary,
+    minHeight: windowHeight(23.5),
+    backgroundColor: "#17191C",
+  
+    ...referenceSurfaces.card,
   },
   walletImage: {
-    height: windowHeight(19),
+    ...StyleSheet.absoluteFillObject,
+    height: '100%',
     width: '100%',
     borderRadius: windowHeight(1),
     resizeMode: 'stretch',
   },
   subBalance: {
-    position: 'absolute',
-    height: windowHeight(6),
+    paddingBottom: windowHeight(1.4),
     width: '100%',
     justifyContent: 'space-between',
   },
@@ -30,25 +33,29 @@ const styles = StyleSheet.create({
     marginVertical: windowHeight(1.4),
   },
   balanceTitle: {
-    color: appColors.value,
+    color: "#FFDEAB",
     fontSize: fontSizes.FONT4,
     marginBottom: windowHeight(0.1),
     fontFamily: appFonts.regular,
   },
   totalBalance: {
-    fontSize: fontSizes.FONT6,
+    fontSize: 30,
+    lineHeight: 37,
     color: appColors.white,
     fontFamily: appFonts.bold,
   },
   topupBtn: {
-    height: windowHeight(5),
-    width: windowWidth(20),
+    minHeight: 44,
+    minWidth: windowWidth(20),
+    paddingHorizontal: 12,
     backgroundColor: appColors.white,
     borderRadius: windowHeight(1),
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: windowHeight(3),
+    marginVertical: windowHeight(1),
     marginHorizontal: windowWidth(4),
+  
+    ...referenceSurfaces.control,
   },
   topupTitle: {
     color: appColors.primary,

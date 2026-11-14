@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { BackHandler, TouchableOpacity, View, Text } from 'react-native';
+import {BackHandler, TouchableOpacity, View} from 'react-native';
+import {Text} from '../../design/Typography';
 import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { windowHeight } from '../../theme/appConstant';

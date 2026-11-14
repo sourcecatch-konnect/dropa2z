@@ -1,0 +1,101 @@
+﻿import React from 'react';
+import renderer,{act} from 'react-test-renderer';
+import {LocationDrop} from '../src/screens/locationDrop';
+import {HomeServiceChoices} from '../src/design/HomeServiceChoices';
+import {AddressSuggestionOverlay} from '../src/components/homeScreen/AddressSuggestionOverlay';
+import {TextInput,Alert} from 'react-native';
+const mockNavigate=jest.fn(),mockSetParams=jest.fn();
+const mockState:any={setting:{settingData:{values:{activation:{login_number:1}}},translateData:{proceed:'Proceed',pickupLocationTittle:'Pickup',enterDestination:'Destination'},taxidoSettingData:{cabbooking_values:{ride:{}}}},service:{serviceData:{data:[{id:1,type:'parcel',service_categories:[{id:11,slug:'ride-parcel-bike'},{id:12,slug:'ride-parcel-auto'}]},{id:2,type:'freight',service_categories:[{id:21,slug:'ride-freight-bike'},{id:22,slug:'ride-freight-auto'}]}]}},saveLocation:{saveLocationDataGet:{data:[]}},zone:{zoneValue:{id:3}}};
+const mockParams:any={selectedAddress:'Station, Jalgaon',fieldValue:'destination',pinLatitude:21.02,pinLongitude:75.58};
+jest.mock('@react-navigation/native',()=>({useRoute:()=>({name:'HomeScreen',params:mockParams}),useNavigation:()=>({navigate:mockNavigate,setParams:mockSetParams}),useFocusEffect:(f:any)=>require('react').useEffect(f,[f])}));
+jest.mock('../src/utils/navigation',()=>({useAppNavigation:()=>({navigate:mockNavigate,replace:jest.fn()})}));
+jest.mock('react-redux',()=>({useSelector:(select:any)=>select(mockState),useDispatch:()=>jest.fn(()=>Object.assign(Promise.resolve({payload:{id:3}}),{unwrap:async()=>({id:3})}))}));
+jest.mock('../src/api/store/actions',()=>({userZone:(p:any)=>({type:'zone',payload:p})}));
+jest.mock('../src/api/store/actions/vehicleTypeAction',()=>({vehicleTypeDataGet:(p:any)=>({type:'vehicles',payload:p})}));
+jest.mock('../src/utils/context',()=>({useValues:()=>({viewRTLStyle:'row',textRTLStyle:'left',isDark:false,Google_Map_Key:'test-key'})}));
+jest.mock('../src/utils/localstorage',()=>({getValue:jest.fn(async(key:string)=>key==='token'?'token':null),setValue:jest.fn(async()=>{})}));
+jest.mock('../src/components/helper/locationHelper',()=>({__esModule:true,default:()=>({currentLatitude:21.01,currentLongitude:75.56})}));
+jest.mock('../src/utils/icons',()=>new Proxy({},{get:()=>()=>null}));
+jest.mock('../src/commonComponent',()=>({Button:(p:any)=>require('react').createElement('BookingButton',p),Header:()=>null,SolidLine:()=>null,InputText:()=>null}));
+jest.mock('react-native-safe-area-context',()=>({useSafeAreaInsets:()=>({bottom:12,top:0,left:0,right:0})}));
+jest.mock('../src/components/homeScreen/BookingActivityCard',()=>({BookingActivityCard:()=>null}));
+jest.mock('../src/components/homeScreen/PlaceCategoryShortcuts',()=>({PlaceCategoryShortcuts:(p:any)=>require('react').createElement('PlaceCategoryShortcuts',p)}));
+let tree:renderer.ReactTestRenderer;
+beforeEach(()=>{jest.clearAllMocks();global.fetch=jest.fn().mockResolvedValue({json:async()=>({status:'OK',results:[{formatted_address:'Home, Jalgaon',address_components:[{types:['country'],short_name:'IN'}]}]})});});
+afterEach(()=>{if(tree)act(()=>tree.unmount());jest.useRealTimers();mockState.saveLocation.saveLocationDataGet.data=[];});
+it('explains an unselected typed destination instead of silently ignoring Proceed',async()=>{
+ const alert=jest.spyOn(Alert,'alert').mockImplementation(()=>{});
+ await act(async()=>{tree=renderer.create(<LocationDrop embedded festive serviceParams={{service_ID:1,service_name:'parcel',service_category_ID:11,preferredVehicleKind:'bike',defultAddress:'Home, Jalgaon',defultCoords:{lat:21.01,lng:75.56}}}/>);});
+ const destination=tree.root.findAllByType(TextInput).find(input=>input.props.value==='Station, Jalgaon')!;
+ await act(async()=>{destination.props.onChangeText('New typed destination');});
+ const proceed=tree.root.findAllByType('BookingButton' as any).find(button=>button.props.title?.startsWith('Proceed'))!;
+ await act(async()=>{await proceed.props.onPress();});
+ expect(alert).toHaveBeenCalledWith('Select a destination',expect.stringContaining('Typing an address alone'));
+ expect(mockNavigate).not.toHaveBeenCalled();
+ expect(tree.root.findAll(node=>node.props.onPress&&node.props.children==='View More')).toHaveLength(0);
+ expect(tree.root.findAll(node=>node.props.onPress&&node.props.accessibilityLabel==='Locate on map').length).toBeGreaterThan(0);
+ expect(tree.root.findAllByType('PlaceCategoryShortcuts' as any)).toHaveLength(1);
+ expect(tree.root.findAllByType('BookingButton' as any).find(button=>button.props.title?.startsWith('Proceed'))!.props.loading).toBe(false);
+ alert.mockRestore();
+});
+it('shows three homepage services and keeps selected endpoints when changing service',async()=>{
+ await act(async()=>{tree=renderer.create(<LocationDrop embedded festive serviceParams={{service_ID:1,service_name:'parcel',service_category_ID:11,preferredVehicleKind:'bike',defultAddress:'Home, Jalgaon',defultCoords:{lat:21.01,lng:75.56}}}/>);});
+ const choices=tree.root.findByType(HomeServiceChoices);
+ expect(choices.props.options.map((item:any)=>item.key)).toEqual(['bike-parcel','auto-parcel','auto-freight']);
+ for(const key of ['auto-parcel','auto-freight','bike-parcel']){
+  await act(async()=>{choices.props.onSelect(key);});
+  expect(tree.root.findByType(HomeServiceChoices).props.selectedKey).toBe(key);
+  const values=tree.root.findAllByType(TextInput).map(input=>input.props.value);
+  expect(values).toContain('Home, Jalgaon');expect(values).toContain('Station, Jalgaon');
+ }
+ await act(async()=>{tree.root.findByType(HomeServiceChoices).props.onSelect('auto-freight');});
+ const proceed=tree.root.findAllByType('BookingButton' as any).find(button=>button.props.title?.startsWith('Proceed'))!;
+ await act(async()=>{await proceed.props.onPress();});
+ expect(mockNavigate).toHaveBeenCalledWith('Outstation',expect.objectContaining({service_ID:2,service_category_ID:22,service_name:'freight',preferredVehicleKind:'auto',pickupLocation:'Home, Jalgaon',destination:'Station, Jalgaon',pickupCoords:{lat:21.01,lng:75.56},destinationCoords:{lat:21.02,lng:75.58}}));
+});
+it('does not reopen Parcel Details when a background zone update arrives after Proceed',async()=>{
+ const screen=<LocationDrop embedded festive serviceParams={{service_ID:1,service_name:'parcel',service_category_ID:11,preferredVehicleKind:'bike',defultAddress:'Home, Jalgaon',defultCoords:{lat:21.01,lng:75.56}}}/>;
+ await act(async()=>{tree=renderer.create(screen);});
+ expect(mockNavigate).not.toHaveBeenCalled();
+ const proceed=tree.root.findAllByType('BookingButton' as any).find(button=>button.props.title?.startsWith('Proceed'))!;
+ await act(async()=>{await proceed.props.onPress();});
+ expect(mockNavigate).toHaveBeenCalledTimes(1);
+ expect(mockNavigate).toHaveBeenCalledWith('Outstation',expect.objectContaining({zoneValue:{id:3}}));
+ mockNavigate.mockClear();
+ const previous=mockState.zone.zoneValue;
+ try{
+  mockState.zone.zoneValue={id:99};
+  await act(async()=>{tree.update(<LocationDrop embedded festive serviceParams={{service_ID:1,service_name:'parcel',service_category_ID:11,preferredVehicleKind:'bike',defultAddress:'Home, Jalgaon',defultCoords:{lat:21.01,lng:75.56}}}/>);});
+  expect(mockNavigate).not.toHaveBeenCalled();
+  expect(tree.root.findAllByType(TextInput).map(input=>input.props.value)).toContain('Station, Jalgaon');
+ }finally{mockState.zone.zoneValue=previous;}
+});
+it('clears the pickup without changing the destination or silently restoring GPS pickup',async()=>{
+ await act(async()=>{tree=renderer.create(<LocationDrop embedded festive serviceParams={{service_ID:1,service_name:'parcel',service_category_ID:11,defultAddress:'Home, Jalgaon',defultCoords:{lat:21.01,lng:75.56}}}/>);});
+ await act(async()=>{tree.root.findAll(node=>node.props.accessibilityLabel==='Clear pickup location'&&node.props.onPress)[0].props.onPress();});
+ const values=tree.root.findAllByType(TextInput).map(input=>input.props.value);
+ expect(values).toContain('');expect(values).toContain('Station, Jalgaon');expect(values).not.toContain('Home, Jalgaon');
+ expect(mockNavigate).not.toHaveBeenCalled();
+});
+it('keeps categories mounted while suggestions overlay services, and selects the exact suggested coordinates',async()=>{
+ jest.useFakeTimers();
+ mockState.saveLocation.saveLocationDataGet.data=[{id:10,title:'Station',type:'other',location:'Station, Jalgaon',location_coordinates:{lat:21.024,lng:75.584}}];
+ await act(async()=>{tree=renderer.create(<LocationDrop embedded festive serviceParams={{service_ID:1,service_name:'parcel',service_category_ID:11,defultAddress:'Home, Jalgaon',defultCoords:{lat:21.01,lng:75.56}}}/>);});
+ const categoryNode=tree.root.findByType('PlaceCategoryShortcuts' as any);
+ const input=tree.root.findAllByType(TextInput).find(node=>node.props.value==='Station, Jalgaon')!;
+ await act(async()=>{input.props.onFocus();input.props.onChangeText('Station');});
+ await act(async()=>{jest.advanceTimersByTime(250);});
+ expect(tree.root.findByType('PlaceCategoryShortcuts' as any)).toBe(categoryNode);
+ const overlay=tree.root.findByType(AddressSuggestionOverlay);
+ expect(overlay.props.suggestions).toHaveLength(1);
+ const panel=tree.root.findAll(node=>node.props.testID==='address-suggestion-overlay')[0];
+ expect(panel.props.style).toEqual(expect.objectContaining({position:'absolute',top:'100%',zIndex:100}));
+ const scroller=tree.root.findAll(node=>node.props.testID==='address-suggestion-scroll')[0];
+ expect(scroller.props.nestedScrollEnabled).toBe(true);expect(scroller.props.persistentScrollbar).toBe(true);
+ expect(scroller.props.style.maxHeight).toBe(210);
+ await act(async()=>{await overlay.props.onSelect(overlay.props.suggestions[0]);});
+ expect(tree.root.findByType('PlaceCategoryShortcuts' as any)).toBe(categoryNode);
+ const proceed=tree.root.findAllByType('BookingButton' as any).find(button=>button.props.title?.startsWith('Proceed'))!;
+ await act(async()=>{await proceed.props.onPress();});
+ expect(mockNavigate).toHaveBeenCalledWith('Outstation',expect.objectContaining({destinationCoords:{lat:21.024,lng:75.584}}));
+});

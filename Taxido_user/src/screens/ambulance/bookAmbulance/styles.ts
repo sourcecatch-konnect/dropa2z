@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { windowHeight, windowWidth, appColors, appFonts, fontSizes } from '@src/themes';
 
@@ -16,6 +17,8 @@ const styles = StyleSheet.create({
     marginBottom: windowHeight(10),
     borderWidth: windowHeight(1),
     flexDirection: 'row',
+  
+    ...riderCardFinish,
   },
   btn: {
     position: 'absolute',
@@ -53,6 +56,8 @@ const styles = StyleSheet.create({
     padding: windowHeight(10),
     flexDirection: 'row',
     marginVertical: windowHeight(15),
+  
+    ...riderCardFinish,
   },
   pickUp: {
     color: appColors.primaryText,
@@ -77,6 +82,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowHeight(12),
     borderRadius: windowHeight(5),
     marginVertical: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   description: {
     marginHorizontal: windowWidth(20),

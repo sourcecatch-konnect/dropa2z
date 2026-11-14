@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native';
 import { appColors, appFonts, windowHeight, windowWidth } from '@src/themes';
 import { external } from '../../../../../styles/externalStyle';
@@ -11,6 +13,8 @@ const styles = StyleSheet.create({
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
     overflow: 'hidden',
+  
+    ...riderCardFinish,
   },
   pendingViewContainer: {
     ...external.ph_13,
@@ -22,6 +26,8 @@ const styles = StyleSheet.create({
     marginHorizontal: windowHeight(15),
     backgroundColor: appColors.whiteColor,
 
+  
+    ...riderCardFinish,
   },
   pin: {
     backgroundColor: appColors.primary,
@@ -30,6 +36,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(3),
     marginHorizontal: windowWidth(2),
     color: appColors.whiteColor,
+  
+    ...riderCardFinish,
   },
   cargoImg: {
     width: "100%",
@@ -46,13 +54,17 @@ const styles = StyleSheet.create({
   parcelView: {
     justifyContent: "space-between",
     marginBottom: windowHeight(4),
+  
+    ...referenceSurfaces.card,
   },
   paragraphText: {
     color: appColors.regularText,
     fontFamily: appFonts.regular,
     marginVertical: windowHeight(10),
   },
-  rideDetailsView: { marginHorizontal: windowWidth(15) },
+  rideDetailsView: { marginHorizontal: windowWidth(15) ,
+    ...referenceSurfaces.card,
+  },
   rideOTPText: {
     color: appColors.primaryText,
     fontFamily: appFonts.medium,

@@ -1,11 +1,12 @@
-import { View, Image } from 'react-native';
+import {BrandLogo} from '../../../../design/BrandLogo';
+import {View} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from 'react';
 import { external } from '../../../../styles/externalStyle';
 import { Notification, Wallet } from '@utils/icons';
 import { IconBackground } from '@src/commonComponent';
 import { styles } from './style';
 import { appColors } from '@src/themes';
-import Images from '@utils/images';
 import { getValue, setValue } from '@src/utils/localstorage';
 import { useSelector } from 'react-redux';
 import { useAppNavigation } from '@src/utils/navigation';
@@ -33,7 +34,7 @@ export function HeaderComponent() {
         replace("SignIn");
       } else if (settingData.values.activation.login_number == 0) {
         setValue("CountinueScreen", screenName);
-        replace("SignInWithMail");
+        replace("SignIn");
       }
       else {
         replace("SignIn");
@@ -50,7 +51,7 @@ export function HeaderComponent() {
         { flexDirection: viewRTLStyle },
       ]}
     >
-      <Image source={Images.splash} style={styles.logo} />
+      <BrandLogo light size={29}/>
       <View style={[external.fd_row, external.ai_center]}>
         <View style={[external.mh_8]}>
           <IconBackground

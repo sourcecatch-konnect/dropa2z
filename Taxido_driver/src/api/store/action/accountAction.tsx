@@ -14,16 +14,21 @@ import {
 import { accountServices } from '../../services/index'
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import { BankDetailsinterface, UpdateProfileInterface, updateVehicleInterface } from '../../interface/accountInterface'
+import {requireApiSuccess} from '../../responseError'
 
 
 export const selfDriverData = createAsyncThunk(SELF_DRIVER, async () => {
-  const response = await accountServices.selfDriverData()
-  return response?.data
+  const response = requireApiSuccess(await accountServices.selfDriverData(), 'Unable to load your driver profile.')
+  const profile = response.data?.data ?? response.data
+  if (!profile?.id) throw new Error('Your driver profile could not be loaded. Please try again.')
+  return profile
 })
 
 export const selfFleetData = createAsyncThunk(SELF_FLEET, async () => {
-  const response = await accountServices.selfFleetData()
-  return response?.data
+  const response = requireApiSuccess(await accountServices.selfFleetData(), 'Unable to load your fleet profile.')
+  const profile = response.data?.data ?? response.data
+  if (!profile?.id) throw new Error('Your fleet profile could not be loaded. Please try again.')
+  return profile
 })
 
 export const updateProfile = createAsyncThunk(UPDATEPROFILE, async (data: any) => {

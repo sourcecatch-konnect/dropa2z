@@ -7,7 +7,8 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: appColors.primary,
     height: windowHeight(40),
-    borderRadius: windowHeight(5),
+    borderRadius: 14,
+    minHeight: 48,
     ...external.ai_center,
     ...external.js_center,
     paddingVertical: windowHeight(10),

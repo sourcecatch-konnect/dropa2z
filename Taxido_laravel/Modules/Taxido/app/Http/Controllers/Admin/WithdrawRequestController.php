@@ -82,14 +82,6 @@ class WithdrawRequestController extends Controller
         //
     }
 
-    /**
-     * Change Status the specified resource from storage.
-     */
-    public function status(Request $request, $id)
-    {
-        return $this->repository->status($request->status, $id);
-    }
-
     public function export(Request $request)
     {
         return $this->repository->export($request);

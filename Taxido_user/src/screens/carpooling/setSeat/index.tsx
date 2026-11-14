@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useState } from "react";
 import { BarProgress, Button, Header } from "@src/commonComponent";
 import {

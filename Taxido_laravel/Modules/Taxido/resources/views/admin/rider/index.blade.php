@@ -7,6 +7,9 @@
                 <div class="contentbox-subtitle">
                     <h3>{{ __('taxido::static.riders.riders') }}</h3>
                     <div class="subtitle-button-group">
+                        @can('rider.edit')
+                            <a class="btn btn-outline" href="{{ route('admin.rider-registration-unlock.index') }}">Registration unlocks</a>
+                        @endcan
                         @can('rider.create')
                             <button class="add-spinner btn btn-outline" data-url="{{ route('admin.rider.create') }}">
                                 <i class="ri-add-line"></i> {{ __('taxido::static.riders.add_new') }}

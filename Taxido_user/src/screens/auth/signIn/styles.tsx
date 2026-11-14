@@ -1,3 +1,4 @@
+import {riderCardFinish,riderFieldFinish} from '../../../design/RiderSurfaces';
 import {StyleSheet} from "react-native";
 import {
   windowHeight,
@@ -25,11 +26,13 @@ const styles = StyleSheet.create({
     width: windowWidth(100),
     height: windowHeight(42),
     backgroundColor: appColors.lightGray,
-    borderRadius: windowHeight(4),
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   inputText: {
     marginHorizontal: windowWidth(5),
@@ -38,11 +41,13 @@ const styles = StyleSheet.create({
   phoneNumberInput: {
     width: windowWidth(330),
     backgroundColor: appColors.lightGray,
-    borderRadius: windowHeight(4),
+    borderRadius: 14,
     marginHorizontal: windowHeight(9),
     paddingHorizontal: windowHeight(9),
     borderWidth: windowHeight(1),
     height: windowHeight(42),
+  
+    ...riderFieldFinish,
   },
   iconContainer: {
     height: windowHeight(39),
@@ -74,7 +79,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: windowHeight(12),
     paddingHorizontal: windowHeight(12),
-    borderRadius: windowHeight(5),
+    borderRadius: 14,
     width: "47%",
   },
   faceBook: {
@@ -82,9 +87,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: windowHeight(13.2),
-    borderRadius: windowHeight(5),
+    borderRadius: 14,
     marginTop: windowHeight(15),
     backgroundColor: appColors.lightGray,
+  
+    ...riderCardFinish,
   },
   orImg: {
     width: "100%",

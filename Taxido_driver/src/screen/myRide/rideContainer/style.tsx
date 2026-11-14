@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import { windowHeight, windowWidth, fontSizes } from '../../../theme/appConstant'
 import appFonts from '../../../theme/appFonts'
@@ -14,7 +15,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 1.0,
     elevation: 1,
-    borderRadius: 6,
+    borderRadius: 18,
     paddingHorizontal: windowWidth(12),
     paddingVertical: windowHeight(6),
   },
@@ -43,6 +44,8 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: windowHeight(2),
     marginTop: windowHeight(2.3),
+  
+    ...referenceSurfaces.card,
   },
   rideInfoContainer: {
     width: '100%',
@@ -56,7 +59,7 @@ const styles = StyleSheet.create({
     width: windowWidth(13),
     height: windowWidth(13),
     resizeMode: 'cover',
-    borderRadius: windowHeight(0.8),
+    borderRadius: 16,
     overflow: 'hidden',
   },
   profileTextContainer: {
@@ -120,7 +123,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
-    bottom: windowHeight(1.8),
+
   },
   iconContainer1: {
     height: windowHeight(5.5),
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(0.3),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: windowHeight(2),
+    borderRadius: 16,
     marginHorizontal: windowWidth(3),
     alignSelf: 'center',
     alignContent: "center",
@@ -157,14 +160,14 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(0.3),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: windowHeight(2),
+    borderRadius: 16,
   },
   containerService: {
     marginTop: windowHeight(2),
     paddingHorizontal: windowHeight(0.5),
   },
   callContainer: {
-    borderRadius: windowWidth(2),
+    borderRadius: 16,
     height: windowHeight(5),
     width: windowHeight(5),
     alignItems: 'center',
@@ -186,6 +189,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     height: windowHeight(65),
+  
+    ...referenceSurfaces.card,
   },
   noDataImage: {
     width: windowHeight(33),

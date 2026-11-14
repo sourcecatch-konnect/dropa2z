@@ -1,4 +1,7 @@
-import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native'
+import {DeliveryNotification} from '../../design/DeliveryNotification';
+import {ReferenceScreen} from '../../design/ReferenceChrome';
+import {View, FlatList, Image, TouchableOpacity} from 'react-native';
+import {Text} from '../../design/Typography';
 import React, { useEffect } from 'react'
 import { Header } from '../../commonComponents'
 import appColors from '../../theme/appColors'
@@ -47,55 +50,10 @@ export function Notification() {
     const diffInYears = Math.floor(diffInMonths / 12)
     return `${diffInYears} ${translateData.yearsago}`
   }
-  const renderItem = ({ item }) => {
-
-    return (
-      <View
-        style={[
-          styles.mainContainer,
-          {
-            flexDirection: viewRtlStyle,
-            borderColor: colors.border,
-            backgroundColor: colors.card,
-          },
-        ]}
-      >
-        <View style={[styles.iconContainer, { flexDirection: viewRtlStyle, backgroundColor: isDark ? appColors.dotDark : appColors.planDot }]}>
-          <Icons.Notification
-            color={appColors.white}
-          />
-
-        </View>
-
-        <View style={styles.textContainer}>
-          <Text
-            style={[
-              styles.title,
-              { color: isDark ? appColors.white : appColors.primaryFont },
-              { textAlign: textRtlStyle },
-            ]}
-          >
-            {item?.data?.title}
-          </Text>
-          <Text
-            style={[
-              styles.message,
-              { color: isDark ? appColors.white : appColors.primaryFont },
-              { textAlign: textRtlStyle },
-            ]}
-          >
-            {item?.data?.message}
-          </Text>
-          <Text style={[styles.timeText, { textAlign: textRtlStyle }]}>
-            {getTimeAgo(item.created_at)}
-          </Text>
-        </View>
-      </View>
-    )
-  }
+  const renderItem = ({item}:any) => <View style={{marginHorizontal:16,marginBottom:12}}><DeliveryNotification title={item?.data?.title} description={item?.data?.message||item?.data?.body} time={getTimeAgo(item?.created_at)} dark={isDark}/></View>;
 
   return (
-    <View style={styles.container}>
+    <ReferenceScreen><View style={[styles.container, {backgroundColor:'transparent'}]}>
       <Header
         title={translateData.notification}
         backgroundColor={
@@ -108,7 +66,7 @@ export function Notification() {
         <FlatList
           data={notificationList.data}
           renderItem={renderItem}
-          keyExtractor={item => item.id}
+          keyExtractor={item => String(item.id)}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews={true}
         />
@@ -135,6 +93,6 @@ export function Notification() {
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </View></ReferenceScreen>
   )
 }

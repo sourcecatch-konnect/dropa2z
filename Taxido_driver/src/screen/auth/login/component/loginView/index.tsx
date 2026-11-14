@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React, { useCallback, useEffect, useState } from 'react'
 import appColors from '../../../../../theme/appColors'
 import styles from './styles'
@@ -20,6 +21,7 @@ import {
   ValidatePhoneNumber,
 } from '../../../../../utils/validation'
 import CountrySelect from 'react-native-country-select'
+import Icons from '../../../../../utils/icons/icons'
 
 export function LoginView({
   gotoOTP,
@@ -35,6 +37,11 @@ export function LoginView({
   setFleetLoading,
   gotoOTPFleet,
   countryCode,
+  googleLogin,
+  googleLoading,
+  selectedRole,
+  setSelectedRole,
+  showRoleSelector = true,
 }: LoginViewProps) {
   const [error, setError] = useState('')
   const [numberShow, setNumberShow] = useState(true)
@@ -43,16 +50,9 @@ export function LoginView({
   const { colors } = useTheme()
   const { textRtlStyle, viewRtlStyle, isDark, rtl } = useValues()
   const dispatch = useDispatch<AppDispatch>()
-  const { translateData, taxidoSettingData } = useSelector(
+  const { translateData } = useSelector(
     (state: any) => state.setting,
   )
-
-  useEffect(() => {
-    const code = taxidoSettingData?.cabbooking_values?.ride?.country_code
-    if (code && setCountryCode) {
-      setCountryCode(`+${code}`)
-    }
-  }, [taxidoSettingData])
 
   useFocusEffect(
     useCallback(() => {
@@ -71,7 +71,7 @@ export function LoginView({
     const isNumeric = /^\d+$/.test(phoneNumber)
 
     if (isNumeric) {
-      const msg = ValidatePhoneNumber(phoneNumber)
+      const msg = ValidatePhoneNumber(phoneNumber, undefined, String(countryCode))
       if (msg) {
         setError(msg)
         setDriverLoading(false)
@@ -99,7 +99,7 @@ export function LoginView({
     const isNumeric = /^\d+$/.test(phoneNumber)
 
     if (isNumeric) {
-      const msg = ValidatePhoneNumber(phoneNumber)
+      const msg = ValidatePhoneNumber(phoneNumber, undefined, String(countryCode))
       if (msg) {
         setError(msg)
         setFleetLoading?.(false)
@@ -134,6 +134,37 @@ export function LoginView({
           title={translateData?.authTitle}
           subTitle={translateData?.subTitle}
         />
+
+        {showRoleSelector && <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: windowHeight(2), marginBottom: windowHeight(1) }}>
+          {([
+            { id: 'driver' as const, title: 'Driver', subtitle: 'Sign in to accept trips' },
+            { id: 'fleet' as const, title: 'Fleet', subtitle: 'Manage your fleet' },
+          ]).map(option => {
+            const selected = selectedRole === option.id
+            return (
+              <TouchableOpacity
+                key={option.id}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                activeOpacity={0.8}
+                onPress={() => setSelectedRole?.(option.id)}
+                style={{
+                  width: '48.5%',
+                  minHeight: windowHeight(7),
+                  paddingHorizontal: windowWidth(3),
+                  borderRadius: windowHeight(1),
+                  borderWidth: selected ? 2 : 1,
+                  borderColor: selected ? appColors.primary : (isDark ? appColors.darkborder : appColors.graybackground),
+                  backgroundColor: isDark ? appColors.darkThemeSub : appColors.white,
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: '600', fontSize: windowHeight(1.7) }}>{option.title}</Text>
+                <Text style={{ color: colors.text, opacity: 0.7, fontSize: windowHeight(1.3), marginTop: 3 }}>{option.subtitle}</Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>}
 
         <View
           style={[
@@ -216,32 +247,58 @@ export function LoginView({
             {error}
           </Text>
         ) : null}
+        <Text style={{ color: colors.text, marginTop: windowHeight(1), fontSize: windowHeight(1.5) }}>
+          Use your phone for SMS OTP, or enter your email to receive the OTP by email.
+        </Text>
       </View>
+
+      {googleLogin ? (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          disabled={googleLoading || !selectedRole}
+          onPress={googleLogin}
+          style={{
+            marginHorizontal: windowWidth(4),
+            marginTop: windowHeight(2),
+            height: windowHeight(6),
+            borderRadius: windowHeight(1),
+            borderWidth: 1,
+            borderColor: isDark ? appColors.darkborder : appColors.graybackground,
+            backgroundColor: isDark ? appColors.darkThemeSub : appColors.white,
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: googleLoading || !selectedRole ? 0.6 : 1,
+          }}
+        >
+          <Icons.Google />
+          <Text style={{ marginLeft: windowWidth(3), color: colors.text, fontWeight: '600' }}>
+            {googleLoading ? 'Signing in...' : 'Continue with Google'}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
 
       <View style={styles.button}>
         <View
           style={{
             flexDirection: 'row',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             paddingBottom: windowHeight(2),
           }}
         >
-          <View style={{ width: '50%' }}>
+          <View style={{ width: '100%' }}>
             <Button
-              onPress={() => handleGetOTP('driver')}
-              title={translateData?.driver}
+              onPress={() => {
+                if (!selectedRole) {
+                  setError('Choose Driver or Fleet first.')
+                  return
+                }
+                selectedRole === 'fleet' ? handleGetOTPFleet('fleet') : handleGetOTP('driver')
+              }}
+              title="Continue with OTP"
               backgroundColor={appColors.primary}
               color={appColors.white}
-              loading={driverLoading}
-            />
-          </View>
-          <View style={{ width: '50%' }}>
-            <Button
-              onPress={() => handleGetOTPFleet('fleet')}
-              title={translateData?.fleet}
-              backgroundColor={appColors.primary}
-              color={appColors.white}
-              loading={fleetLoading}
+              loading={selectedRole === 'fleet' ? fleetLoading : driverLoading}
             />
           </View>
         </View>

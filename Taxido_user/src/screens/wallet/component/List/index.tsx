@@ -1,5 +1,7 @@
-import { View, Text, ScrollView } from "react-native";
+import {View, ScrollView} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from "react";
+import {DesignIcon} from '../../../../design/DesignIcon';
 import styles from "./styles";
 import { Receipt, PlusAmount, MinusAmount } from "@utils/icons";
 import { appColors, windowHeight } from "@src/themes";
@@ -34,14 +36,15 @@ export function List({ dataList }: ListProps) {
         {dataList?.map((data, index) => (
           <View key={index}>
             <View style={[styles.list, { flexDirection: viewRTLStyle }]}>
-              <View style={{ flexDirection: viewRTLStyle }}>
+              <View style={{ flexDirection: viewRTLStyle, flex: 1, minWidth: 0, alignItems: 'center' }}>
                 <View
                   style={[
                     styles.receiptView,
                     styles.bgStyle,
+                    {backgroundColor: isDark ? '#3B2B19' : '#FFF2DF'},
                   ]}
                 >
-                  <Receipt color={colors.text} />
+                  <DesignIcon name="file-text" color={isDark ? '#FFBE60' : '#A64B00'} width={22} height={22}/>
                 </View>
                 <View style={styles.detailView}>
                   <Text

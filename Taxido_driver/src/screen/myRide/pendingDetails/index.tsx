@@ -1,4 +1,7 @@
-import { View, ScrollView, TouchableOpacity, Text, ActivityIndicator, TextInput, Image } from 'react-native'
+import {BrandLoader} from '../../../design/BrandLogo';
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import {View, ScrollView, TouchableOpacity, ActivityIndicator, Image} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Header, Button, notificationHelper } from '../../../commonComponents'
 import appColors from '../../../theme/appColors'
@@ -38,8 +41,8 @@ export function PendingDetails() {
   const { translateData } = useSelector((state: any) => state.setting)
   const { zoneValue } = useSelector((state: any) => state.zoneUpdate)
   const navigation = useNavigation<any>()
-  const [paymentMethod, setPaymentMethod] = useState<any>(null)
-  const [paymentStatus, setpaymentStatus] = useState<any>()
+  const [paymentMethod, setPaymentMethod] = useState<any>(item?.payment_method ?? null)
+  const [paymentStatus, setpaymentStatus] = useState<any>(item?.payment_status)
   const [isConfirming, setIsConfirming] = useState<boolean>(false)
   const [completeLoading, setCompleteLoading] = useState<boolean>(false)
   const [loaderInvoice, setLoaderInvoice] = useState<boolean>(false)
@@ -47,6 +50,11 @@ export function PendingDetails() {
   const [isBottomSheetReviewOpen, setIsBottomSheetReviewOpen] = useState<boolean>(false)
   const [rating, setRating] = useState<number>(0)
   const [reviewText, setReviewText] = useState<string>('')
+
+  useEffect(() => {
+    if (item?.payment_method) setPaymentMethod(item.payment_method)
+    if (item?.payment_status) setpaymentStatus(item.payment_status)
+  }, [item?.payment_method, item?.payment_status])
 
 
   useEffect(() => {
@@ -245,7 +253,7 @@ export function PendingDetails() {
 
 
   return (
-    <View style={styles.main}>
+    <ReferenceScreen><View style={[styles.main, {backgroundColor:'transparent'}]}>
       <Header title={`${rideStatus} Ride`} />
       <ScrollView showsVerticalScrollIndicator={false}>
         <>
@@ -726,17 +734,17 @@ export function PendingDetails() {
               </View>
             )}
           </View>
-          {item?.ride_status?.slug == 'completed' &&
-            item?.payment_status == 'COMPLETED' && (
-              <View style={{ marginTop: windowHeight(3) }}>
-                {item?.driverReview == null && (
-                  <Button
-                    backgroundColor={appColors.primary}
-                    color={appColors.white}
-                    title={translateData.reviewCustomer}
-                    onPress={gotoReview}
-                  />
-                )}
+          {item?.ride_status?.slug == 'completed' && (
+            <View style={{ marginTop: windowHeight(3) }}>
+              {item?.driverReview == null && (
+                <Button
+                  backgroundColor={appColors.primary}
+                  color={appColors.white}
+                  title={translateData.reviewCustomer}
+                  onPress={gotoReview}
+                />
+              )}
+              {item?.payment_status == 'COMPLETED' && (
                 <View style={{ marginTop: windowHeight(3) }}>
                   <Button
                     backgroundColor={appColors.primary}
@@ -746,8 +754,9 @@ export function PendingDetails() {
                     loading={loaderInvoice}
                   />
                 </View>
-              </View>
-            )}
+              )}
+            </View>
+          )}
           <View style={styles.bottomView} />
         </>
       </ScrollView>
@@ -870,7 +879,7 @@ export function PendingDetails() {
                     >
                       {translateData?.waitPayemt}
                     </Text>
-                    <ActivityIndicator size="large" color={appColors.white} />
+                    <BrandLoader size="large" color={appColors.white} />
                   </View>
                 </View>
               )}
@@ -898,7 +907,7 @@ export function PendingDetails() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={styles.contentContainer}>
             <View>
               <Text
@@ -1061,6 +1070,6 @@ export function PendingDetails() {
           </View>
         }
       />
-    </View>
+    </View></ReferenceScreen>
   )
 }

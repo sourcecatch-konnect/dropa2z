@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import styles from "./styles";
 import Images from "../../utils/images/images";
-import { Image, Text, View } from "react-native";
+import {Image, View} from 'react-native';
+import {Text} from '../../design/Typography';
 import { Button, notificationHelper } from "../../commonComponents";
 import Icons from "../../utils/icons/icons";
 import appColors from "../../theme/appColors";

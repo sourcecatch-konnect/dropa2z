@@ -19,7 +19,7 @@ use App\Exceptions\ExceptionHandler;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Modules\Taxido\Emails\VerifyEmail;
+use Modules\Taxido\Emails\RiderLoginOtp;
 use Illuminate\Support\Facades\Validator;
 use Modules\Taxido\Http\Traits\ReferralTrait;
 use Modules\Taxido\Http\Resources\Riders\SelfResource;
@@ -191,6 +191,9 @@ class AuthController extends Controller
                 'country_code' => 'nullable|required_if:email_or_phone,phone|string',
             ]);
 
+            $req['email_or_phone'] = trim($req['email_or_phone']);
+            $this->resolveRiderLoginIdentity($req['email_or_phone'], $req['country_code'] ?? null);
+
             return filter_var($req['email_or_phone'], FILTER_VALIDATE_EMAIL)
                 ? $this->sendEmailToken($req['email_or_phone'])
                 : $this->sendPhoneToken($req['country_code'] ?? null, $req['email_or_phone']);
@@ -201,19 +204,48 @@ class AuthController extends Controller
         }
     }
 
+    private function resolveRiderLoginIdentity(string $identity, ?string $countryCode = null): ?User
+    {
+        $identity = trim($identity);
+        $query = User::query()->whereNull('deleted_at');
+        if (filter_var($identity, FILTER_VALIDATE_EMAIL)) {
+            $query->whereRaw('LOWER(email) = ?', [strtolower($identity)]);
+        } else {
+            $code = ltrim((string) $countryCode, '+');
+            $query->where('phone', $identity)->whereIn('country_code', [$code, '+' . $code]);
+        }
+        $account = (clone $query)->whereHas('roles', fn ($roles) => $roles->where('name', RoleEnum::RIDER))->first()
+            ?? $query->first();
+        if ($account && (!$account->hasAnyRole([RoleEnum::RIDER, RoleEnum::DRIVER]) || $account->hasRole('admin'))) {
+            throw new Exception('This email or phone belongs to a staff account. Please use another email for the customer app.', 403);
+        }
+        if ($account && !$account->status) {
+            throw new Exception('Account is disabled. Please contact support.', 403);
+        }
+        if (!$account || !$account->hasRole(RoleEnum::RIDER)) {
+            \Modules\Taxido\Services\RiderDeletionPolicy::assertRegistrationAllowed(
+                filter_var($identity,FILTER_VALIDATE_EMAIL)?$identity:null,
+                filter_var($identity,FILTER_VALIDATE_EMAIL)?null:$identity,$countryCode
+            );
+        }
+        return $account;
+    }
+
     private function sendEmailToken($email)
     {
+        $email = strtolower(trim($email));
         $isScopedTestLogin = isDropa2zScopedTestLogin($email);
         $token = $this->generateToken(null, null, $email, $isScopedTestLogin);
 
         if (! $isScopedTestLogin && !isDemoMode()) {
             try {
 
-                Mail::to($email)->send(new VerifyEmail($token));
+                Mail::to($email)->send(new RiderLoginOtp((string) $token));
 
             } catch(Exception $e) {
-
-                Log::error($e->getMessage());
+                DB::table('auth_tokens')->where('token', $token)->where('email', $email)->delete();
+                Log::error('Rider login OTP email could not be delivered.', ['exception' => $e->getMessage()]);
+                throw new Exception('We could not send the sign-in code. Please check your email address and try again.', 503);
             }
         }
 
@@ -237,7 +269,12 @@ class AuthController extends Controller
 
         $token = $this->generateToken($country_code, $phone);
         if (!isDemoMode()) {
-            sendSMS('+' . $country_code . $phone, $token);
+            try {
+                sendSMS('+' . $country_code . $phone, $token);
+            } catch (Exception $e) {
+                DB::table('auth_tokens')->where('phone', '+' . $country_code . $phone)->where('token', $token)->delete();
+                throw $e;
+            }
         }
 
         return response()->json(['message' => __('OTP sent successfully to your phone!'), 'success' => true], 200);
@@ -319,7 +356,9 @@ class AuthController extends Controller
                 throw new Exception($validator->messages()->first(), 422);
             }
 
+            $request->merge(['email_or_phone' => trim($request->email_or_phone)]);
             $isEmail = filter_var($request->email_or_phone, FILTER_VALIDATE_EMAIL);
+            $normalizedEmail = $isEmail ? strtolower(trim($request->email_or_phone)) : null;
 
             if (!$isEmail && empty($request->country_code)) {
                 throw new Exception(__('Country code is required for phone login'), 422);
@@ -327,10 +366,10 @@ class AuthController extends Controller
 
             $authTokenQuery = DB::table('auth_tokens')
                 ->where('token', $request->token)
-                ->where('created_at', '>', Carbon::now()->subHours(1));
+                ->where('created_at', '>', Carbon::now()->subMinutes(10));
 
             if ($isEmail) {
-                $verify_otp = $authTokenQuery->where('email', $request->email_or_phone)->first();
+                $verify_otp = $authTokenQuery->where('email', $normalizedEmail)->first();
             } else {
                 $country_code = ltrim($request->country_code, '+');
                 $verify_otp = $authTokenQuery->where('phone', '+' . $country_code . $request->email_or_phone)->first();
@@ -340,21 +379,20 @@ class AuthController extends Controller
                 throw new Exception(__('Invalid token'), 400);
             }
 
-            $riderQuery = Rider::whereNull('deleted_at');
-            if ($isEmail) {
-                $rider = $riderQuery->where('email', $request->email_or_phone)->first();
-            } else {
-                $rider = $riderQuery->where('phone', $request->email_or_phone)->first();
-                if ($rider) {
-                    $riderCountryCode = ltrim($rider->country_code, '+');
-                    if ($riderCountryCode != $country_code) {
-                        $rider = null;
-                    }
+            $account = $this->resolveRiderLoginIdentity($request->email_or_phone, $request->country_code);
+            $rider = $account ? DB::transaction(function () use ($account) {
+                $existing = User::whereKey($account->id)->lockForUpdate()->firstOrFail();
+                if (!$existing->hasRole(RoleEnum::RIDER)) {
+                    // The OTP above proves ownership. Add customer access without replacing Driver access.
+                    $existing->assignRole(RoleEnum::RIDER);
                 }
-            }
+                $customer = Rider::findOrFail($existing->id);
+                $customer->wallet()->firstOrCreate([]);
+                return $customer;
+            }) : null;
 
             if ($rider) {
-                if ($rider->role->name != RoleEnum::RIDER) {
+                if (!$rider->hasRole(RoleEnum::RIDER)) {
                     throw new Exception(__('Only Riders are allowed'), 403);
                 }
 
@@ -362,14 +400,18 @@ class AuthController extends Controller
                     throw new Exception(__('Account is disabled'), 403);
                 }
 
-                $token = $rider->createToken('auth_token')->plainTextToken;
-                $rider->tokens()->update([
-                    'role_type' => $rider->getRoleNames()->first(),
+                $issuedToken = $rider->createToken('auth_token');
+                $token = $issuedToken->plainTextToken;
+                $rider->tokens()->whereKey($issuedToken->accessToken->getKey())->update([
+                    'role_type' => RoleEnum::RIDER,
                 ]);
 
-                $rider->update([
-                    'fcm_token' => $request->fcm_token,
-                ]);
+                $rider->fcm_token = $request->fcm_token;
+                if ($isEmail && ! $rider->email_verified_at) {
+                    $rider->email_verified_at = now();
+                }
+                $rider->save();
+                DB::table('auth_tokens')->where('token', $verify_otp->token)->delete();
 
                 return response()->json([
                     'id' => $rider?->id,
@@ -543,6 +585,18 @@ class AuthController extends Controller
             $firebaseToken = $request->firebase_token;
             $firebaseAuth = (new Factory)->withServiceAccount(config('services.firebase.credentials'))?->createAuth();
             $verifiedToken = $firebaseAuth->verifyIdToken($firebaseToken);
+
+            // SECURITY: verifyIdToken() only proves the token is valid for this Firebase
+            // project - it does NOT prove the token belongs to the phone number being
+            // claimed. Without this check, any valid token could be replayed with another
+            // user's phone number to obtain their access token.
+            $tokenPhone   = preg_replace('/\D/', '', (string) $verifiedToken->claims()->get('phone_number'));
+            $claimedPhone = preg_replace('/\D/', '', $request->country_code . $request->phone);
+
+            if ($tokenPhone === '' || $tokenPhone !== $claimedPhone) {
+                throw new Exception("Token does not match the phone number", 403);
+            }
+
             $rider = Rider::where('phone', $request->phone)?->where('country_code', $request->country_code)?->whereNull('deleted_at')?->first();
             if ($verifiedToken) {
                 if (!$rider) {
@@ -579,16 +633,34 @@ class AuthController extends Controller
             $referrerId = null;
 
             $validator = Validator::make($request->all(), [
-                'email' => 'required|string|email|max:255',
+                'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
                 'password' => 'nullable|string|min:8|confirmed',
                 'password_confirmation' => 'nullable',
-                'country_code' => 'required',
-                'phone' => 'required|min:6|max:15',
+                'verification_token' => 'required|string',
+                'country_code' => 'nullable|required_with:phone|string',
+                'phone' => 'nullable|min:6|max:15',
                 'referral_code' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
                 throw new Exception($validator->messages()->first(), 422);
+            }
+
+            $email = strtolower(trim($request->email));
+            $countryCode = ltrim((string) $request->country_code, '+');
+            $verifiedAuthToken = DB::table('auth_tokens')
+                ->where('token', $request->verification_token)
+                ->where('created_at', '>', Carbon::now()->subMinutes(10))
+                ->where(function ($query) use ($email, $request, $countryCode) {
+                    $query->whereRaw('LOWER(email) = ?', [$email]);
+                    if ($request->phone && $countryCode) {
+                        $query->orWhere('phone', '+' . $countryCode . $request->phone);
+                    }
+                })
+                ->first();
+
+            if (! $verifiedAuthToken) {
+                throw new Exception('Please verify your email or phone again before creating your account.', 422);
             }
 
             // Simplified referral code validation for rider-to-rider referrals
@@ -612,9 +684,9 @@ class AuthController extends Controller
 
             $rider = Rider::create([
                 'name' => $request->name,
-                'email' => $request->email,
-                'country_code' => $request->country_code,
-                'phone' => (string) $request->phone,
+                'email' => $email,
+                'country_code' => $request->phone ? $countryCode : null,
+                'phone' => $request->phone ? (string) $request->phone : null,
                 'fcm_token' => $request->fcm_token,
                 'password' => Hash::make($request->password),
                 'referral_code' => getReferralCodeByName($request->name ?? 'Rider'),
@@ -622,11 +694,17 @@ class AuthController extends Controller
                 
             ]);
 
+            if ($verifiedAuthToken->email) {
+                $rider->email_verified_at = now();
+                $rider->save();
+            }
+
             $rider->assignRole(RoleEnum::RIDER);
             $rider->wallet()->create();
             $rider->wallet;
 
             DB::commit();
+            DB::table('auth_tokens')->where('token', $verifiedAuthToken->token)->delete();
 
             // Apply referral code using simplified ReferralTrait for referral relationship creation
             if ($request->referral_code) {
@@ -698,13 +776,28 @@ class AuthController extends Controller
         return Rider::where('referral_code', $referral_code)?->whereNull('deleted_at')?->pluck('id');
     }
 
-    public function deleteAccount()
+    public function deletionPolicy()
+    {
+        $rider=Rider::findOrFail(auth('sanctum')->id());
+        return response()->json(['data'=>\Modules\Taxido\Services\RiderDeletionPolicy::preview($rider)]);
+    }
+
+    public function deleteAccount(Request $request)
     {
         DB::beginTransaction();
 
         try {
 
-            $rider = Rider::findOrFail(auth('sanctum')->user()->id);
+            $validator=Validator::make($request->all(),['confirmation'=>'required|in:DELETE','acknowledged'=>'required|accepted']);
+            if($validator->fails())throw new Exception('Review the deletion warning and type DELETE to confirm.',422);
+            $rider = Rider::whereKey(auth('sanctum')->id())->lockForUpdate()->firstOrFail();
+            if($rider->getRoleNames()->contains(fn($role)=>$role!==RoleEnum::RIDER))throw new Exception('This account also has another role. Contact Admin to remove customer access without affecting your other account.',409);
+            if(\Modules\Taxido\Models\Ride::where('rider_id',$rider->id)->whereHas('ride_status',fn($q)=>$q->whereNotIn('slug',['completed','cancelled','canceled']))->exists()
+                || \Modules\Taxido\Models\RideRequest::where('rider_id',$rider->id)->whereIn('status',['requested','pending'])->whereDoesntHave('ride')->exists()){
+                throw new Exception('Complete or cancel your active booking before deleting your account.',409);
+            }
+            \Modules\Taxido\Services\RiderDeletionPolicy::record($rider);
+            $rider->tokens()->delete();
             $rider->delete();
 
             DB::commit();

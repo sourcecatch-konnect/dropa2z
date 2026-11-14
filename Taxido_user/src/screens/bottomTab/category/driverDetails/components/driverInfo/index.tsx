@@ -1,4 +1,5 @@
-import { Image, Text, View } from 'react-native';
+import {Image, View} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import React from 'react';
 import Images from '@utils/images';
 import { commonStyles } from '../../../../../../styles/commonStyle';
@@ -10,7 +11,10 @@ import { useRoute } from '@react-navigation/native';
 
 export function DriverInfo() {
   const route = useRoute<any>();
-  const { driverInfo } = route?.params;
+  const { driverInfo, rideInfo } = route?.params ?? {};
+  const vehicle = driverInfo?.vehicle_info ?? {};
+  const vehicleModel = rideInfo?.vehicle_model || vehicle.model || vehicle.vehicle_model || rideInfo?.vehicle_type?.name || 'Vehicle details unavailable';
+  const plateNumber = rideInfo?.plate_number || vehicle.plate_number || 'Number plate unavailable';
   const { textRTLStyle, viewRTLStyle, textColorStyle, linearColorStyle, bgContainer } = useValues();
 
   return (
@@ -32,9 +36,9 @@ export function DriverInfo() {
         </View>
         <View style={[styles.vehicleContainer, { flexDirection: viewRTLStyle, backgroundColor: linearColorStyle }]}>
           <View>
-            <Text style={[styles.vehicleText, { textAlign: textRTLStyle, color: textColorStyle }]}>{driverInfo?.vehicle_info.model}</Text>
+            <Text style={[styles.vehicleText, { textAlign: textRTLStyle, color: textColorStyle }]}>{vehicleModel}</Text>
             <View style={{ flexDirection: viewRTLStyle }}>
-              <Text style={[styles.vehicleNumber, { textAlign: textRTLStyle, color: textColorStyle }]}>{driverInfo?.vehicle_info.plate_number}</Text>
+              <Text style={[styles.vehicleNumber, { textAlign: textRTLStyle, color: textColorStyle }]}>{plateNumber}</Text>
               <View style={styles.carView}>
                 <Car colors='gray' />
               </View>

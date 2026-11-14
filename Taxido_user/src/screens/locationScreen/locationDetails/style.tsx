@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { external } from '../../../styles/externalStyle';
 import { appColors } from '@src/themes';
@@ -20,6 +21,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(4),
     ...commonStyles.shadowContainer,
     ...external.pv_5,
+  
+    ...riderCardFinish,
   },
   popupHeader: {
     ...external.js_space,

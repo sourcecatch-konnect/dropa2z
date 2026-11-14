@@ -4,16 +4,14 @@ import appFonts from '../../../../theme/appFonts'
 
 const styles = StyleSheet.create({
   main: {
-    height: windowHeight(9.5),
+    minHeight: 76,
     paddingHorizontal: windowWidth(4),
   },
   title: {
-    fontSize: fontSizes.FONT5,
-    fontFamily: appFonts.medium,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
+    fontSize: 28,
+    fontFamily: appFonts.bold,
+    flex:1,
+    marginEnd:12,
   },
   callIcon: {
     height: windowHeight(5),

@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
 
@@ -11,6 +12,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     borderRadius: windowWidth(8),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   scrollContainer: {
     position: 'relative',

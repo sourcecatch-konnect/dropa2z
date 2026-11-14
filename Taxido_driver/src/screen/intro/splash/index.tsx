@@ -1,5 +1,7 @@
+import {BrandLogo, BrandEntrance, BrandMark,BrandSymbol} from '../../../design/BrandLogo';
 import React, { useEffect, useState, useCallback } from "react";
-import { Alert, Image, View, BackHandler, Linking, Text, TouchableOpacity, Platform } from "react-native";
+import {Alert, Image, View, BackHandler, Linking, TouchableOpacity, Platform} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { CommonModal } from "../../../commonComponents/commonModal";
 import images from "../../../utils/images/images";
 import styles from "./styles";
@@ -88,35 +90,24 @@ console.log();
 
   useEffect(() => {
     const initializeApp = async () => {
-      try {
-        // 2. Request permissions sequentially
-        const granted = await requestLocationPermission();
-        if (granted) {
-          try { await requestNotificationPermission(); } catch { }
+      // Do not hold the entire app on the splash screen while Android shows
+      // or resolves a permissions dialog. Location is requested here, while
+      // navigation always continues to the appropriate authentication screen.
+      requestLocationPermission()
+        .then(granted => granted ? requestNotificationPermission() : undefined)
+        .catch(() => undefined)
 
-          // 3. Small delay (2s) so the user can see the brand/splash 
-          // and to ensure all state updates are committed.
-          setTimeout(() => {
-            proceedToNextScreen();
-          }, 2000);
+      const navigationTimer = setTimeout(() => {
+        proceedToNextScreen()
+      }, 800)
 
-        } else {
-          Alert.alert(
-            "Permission Required",
-            "Location permission is needed to continue.",
-            [
-              { text: "Open Settings", onPress: () => Linking.openSettings() },
-              { text: "Exit", style: "destructive", onPress: () => BackHandler.exitApp() },
-            ],
-            { cancelable: false }
-          );
-        }
-      } catch (error) {
-        console.error("[Splash] Critical Init failure:", error);
-      }
+      return () => clearTimeout(navigationTimer)
     };
 
-    initializeApp();
+    const cleanup = initializeApp();
+    return () => {
+      Promise.resolve(cleanup).then(clearup => clearup?.())
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
@@ -194,31 +185,30 @@ console.log();
 
   if (showNoInternet) {
     return (
-      <View></View>
+      <View style={[styles.container, { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }]}>
+        <BrandLogo size={92} driver />
+        <Text style={{ marginTop: 24, fontSize: 22, fontWeight: '700', textAlign: 'center' }}>
+          Dropa2z Driver is temporarily unavailable
+        </Text>
+        <Text style={{ marginTop: 10, fontSize: 15, lineHeight: 22, textAlign: 'center', opacity: 0.7 }}>
+          Please check your connection and reopen the app in a moment.
+        </Text>
+      </View>
     );
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        <Image
-          source={splashImage ? { uri: splashImage } : images.splashDriver}
-          style={styles.img}
-          onError={() => {
-            setSplashImage(null)
-            deleteValue('splashImage')
-          }}
-        />
+        <BrandEntrance><BrandLogo size={100} driver/></BrandEntrance>
+        <Text style={styles.brandSubtitle}>Associated with SK Translines</Text>
       </View>
       <CommonModal
         isVisible={showUpdateModal}
         value={
           <View style={styles.modalContent}>
             <View style={styles.modalImageContainer}>
-              <Image
-                source={images.splash}
-                style={styles.modalImage}
-              />
+              <BrandMark size={44}/>
             </View>
             <Text style={styles.modalTitle}>{translateData?.updateRequired}</Text>
             <Text style={styles.modalMessage}>{translateData?.newVersions}</Text>

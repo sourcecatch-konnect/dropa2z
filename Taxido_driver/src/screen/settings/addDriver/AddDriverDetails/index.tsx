@@ -1,4 +1,5 @@
-import { View, ScrollView, TouchableOpacity, Text } from 'react-native'
+import {View, ScrollView, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useState, useEffect, useRef } from 'react'
 import { useValues } from '../../../../utils/context'
 import { useTheme } from '@react-navigation/native'
@@ -40,7 +41,7 @@ export function AddDriverDetails({ route }: any) {
     const { navigate } = useAppNavigation()
     const { serviceData } = useSelector((state: any) => state.service)
     const [showWarning, setShowWarning] = useState<boolean>(false)
-    const { translateData, taxidoSettingData } = useSelector((state: any) => state.setting)
+    const { translateData } = useSelector((state: any) => state.setting)
     const [openService, setOpenService] = useState(false)
     const [selectedService, setSelectedService] = useState<number | null>(
         type === "edit" && driverData?.service_id ? driverData?.service_id : null
@@ -78,12 +79,12 @@ export function AddDriverDetails({ route }: any) {
         selectedServiceId: selectedService || 0,
         selectedCategoryId: selectedCategory || 0,
         selectedVehicleId: selectedVehicle || '',
-        countryCode: '',
+        countryCode: '91',
     })
 
     useEffect(() => {
         const fetchCountryFromCode = async () => {
-            const code = taxidoSettingData?.cabbooking_values?.ride?.country_code;
+            const code = (type === 'edit' && driverData?.country_code) || '91';
             if (code) {
                 try {
                     const countries = await getAllCountries();
@@ -102,7 +103,7 @@ export function AddDriverDetails({ route }: any) {
             }
         };
         fetchCountryFromCode();
-    }, [taxidoSettingData]);
+    }, [type, driverData]);
 
     useEffect(() => {
         if (type === "edit" && driverData) {

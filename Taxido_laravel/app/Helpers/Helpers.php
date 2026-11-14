@@ -191,7 +191,14 @@ if (! function_exists('getCurrentRoleName')) {
     function getCurrentRoleName()
     {
         if (isUserLogin()) {
-            return auth()?->user()?->role?->name;
+            $user = auth()->user();
+            $accessToken = $user?->currentAccessToken();
+            $appRole = $accessToken instanceof \Illuminate\Database\Eloquent\Model
+                ? $accessToken->getAttribute('role_type') : null;
+            if ($appRole && $user->hasRole($appRole)) {
+                return $appRole;
+            }
+            return $user?->role?->name;
         }
     }
 }
@@ -1047,6 +1054,7 @@ if (! function_exists('add_menu')) {
                 'image' => null,
                 'status' => true,
             ];
+            $smsGateways[] = array_intersect_key(\App\Services\AuthkeySms::gateway(), array_flip(['name', 'slug', 'image', 'status']));
             foreach ($modules as $module) {
                 $smsFile = module_path($module->getName(), 'config/sms.php');
                 if (file_exists($smsFile)) {
@@ -1067,7 +1075,7 @@ if (! function_exists('add_menu')) {
     if (! function_exists('getSMSGatewayConfigs')) {
         function getSMSGatewayConfigs()
         {
-            $smsGateways = [];
+            $smsGateways = [\App\Services\AuthkeySms::gateway()];
             $modules = getAllPaymentModules();
             foreach ($modules as $module) {
                 $smsFile = module_path($module->getName(), 'config/sms.php');
@@ -1104,6 +1112,10 @@ if (! function_exists('add_menu')) {
                 $defaultSMSGateway = getDefaultSMSGateway();
                 if (! $defaultSMSGateway) {
                     throw new Exception(__('static.sms_gateways.default_not_select'), 400);
+                }
+
+                if ($defaultSMSGateway === 'authkey') {
+                    return app(\App\Services\AuthkeySms::class)->send((string) $sendTo, (string) $message);
                 }
 
                 if ($defaultSMSGateway !== 'firebase') {

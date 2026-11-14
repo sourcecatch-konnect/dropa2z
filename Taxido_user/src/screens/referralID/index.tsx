@@ -1,14 +1,10 @@
+import {ReferenceScreen} from '../../design/ReferenceChrome';
 import { Header } from "@src/commonComponent";
 import React from "react";
-import {
-  Image,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Share,
-  Linking,
-} from "react-native";
+import {CardHeading} from "../../design/CardHeading";
+import {DesignIcon} from "../../design/DesignIcon";
+import {Image, View, TouchableOpacity, ScrollView, Share, Linking} from 'react-native';
+import {Text} from '../../design/Typography';
 import styles from "./style";
 import { useValues } from "@src/utils/context";
 import Images from "@src/utils/images";
@@ -44,7 +40,7 @@ export function ReferralID() {
   const handleShareReferral = async () => {
     try {
       const referralCode = self?.referral_code || "Code Note Found";
-      const message = `🚖 ${translateData.referralShare1} *Taxido*! ${translateData.referralShare2}: *${referralCode}* ${translateData.referralShare3}.\n\n${translateData.referralShare4} 🚕\n👉 https://play.google.com/store/apps/details?id=com.taxidouserui&hl=en_IN`;
+      const message = `🚖 ${translateData.referralShare1} *DropA2Z*! ${translateData.referralShare2}: *${referralCode}* ${translateData.referralShare3}.\n\n${translateData.referralShare4} 🚕\n👉 https://play.google.com/store/apps/details?id=com.dropa2z.rider&hl=en_IN`;
 
       await Share.share({
         message,
@@ -63,11 +59,11 @@ export function ReferralID() {
   };
 
   return (
-    <View
-      style={{
+    <ReferenceScreen><View
+      style={[{
         backgroundColor: isDark ? appColors.primaryText : appColors.lightGray,
         flex: 1,
-      }}>
+      }, {backgroundColor:'transparent'}]}>
       <Header value={translateData.referralCodeTitle} />
 
       <ScrollView
@@ -75,31 +71,10 @@ export function ReferralID() {
           paddingBottom: windowHeight(60),
           paddingTop: windowHeight(10),
         }}>
-        <View>
-          <Image source={Images.referral} style={styles.image} />
-          <View style={styles.position}>
-            <Text style={styles.des}>
-              {translateData.earn}{" "}
-              <Text
-                style={[
-                  { fontFamily: appFonts.bold, color: appColors.whiteColor },
-                ]}>
-                {taxidoSettingData?.cabbooking_values?.referral?.referral_amount}
-              </Text>{" "}
-              {translateData.referralDetails}
-            </Text>
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={[styles.button, { flexDirection: viewRTLStyle }]}
-              onPress={() => {
-                Clipboard.setString(self?.referral_code || "");
-              }}>
-              <Copy color={appColors.primary} />
-              <Text style={styles.buttonText}>{self?.referral_code}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <View style={{marginHorizontal:20,padding:22,borderRadius:24,backgroundColor:'#17191C',marginBottom:20}}>
+ <View style={{width:52,height:52,borderRadius:17,backgroundColor:'#3B2B19',alignItems:'center',justifyContent:'center',marginBottom:16}}><DesignIcon name="tag" color="#FFBE60" width={28} height={28}/></View>
+ <Text style={{color:'#FFFFFF',fontSize:22,lineHeight:29,fontWeight:'700'}}>{translateData.earn} {taxidoSettingData?.cabbooking_values?.referral?.referral_amount} {translateData.referralDetails}</Text>
+ <TouchableOpacity accessibilityRole="button" accessibilityLabel="Copy referral code" onPress={()=>Clipboard.setString(self?.referral_code || '')} style={{minHeight:52,marginTop:20,padding:14,borderRadius:14,backgroundColor:'#FFF2DF',flexDirection:viewRTLStyle,alignItems:'center',justifyContent:'space-between',gap:12}}><Text style={{fontSize:20,color:'#A64B00',fontWeight:'700',flexShrink:1}}>{self?.referral_code}</Text><DesignIcon name="file-text" color="#A64B00" width={22}/></TouchableOpacity></View>
 
         <View
           style={[
@@ -119,7 +94,7 @@ export function ReferralID() {
                 alignItems: "center",
               },
             ]}>
-            <Text style={styles.que}>{translateData.referralWork}</Text>
+            <View style={{flex:1}}><CardHeading icon="circle-help" title={translateData.referralWork}/></View>
             <Text style={[styles.trems]} onPress={handlePress}>
               {/* {translateData.referralCondition} */}
             </Text>
@@ -137,7 +112,7 @@ export function ReferralID() {
                 <Text
                   style={{
                     fontFamily: appFonts.semiBold,
-                    fontSize: fontSizes.FONT17,
+                    fontSize: fontSizes.FONT17, flexShrink:1, lineHeight:22,
                     color: isDark ? appColors.whiteColor : appColors.blackColor,
                     marginRight: isRTL ? 0 : 8,
                     marginLeft: isRTL ? 8 : 0,
@@ -146,8 +121,8 @@ export function ReferralID() {
                 </Text>
                 <Text
                   style={{
-                    fontFamily: appFonts.semiBold,
-                    fontSize: fontSizes.FONT17,
+                    fontFamily: appFonts.regular,
+                    fontSize: fontSizes.FONT17, flex:1, lineHeight:23,
                     color: isDark ? appColors.whiteColor : appColors.blackColor,
                   }}>
                   {item?.data}
@@ -157,24 +132,15 @@ export function ReferralID() {
           </View>
         </View>
 
-        <Text style={styles.note}>
+        <Text style={[styles.note,{color:isDark?"#BBC1CA":"#656C76"}]}>
           <Text style={{ fontFamily: appFonts.bold }}>
             {translateData.noteTitle}:{" "}
           </Text>
           {translateData.referralNoteData}
         </Text>
-        <View>
-          <Image source={Images.referral1} style={styles.image} />
-          <View style={styles.position}>
-            <Text style={[styles.que, { fontFamily: appFonts.semiBold }]}>
-              {translateData.referralCard1}
-            </Text>
-            <Text style={styles.des1}>{translateData.referralCard2}</Text>
-            <TouchableOpacity style={styles.viewButton} onPress={gotoList}>
-              <Text style={styles.text}>{translateData.viewAll}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <View style={{marginHorizontal:20,padding:20,borderRadius:22,backgroundColor:isDark?'#202422':'#FFFFFF',borderWidth:1,borderColor:isDark?'#3B403D':'#E5E7EB'}}>
+ <CardHeading icon="user-round" title={translateData.referralCard1 || 'Your referrals'} subtitle={translateData.referralCard2}/>
+ <TouchableOpacity accessibilityRole="button" accessibilityLabel="View all referrals" onPress={gotoList} style={{minHeight:48,borderRadius:14,backgroundColor:'#FFF2DF',alignItems:'center',justifyContent:'center',flexDirection:viewRTLStyle,gap:8}}><Text style={{color:'#A64B00',fontWeight:'700'}}>{translateData.viewAll}</Text><DesignIcon name="arrow-right" color="#A64B00" width={18}/></TouchableOpacity></View>
       </ScrollView>
 
       <TouchableOpacity
@@ -196,6 +162,6 @@ export function ReferralID() {
           {translateData.shareReferral}
         </Text>
       </TouchableOpacity>
-    </View>
+    </View></ReferenceScreen>
   );
 }

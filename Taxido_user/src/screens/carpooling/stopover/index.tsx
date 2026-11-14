@@ -1,4 +1,5 @@
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import {View, FlatList, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useState } from 'react';
 import { BarProgress, Button, Header } from '@src/commonComponent';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';

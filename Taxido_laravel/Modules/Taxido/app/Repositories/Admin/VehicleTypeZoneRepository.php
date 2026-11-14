@@ -55,6 +55,7 @@ class VehicleTypeZoneRepository extends BaseRepository
             'per_distance_charge' => $isFindDriver ? 'nullable|numeric' : 'required|numeric|min:0',
             'per_minute_charge' => $isFindDriver ? 'nullable|numeric' : 'required|numeric|min:0',
             'per_weight_charge' => 'nullable|numeric|min:0',
+            'goods_included_minutes' => 'nullable|integer|min:0|max:1440',
             'waiting_charge' => 'nullable|numeric|min:0',
             'free_waiting_time_before_start_ride' => 'nullable|numeric|min:0',
             'free_waiting_time_after_start_ride' => 'nullable|numeric|min:0',
@@ -75,6 +76,7 @@ class VehicleTypeZoneRepository extends BaseRepository
         }
 
         $data = $request->except('preferences');
+        $data['goods_included_minutes'] = (int) $request->input('goods_included_minutes', 0);
         if ($isFindDriver) {
             $data['base_fare_charge'] = 0;
             $data['base_distance'] = 0;
@@ -120,6 +122,7 @@ class VehicleTypeZoneRepository extends BaseRepository
             'per_distance_charge' => $isFindDriver ? 'nullable|numeric' : 'required|numeric|min:0',
             'per_minute_charge' => $isFindDriver ? 'nullable|numeric' : 'required|numeric|min:0',
             'per_weight_charge' => 'nullable|numeric|min:0',
+            'goods_included_minutes' => 'nullable|integer|min:0|max:1440',
             'waiting_charge' => 'nullable|numeric|min:0',
             'free_waiting_time_before_start_ride' => 'nullable|numeric|min:0',
             'free_waiting_time_after_start_ride' => 'nullable|numeric|min:0',
@@ -139,6 +142,7 @@ class VehicleTypeZoneRepository extends BaseRepository
         }
 
         $data = $request->except('preferences');
+        $data['goods_included_minutes'] = (int) $request->input('goods_included_minutes', 0);
         if ($isFindDriver) {
             $data['base_fare_charge'] = 0;
             $data['base_distance'] = 0;

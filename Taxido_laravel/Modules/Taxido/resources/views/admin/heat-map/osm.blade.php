@@ -38,7 +38,7 @@
             console.log('Heatmap Data:', {!! json_encode($heatmapPoints) !!});
 
             // Initialize the map
-            map = L.map('map').setView([37.0902, -95.7129], 5);
+            map = L.map('map').setView([21.0077, 75.5626], 12);
 
             // Add OSM tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

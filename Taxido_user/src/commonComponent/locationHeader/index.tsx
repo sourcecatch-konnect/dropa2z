@@ -1,4 +1,5 @@
-import { Text, View, TouchableOpacity, SafeAreaView, Pressable } from 'react-native';
+import {View, TouchableOpacity, SafeAreaView, Pressable} from 'react-native';
+import {Text} from '../../design/Typography';
 import React from 'react';
 import { Back } from '@utils/icons';
 import { styles } from './style';

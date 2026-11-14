@@ -1,7 +1,7 @@
 import { homeScreen } from "../endpoints/homeScreenEndPoint";
 import { GET_API } from "../methods";
 
-export const homeScreenData = async ({ service }: { service: string }) => {
+export const homeScreenData = async ({ service }: { service: string | number }) => {
   return GET_API(`${homeScreen}?service=${service}`)
     .then((res) => {
       return res;

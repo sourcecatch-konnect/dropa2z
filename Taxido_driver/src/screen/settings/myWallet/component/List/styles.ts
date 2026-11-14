@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { Platform, StyleSheet } from 'react-native'
 import appColors from '../../../../../theme/appColors'
 import appFonts from '../../../../../theme/appFonts'
@@ -11,9 +12,14 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(2.5),
     overflow: 'hidden',
     borderWidth: windowHeight(0.1),
+  
+    ...referenceSurfaces.card,
   },
   list: {
     justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 56,
     marginHorizontal: windowWidth(4),
     marginVertical: windowHeight(2),
   },
@@ -27,6 +33,8 @@ const styles = StyleSheet.create({
   detailView: {
     marginHorizontal: windowWidth(3),
     justifyContent: 'center',
+    flex: 1,
+    minWidth: 0,
   },
   description: {
     color: appColors.secondaryFont,
@@ -36,11 +44,13 @@ const styles = StyleSheet.create({
   id: {
     fontSize: fontSizes.FONT3,
     fontFamily: appFonts.medium,
-    width: windowWidth(40),
+    flexShrink: 1,
+    lineHeight: 20,
   },
   amountView: {
     marginVertical: windowHeight(1),
-    width: windowWidth(30),
+    flexShrink: 0,
+    maxWidth: "40%",
     justifyContent: 'flex-end',
     flexWrap: 'wrap',
   },

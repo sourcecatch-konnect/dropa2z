@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import {StyleSheet} from 'react-native';
 import {
   windowHeight,
@@ -24,6 +25,8 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(16),
     width: '95.5%',
     alignSelf: 'center',
+  
+    ...riderCardFinish,
   },
 
   stepContainer: {
@@ -96,6 +99,8 @@ const styles = StyleSheet.create({
     borderColor: appColors.border,
     borderRadius: windowHeight(5),
     backgroundColor: appColors.whiteColor,
+  
+    ...riderCardFinish,
   },
   cancelledView: {marginHorizontal: windowWidth(20)},
   timeText: {
@@ -194,6 +199,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.whiteColor,
     height: '110%',
     right: windowWidth(10),
+  
+    ...riderCardFinish,
   },
 });
 export default styles;

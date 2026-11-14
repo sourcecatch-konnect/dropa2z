@@ -20,7 +20,7 @@ export function BarProgress({ fill, totalBars = 4 }: FilledBarsProps) {
             style={[
               styles.bar,
               index < fill ? styles.filledBar : styles.emptyBar,
-              { backgroundColor: index < fill ? appColors.primary : isDark ? appColors.primary : '#E3F2EE' },
+              { backgroundColor: index < fill ? appColors.primary : isDark ? appColors.primary : '#F2E9E3' },
             ]}
           />
         ))}

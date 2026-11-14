@@ -1,22 +1,11 @@
-import {
-  Text,
-  View,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  Pressable,
-  BackHandler,
-  Modal,
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  AppState,
-  Vibration,
-  Platform,
-  Image,
-  Dimensions,
-  KeyboardAvoidingView,
-} from "react-native";
+import {DeliveryDetailsFields} from './component/DeliveryDetailsFields';
+import {deliveryFormErrors} from '../../utils/deliveryForm';
+import {useKeyboardState} from '../../utils/useKeyboardState';
+import {vehicleChoices} from '../../utils/vehicleChoices';
+import {BrandLoader} from '../../design/BrandLogo';
+import {View, FlatList, TouchableOpacity, Pressable, BackHandler, Modal, ActivityIndicator, Alert, Keyboard, AppState, Vibration, Platform, Image, Dimensions, KeyboardAvoidingView} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
+import {ScrollView as GestureScrollView} from 'react-native-gesture-handler';
 import React, {
   useState,
   useEffect,
@@ -48,30 +37,36 @@ import {
   Close,
   Coupon,
   ArrowDown,
-  Preference,
 } from "@utils/icons";
-import { useRoute } from "@react-navigation/native";
+import {useRoute,useIsFocused} from "@react-navigation/native";
+import {resumeBooking} from "../../utils/bookingNavigation";
+import {resolveAcceptedBooking} from "../../utils/acceptedBooking";
+import {bookingSnapshot} from "../../utils/bookingPeople";
 import { CancelRender } from "../cancelFare/cancelRenderItem/index";
 import { useDispatch, useSelector } from "react-redux";
 import {
   allDriver,
+  allRide,
   allRides,
   couponVerifyData,
+  vehicleTypeDataGet,
+  findDriverRequestsAction,
 } from "../../api/store/actions/index";
 import { AppDispatch } from "../../api/store/index";
 import { updateRideRequest } from "../../api/store/actions/index";
 import { clearValue, getValue, setValue } from "@src/utils/localstorage";
 import { useAppNavigation } from "@src/utils/navigation";
 import { URL } from "@src/api/config";
-import { noserviceData } from "@src/data/unavailableVehicleData";
+import { getInitialVehicleOptions } from "@src/utils/initialVehicleOptions";
+import { GoodsVehicleKind, matchesGoodsVehicle, goodsWeightLimit } from "@src/utils/goodsServiceOptions";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomSheet, {
   BottomSheetModal,
   BottomSheetView,
   BottomSheetModalProvider,
   BottomSheetFlatList,
-  BottomSheetBackdrop,
   BottomSheetScrollView,
+  BottomSheetBackdrop,
 } from "@gorhom/bottom-sheet";
 import {
   check,
@@ -86,13 +81,25 @@ import PaymentItem from "./component/paymentRender";
 import CouponsBottomSheet from "./component/couponSheet";
 import Checkbox from "@src/commonComponent/checkBox";
 import LottieView from "lottie-react-native";
-import getEchoInstance from "@src/utils/echo";
+import getEchoInstance,{releaseScopedEcho} from "@src/utils/echo";
+import {BookingReview} from './component/BookingReview';
+import type {DeliveryDetails} from '../../utils/bookingReview';
+import {useLiveBookings} from '../../utils/LiveBookingProvider';
+import {bookingDeadline} from '../../utils/liveBooking';
+import {bookingChanged} from '../../utils/bookingSignals';
 
 const EMPTY_ARRAY: any[] = [];
+const EMPTY_PREFERENCES: {[vehicleId: string]: any[]} = {};
 
 export function BookRide() {
+  const {created:recordCreatedBooking}=useLiveBookings();
   const navigation = useAppNavigation();
+  const focused=useIsFocused();
+  const focusedRef=useRef(focused);focusedRef.current=focused;
+  const acceptingRef=useRef(false);
   const route = useRoute<RideRequestData | any>();
+  const { self } = useSelector((state: any) => state.account);
+  const routeStopsCoords = route.params?.stopsCoords;
   const {
     pickupLocation,
     stops,
@@ -100,22 +107,34 @@ export function BookRide() {
     service_ID,
     zoneValue,
     service_category_ID,
-    receiverName,
-    countryCode,
-    phoneNumber,
+    receiverName: initialReceiverName,
+    countryCode: initialCountryCode,
+    phoneNumber: initialPhoneNumber,
     scheduleDate,
     filteredLocations,
     descriptionText,
     otherContect,
     otherName,
+    recipientMode: initialRecipientMode,
     pickupCoords,
     destinationCoords,
-    selectedImage,
-    parcelWeight,
+    selectedImage: initialSelectedImage,
+    parcelWeight: initialParcelWeight,
   } = route.params;
+  const [recipientMode,setRecipientMode]=useState<'self'|'other'>(initialRecipientMode === 'other' ? 'other' : 'self');
+  const [selectedContactName,setSelectedContactName]=useState(initialRecipientMode === 'other' ? (otherName || initialReceiverName || '') : '');
+  const [receiverName,setReceiverName]=useState(initialReceiverName || (initialRecipientMode === 'other' ? (otherName || '') : (self?.name || '')));
+  const [countryCode,setCountryCode]=useState(initialCountryCode || (initialRecipientMode === 'other' ? '+91' : (self?.country_code ? (String(self.country_code).startsWith('+') ? String(self.country_code) : `+${self.country_code}`) : '+91')));
+  const [phoneNumber,setPhoneNumber]=useState(initialPhoneNumber || (initialRecipientMode === 'other' ? (otherContect || '') : String(self?.phone || '')));
+  const [parcelWeight,setParcelWeight]=useState(String(initialParcelWeight||''));
+  const [selectedImage,setSelectedImage]=useState(initialSelectedImage||null);
+  const [deliveryErrors,setDeliveryErrors]=useState<any>({});
+  const [quoteState,setQuoteState]=useState<{key:string;error:string;loading:boolean}>({key:'',error:'',loading:true});
+  const [quoteRetry,setQuoteRetry]=useState(0);
   const { countinueRide = false } = route.params ?? {};
   const { countinueRideId = "" } = route.params ?? {};
   const { vehicleIdValue = null } = route.params ?? {};
+  const preferredVehicleKind: GoodsVehicleKind | null = route.params?.preferredVehicleKind ?? null;
   const {
     textColorStyle,
     bgContainer,
@@ -133,44 +152,66 @@ export function BookRide() {
   );
   const dispatch = useDispatch<AppDispatch>();
   const [seletedPayment, setSeletedPayment] = useState<string | null>(null);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
-
+  const [reviewVisible, setReviewVisible] = useState(false);
+  const [bookingFooterHeight,setBookingFooterHeight]=useState(96);
+  const deliveryDetailsRef = useRef<DeliveryDetails | null>(null);
+  const {visible:isKeyboardVisible}=useKeyboardState();
+  const selfAutofillRef = useRef('');
   useEffect(() => {
-    const showSubscription = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => {
-        setIsKeyboardVisible(true);
-      },
-    );
-    const hideSubscription = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
-        setIsKeyboardVisible(false);
-      },
-    );
+    if (recipientMode !== 'self') return;
+    const identityKey = [self?.id, self?.name, self?.phone, self?.country_code].join('|');
+    if (!self?.id || selfAutofillRef.current === identityKey) return;
+    selfAutofillRef.current = identityKey;
+    if (self?.name) setReceiverName(String(self.name));
+    if (self?.phone) setPhoneNumber(String(self.phone));
+    if (self?.country_code) {
+      setCountryCode(String(self.country_code).startsWith('+') ? String(self.country_code) : `+${self.country_code}`);
+    }
+  }, [recipientMode, self?.id, self?.name, self?.phone, self?.country_code]);
 
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  const [selectedItemData, setSelectedItemData] = useState<string | null | any>(
-    null,
-  );
-  const [isChecked, setIsChecked] = useState<boolean>(true);
+  
+  const [selectedItem, setSelectedItem] = useState<string | number | null>(vehicleIdValue);
+  const [selectedItemData, setSelectedItemData] = useState<any>(null);
+  const [mapRouteInfo, setMapRouteInfo] = useState<{
+    distanceKm: number;
+    durationMinutes: number;
+  } | null>(null);
+  const [isChecked, setIsChecked] = useState<boolean>(initialRecipientMode !== 'other');
   const [stopsCoords, setStopsCoords] = useState<
-    Array<{ lat: number; lng: number }>
-  >([]);
+    Array<{ lat: number; lng: number; fullAddress?: string }>
+  >(() => (Array.isArray(routeStopsCoords) ? routeStopsCoords : []));
   const [loading, setLoading] = useState<boolean>(true);
   const [serviceVisible, setServiceVisible] = useState<boolean>(false);
   const ZoneArea = zoneValue?.locations || null;
   const { vehicleTypedata } = useSelector(
     (state: any) => state?.vehicleType || {},
   );
+  const isGoodsBooking = ['parcel','freight'].includes(String(route.params?.service_name).toLowerCase()) || !!route.params?.preferredVehicleKind;
+  const quoteWeight=Number(parcelWeight)>0?Number(parcelWeight):1;
+  const quoteKey=JSON.stringify([filteredLocations,service_ID,service_category_ID,quoteWeight]);
+  useEffect(()=>{
+    if(!isGoodsBooking || countinueRide){setQuoteState({key:quoteKey,error:'',loading:false});return;}
+    let active=true,task:any;
+    setQuoteState({key:'',error:'',loading:true});
+    setCouponValue(null);setAppliedCouponCode('');setInputValue('');
+    const timer=setTimeout(()=>{
+      task=dispatch(vehicleTypeDataGet({locations:filteredLocations,service_id:service_ID,service_category_id:service_category_ID,weight:quoteWeight}));
+      task.unwrap().then(()=>{if(active)setQuoteState({key:quoteKey,error:'',loading:false});}).catch((error:any)=>{if(active)setQuoteState({key:'',error:error?.message||'Unable to refresh the quote. Please retry.',loading:false});});
+    },400);
+    return ()=>{active=false;clearTimeout(timer);task?.abort();};
+  },[dispatch,isGoodsBooking,countinueRide,quoteKey,quoteRetry]);
+  const validateDelivery=()=>{
+    if(!isGoodsBooking)return true;
+    const maxWeight=goodsWeightLimit(selectedItemData)||goodsWeightLimit(preferredVehicleKind)||Number(taxidoSettingData?.cabbooking_values?.ride?.parcel_weight_limit);
+    const errors=deliveryFormErrors({receiverName,phoneNumber,countryCode,parcelWeight},maxWeight);
+    setDeliveryErrors(errors);
+    if(Object.keys(errors).length){notificationHelper('','Please complete the delivery details below the vehicle list.','error');return false;}
+    if(quoteState.loading||quoteState.key!==quoteKey||quoteState.error){notificationHelper('',quoteState.error||'Please wait for the updated quote.','error');return false;}
+    return true;
+  };
   const hasNavigatedRef = useRef(false);
+  const handledCancelledRequestRef = useRef<string | null>(null);
   const { driverData } = useSelector((state: any) => state?.allDriver || {});
-  const { self } = useSelector((state: any) => state.account);
   const riderId = self?.id;
   const activePaymentMethods = zoneValue?.payment_method;
   const [fareValue, setFareValue] = useState<any>(0);
@@ -180,7 +221,8 @@ export function BookRide() {
   const [warningMessage, setWarningMessage] = useState<string>();
   const [rideID, setRideId] = useState(countinueRideId);
   const [driverId, setDriverId] = useState([]);
-  const [riderequestId, setRideRequestId] = useState<string | number | any>();
+  const [riderequestId, setRideRequestId] = useState<string | number | any>(countinueRideId||undefined);
+  const searchDeadlineRef=useRef<number|undefined>(route.params?.searchExpiresAt);
   const mapRef = useRef<any>(null);
   const [bookLoading, setBookLoading] = useState<boolean>(false);
   const animationRef = useRef<any>(null);
@@ -191,12 +233,105 @@ export function BookRide() {
     1000;
   const [remainingTime, setRemainingTime] = useState<number>(0);
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
-  const intervalTimeRef = useRef<NodeJS.Timeout | null>(null);
-  const [_currentNearestDriver, _setCurrentNearestDriver] = useState<any>([]);
-  const dataList =
-    vehicleTypedata && vehicleTypedata?.length > 0
-      ? vehicleTypedata
-      : noserviceData;
+  const intervalTimeRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerCancelledRef = useRef(false);
+  const cancelBookingRef=useRef<(sync?:boolean)=>Promise<void>>(async()=>{});
+  const stopPulseRef=useRef<()=>Promise<void>>(async()=>{});
+  const dataList = useMemo<any[]>(
+    () => getInitialVehicleOptions<any>(isGoodsBooking && quoteState.key!==quoteKey ? [] : vehicleTypedata).filter(vehicle =>
+      !preferredVehicleKind || matchesGoodsVehicle(vehicle, preferredVehicleKind),
+    ),
+    [vehicleTypedata, preferredVehicleKind, isGoodsBooking, quoteState.key, quoteKey],
+  );
+  // The Home screen may carry an older vehicle id while fresh fares are loading.
+  // Only the current quote can be used to create a delivery, so resolve selection
+  // from the two currently available options (Bike or Auto) before continuing.
+  const availableVehicleOptions = useMemo(
+    () => vehicleChoices(dataList),
+    [dataList],
+  );
+  const resolvedSelectedVehicle = useMemo(() => {
+    const selectedKey = String(
+      selectedItemData?.choice_key ?? selectedItemData?.id ?? selectedItem ?? vehicleIdValue ?? "",
+    );
+    return (
+      availableVehicleOptions.find(
+        item => String(item.choice_key ?? item.id) === selectedKey,
+      ) ??
+      (preferredVehicleKind
+        ? availableVehicleOptions.find(item => matchesGoodsVehicle(item, preferredVehicleKind))
+        : undefined) ??
+      availableVehicleOptions[0] ??
+      null
+    );
+  }, [availableVehicleOptions, preferredVehicleKind, selectedItem, selectedItemData?.choice_key, selectedItemData?.id, vehicleIdValue]);
+  const driverZoneId = zoneValue?.data?.[0]?.id;
+  const availableDriverList = useMemo(() => {
+    if (Array.isArray(driverData)) return driverData;
+    if (Array.isArray(driverData?.data)) return driverData.data;
+    if (Array.isArray(driverData?.data?.data)) return driverData.data.data;
+    return [];
+  }, [driverData]);
+  const nearestAvailableDriver = useMemo(() => {
+    if (!isPulsing || !pickupCoords || selectedItem == null) return null;
+
+    const requestedDriverIds = new Set(
+      (Array.isArray(driverId) ? driverId : []).map((driver: any) =>
+        String(typeof driver === "object" ? driver?.id ?? driver?.driver_id : driver),
+      ),
+    );
+    let nearest: { id: string | number; lat: number; lng: number; distanceKm: number } | null = null;
+
+    for (const driver of availableDriverList) {
+      const driverIdValue = driver?.id ?? driver?.driver_id;
+      if (
+        requestedDriverIds.size > 0 &&
+        !requestedDriverIds.has(String(driverIdValue))
+      ) {
+        continue;
+      }
+
+      const vehicleTypeId =
+        driver?.vehicle_type_id ?? driver?.vehicle_info?.vehicle_type_id;
+      if (String(vehicleTypeId) !== String(selectedItem)) continue;
+
+      const online = driver?.is_online;
+      if (online != null && Number(online) !== 1 && online !== true) continue;
+      if (Number(driver?.is_on_ride) === 1 || driver?.is_on_ride === true) continue;
+
+      const location = Array.isArray(driver?.location)
+        ? driver.location[0]
+        : driver?.location ?? driver?.current_location;
+      const rawLat = location?.lat ?? location?.latitude ?? driver?.lat ?? driver?.latitude;
+      const rawLng = location?.lng ?? location?.longitude ?? driver?.lng ?? driver?.longitude;
+      if (rawLat == null || rawLng == null || rawLat === "" || rawLng === "") continue;
+
+      const lat = Number(rawLat);
+      const lng = Number(rawLng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+      const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+      const latDelta = toRadians(lat - pickupCoords.lat);
+      const lngDelta = toRadians(lng - pickupCoords.lng);
+      const a =
+        Math.sin(latDelta / 2) ** 2 +
+        Math.cos(toRadians(pickupCoords.lat)) *
+          Math.cos(toRadians(lat)) *
+          Math.sin(lngDelta / 2) ** 2;
+      const distanceKm = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      if (!nearest || distanceKm < nearest.distanceKm) {
+        nearest = {
+          id: driverIdValue ?? `${lat},${lng}`,
+          lat,
+          lng,
+          distanceKm,
+        };
+      }
+    }
+
+    return nearest;
+  }, [availableDriverList, driverId, isPulsing, pickupCoords, selectedItem]);
   const [isValid, setIsValid] = useState<boolean>(true);
   const { goBack } = useAppNavigation();
   const [coupon, setCoupon] = useState<string | null | any>(null);
@@ -222,41 +357,22 @@ export function BookRide() {
   const paymentSheetRef = useRef<BottomSheetModal>(null);
   const riderSheetRef = useRef<BottomSheetModal>(null);
   const couponsSheetRef = useRef<BottomSheetModal>(null);
-  const preferenceSheetRef = useRef<BottomSheetModal>(null);
-  const [mapBottomPadding, setMapBottomPadding] = useState<number>(0);
-  const mainSnapPoints = useMemo(() => {
-    const bidding = Number(
-      taxidoSettingData?.cabbooking_values?.activation?.bidding ?? 0,
-    );
 
-    if (Platform.OS === "ios") {
-      if (isKeyboardVisible) {
-        return bidding === 0 ? ["75%", "75%"] : ["90%", "90%"];
-      }
-      return bidding === 0 ? ["60%", "60%"] : ["72%", "72%"];
-    } else {
-      if (isKeyboardVisible) {
-        return bidding === 0 ? ["75%", "75%"] : ["88%", "88%"];
-      }
-      return bidding === 0 ? ["55%", "55%"] : ["65%", "65%"];
-    }
-  }, [
-    taxidoSettingData?.cabbooking_values?.activation?.bidding,
-    isKeyboardVisible,
-  ]);
+  const [mapBottomPadding, setMapBottomPadding] = useState<number>(0);
+  // Keep sheet geometry stable when the keyboard changes; BottomSheetTextInput handles IME movement.
+  const mainSnapPoints = useMemo(() => ['55%','88%'], []);
   const vehicleDetailSnapPoints = useMemo(() => ["75%"], ["70%"]);
-  const noVehicleSnapPoints = useMemo(() => ["30%"], []);
+  const noVehicleSnapPoints = useMemo(() => ["50%"], []);
   const paymentSnapPoints = useMemo(() => ["60%"], []);
-  const riderSnapPoints = useMemo(() => ["40%"], []);
+  const riderSnapPoints = useMemo(() => ["70%"], []);
   const couponsSnapPoints = useMemo(() => ["30%"], []);
-  const preferanceSnapPoints = useMemo(() => ["40%"], []);
+
   const webViewRef = useRef<any>(null);
   const [driverbidValue, setDriverBidValue] = useState<any[]>([]);
   const [selectedItem1, setSelectedItem1] = useState<number | null>(null);
 
-  const [selectedPrefs, setSelectedPrefs] = useState<{
-    [vehicleId: string]: any[];
-  }>({});
+  const selectedPrefs: {[vehicleId: string]: any[]} = EMPTY_PREFERENCES;
+
   const [selectedFinalPrice, setSelectedFinalPrice] = useState<string>("");
 
   // Track bottom sheet open states
@@ -266,7 +382,8 @@ export function BookRide() {
   const [isPaymentOpen, setIsPaymentOpen] = useState<boolean>(false);
   const [isRiderOpen, setIsRiderOpen] = useState<boolean>(false);
   const [isCouponsOpen, setIsCouponsOpen] = useState<boolean>(false);
-  const [isPreferenceOpen, setIsPreferenceOpen] = useState<boolean>(false);
+  const isPreferenceOpen = false;
+  const showBookingFooter = !(isVehicleDetailsOpen || isNoVehicleOpen || isPaymentOpen || isRiderOpen || isCouponsOpen || isPreferenceOpen || isExpanding || isKeyboardVisible);
 
   // Declare all useCallback wrapped functions at the beginning
   const sendToWebView = useCallback(
@@ -307,7 +424,7 @@ export function BookRide() {
         }),
       );
     }
-  }, [dispatch, handleCancelRide, riderequestId, stopPulseAnimation]);
+  }, [dispatch, riderequestId]);
 
   const checkTimer = useCallback(async () => {
     if (timerCancelledRef.current) return;
@@ -315,7 +432,7 @@ export function BookRide() {
     const storedStart = await AsyncStorage.getItem("ride_timer_start");
     if (storedStart) {
       const elapsed = Date.now() - parseInt(storedStart, 10);
-      const remaining = TIMER_DURATION - elapsed;
+      const remaining = (searchDeadlineRef.current ?? (parseInt(storedStart,10)+TIMER_DURATION)) - Date.now();
 
       if (remaining <= 0) {
         setRemainingTime(0);
@@ -331,29 +448,9 @@ export function BookRide() {
     checkTimerRef.current = checkTimer;
   }, [checkTimer]);
 
-  const timerCancelledRef = useRef(false);
 
-  const togglePreference = (item: any) => {
-    if (!selectedItemData?.id) return;
 
-    const vehicleId = selectedItemData.id.toString();
-    setSelectedPrefs(prev => {
-      const currentVehiclePrefs = prev[vehicleId] || [];
-      const isAlreadySelected = currentVehiclePrefs.some(p => p.id === item.id);
-
-      if (isAlreadySelected) {
-        return {
-          ...prev,
-          [vehicleId]: currentVehiclePrefs.filter(p => p.id !== item.id),
-        };
-      } else {
-        return {
-          ...prev,
-          [vehicleId]: [...currentVehiclePrefs, item],
-        };
-      }
-    });
-  };
+  
 
   const preferences = selectedItemData?.vehicle_type_zone?.preferences || [];
 
@@ -369,6 +466,18 @@ export function BookRide() {
 
   useEffect(() => {
     const backAction = () => {
+      // Do not leave a live booking request behind when Android Back is
+      // pressed.  Keep the rider on this screen; cancellation remains an
+      // explicit action from the Cancel Ride control.
+      if (isExpanding || isTimerRunning || bookLoading) {
+        Alert.alert(
+          "Delivery request in progress",
+          "Please wait for a driver or use Cancel Delivery to cancel this request.",
+          [{ text: "OK" }],
+        );
+        return true;
+      }
+
       // Check if any bottom sheet is open
       const isAnySheetOpen =
         isVehicleDetailsOpen ||
@@ -385,7 +494,7 @@ export function BookRide() {
         paymentSheetRef.current?.close();
         riderSheetRef.current?.close();
         couponsSheetRef.current?.close();
-        preferenceSheetRef.current?.close();
+
         return true; // Prevent default back behavior
       } else {
         // If no sheet is open, navigate back
@@ -463,6 +572,24 @@ export function BookRide() {
 
   const isPlusDisabled = numericFare >= maxFare;
   const isMinusDisabled = numericFare <= minFare;
+  const quotedDistance = Number.parseFloat(
+    String(selectedItemData?.charges?.total_distance ?? ""),
+  );
+  const quotedDuration = Number.parseFloat(
+    String(selectedItemData?.charges?.duration ?? ""),
+  );
+  const displayedDistance =
+    Number.isFinite(quotedDistance) && quotedDistance > 0
+      ? selectedItemData?.charges?.total_distance
+      : mapRouteInfo
+        ? mapRouteInfo.distanceKm.toFixed(1)
+        : "—";
+  const displayedDuration =
+    Number.isFinite(quotedDuration) && quotedDuration > 0
+      ? selectedItemData?.charges?.duration
+      : mapRouteInfo
+        ? `${Math.max(1, Math.round(mapRouteInfo.durationMinutes))} mins`
+        : "— mins";
 
   useEffect(() => {
     if (selectedItemData?.charges?.total) {
@@ -475,12 +602,15 @@ export function BookRide() {
   }, [coupon]);
 
   useEffect(() => {
-    if (!loading) {
-      setTimeout(() => {
-        mainSheetRef.current?.snapToIndex(2);
-      }, 100);
-    }
-  }, [loading]);
+    // Keep the booking form fully expanded whenever its mode changes.  The
+    // previous loading-based timeout often fired before the sheet mounted, so
+    // the first visit stayed at 55% and hid the photo field below the footer.
+    const frame = requestAnimationFrame(() => {
+      mainSheetRef.current?.snapToIndex(1);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isExpanding]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -522,12 +652,7 @@ export function BookRide() {
 
   const handleMainSheetChange = useCallback(
     (index: number) => {
-      if (index === 0) {
-        mainSheetRef.current?.snapToIndex(1);
-        return;
-      }
-
-      let padding = 0;
+let padding = 0;
       if (index > 0) {
         const snapPoint = mainSnapPoints[index];
         if (typeof snapPoint === "string" && snapPoint.endsWith("%")) {
@@ -565,92 +690,50 @@ export function BookRide() {
   }, [mapBottomPadding, fitMapToRoute]);
 
   useEffect(() => {
-    if (dataList?.length > 0 && !selectedItem) {
-      const firstItem = dataList[0];
-      setSelectedItem(firstItem.id);
-      setSelectedItemData(firstItem);
+    // Do not erase an existing selection during the short quote-loading state.
+    if (isGoodsBooking && (quoteState.loading || quoteState.key !== quoteKey)) return;
+    const selectedVehicle = resolvedSelectedVehicle;
+    if (!selectedVehicle) return;
 
-      if (taxidoSettingData?.cabbooking_values?.activation?.bidding == 0) {
-        setFareValue(`${firstItem?.min_per_unit_charge * distance}`);
-      }
+    if (String(selectedItem) !== String(selectedVehicle.id)) {
+      setSelectedItem(selectedVehicle.id);
+    }
+    if (String(selectedItemData?.choice_key ?? selectedItemData?.id) !== String(selectedVehicle.choice_key ?? selectedVehicle.id)) {
+      setSelectedItemData(selectedVehicle);
+    }
+    if (
+      taxidoSettingData?.cabbooking_values?.activation?.bidding == 0 &&
+      !selectedItemData?.id
+    ) {
+      const quotedFare = Number(
+        selectedVehicle?.charges?.total ??
+          (Number(selectedVehicle?.min_per_unit_charge ?? 0) * Number(distance ?? 0)),
+      );
+      setFareValue(`${Number.isFinite(quotedFare) ? quotedFare : 0}`);
     }
   }, [
-    dataList,
+    resolvedSelectedVehicle,
     distance,
+    isGoodsBooking,
+    quoteKey,
+    quoteState.key,
+    quoteState.loading,
     selectedItem,
+    selectedItemData?.choice_key,
+    selectedItemData?.id,
     taxidoSettingData?.cabbooking_values?.activation?.bidding,
   ]);
 
-  useEffect(() => {
-    const toRad = (value: any) => (value * Math.PI) / 180;
-
-    const getDistanceFromLatLonInKm = (
-      lat1: number,
-      lon1: number,
-      lat2: number,
-      lon2: number,
-    ) => {
-      const R = 6371;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(lat1)) *
-          Math.cos(toRad(lat2)) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    };
-    let ____isCurrent = true;
-
-    const fetchDrivers = async () => {
-      try {
-        _setCurrentNearestDriver([]);
-        const allDrivers = driverData || [];
-
-        const filteredDrivers = allDrivers.filter((data: any) => {
-          if (
-            data.is_online === "1" &&
-            data.vehicle_type_id === selectedItem &&
-            data.lat &&
-            data.lng
-          ) {
-            const driverLat = parseFloat(data.lat);
-            const driverLng = parseFloat(data.lng);
-
-            const distanceInKm = getDistanceFromLatLonInKm(
-              pickupCoords?.lat,
-              pickupCoords?.lng,
-              driverLat,
-              driverLng,
-            );
-
-            return distanceInKm <= 3;
-          }
-          return false;
-        });
-
-        _setCurrentNearestDriver(filteredDrivers);
-      } catch (error) {}
-    };
-
-    if (pickupCoords?.lat && pickupCoords?.lng) {
-      fetchDrivers();
-    }
-
-    return () => {
-      ____isCurrent = false;
-    };
-  }, [selectedItem, pickupCoords?.lat, pickupCoords?.lng]);
-
-  const startTimer = useCallback(async () => {
-    await AsyncStorage.setItem("ride_timer_start", Date.now().toString());
+  const startTimer = useCallback(async (resume = false) => {
+    const storedStart=resume?await AsyncStorage.getItem('ride_timer_start'):null;
+    const start=searchDeadlineRef.current&&Number.isFinite(TIMER_DURATION)?searchDeadlineRef.current-TIMER_DURATION:storedStart?Number(storedStart):Date.now();
+    await AsyncStorage.setItem("ride_timer_start", String(start));
     setIsTimerRunning(true);
     timerCancelledRef.current = false;
     checkTimerRef.current();
+    if(intervalTimeRef.current)clearInterval(intervalTimeRef.current);
     intervalTimeRef.current = setInterval(() => checkTimerRef.current(), 1000);
-  }, [intervalTimeRef, timerCancelledRef]);
+  }, [TIMER_DURATION]);
 
   // Functions are already declared with useCallback above
 
@@ -726,17 +809,21 @@ export function BookRide() {
     TimeValue: scheduleDate?.TimeValue,
   };
 
-  useEffect(() => {
-    if (vehicleTypedata?.length > 0) {
-      setSelectedItem(vehicleTypedata[0].id);
-    }
-  }, [vehicleTypedata]);
-
-  const allLocations = [pickupLocation, ...(stops || []), destination];
+  const allLocations = [
+    pickupLocation,
+    ...(stops || []).map(
+      (stop, index) => stopsCoords[index]?.fullAddress || stop,
+    ),
+    destination,
+  ];
   const allLocationCoords = [pickupCoords, ...stopsCoords, destinationCoords];
-  const selectedVehicleData = Array.isArray(vehicleTypedata)
-    ? vehicleTypedata.find(item => item?.id === selectedItem)
-    : null;
+  const allCoordinatesPresent =
+    allLocationCoords.length === (Array.isArray(stops) ? stops.length : 0) + 2 &&
+    allLocationCoords.every(
+      coordinate =>
+        Number.isFinite(coordinate?.lat) && Number.isFinite(coordinate?.lng),
+    );
+  const selectedVehicleData = dataList.find(item => String(item?.id) === String(selectedItem));
   const minimumCharge = selectedVehicleData?.min_per_unit_charge || null;
   const minChargeRide = minimumCharge * distance;
 
@@ -746,39 +833,38 @@ export function BookRide() {
     }
   }, [ZoneArea]);
 
-  const handlePress = () => {
-    const payload = {
-      coupon: inputValue,
-      service_id: service_ID,
-      vehicle_type_id: selectedItemData?.vehicle_type_zone?.vehicle_type_id,
-      locations: filteredLocations,
-      service_category_id: service_category_ID.toString(),
-      weight: parcelWeight,
-    };
-
-    dispatch(couponVerifyData(payload)).then((res: any) => {
-      if (res.payload?.success !== true) {
-        notificationHelper("", res?.payload?.message, "error");
-      } else {
-        setCouponValue(res?.payload);
-        const isCouponValid = coupon && coupon.code === inputValue;
-        setIsValid(isCouponValid);
-        if (isCouponValid) {
-          const totalBill = selectedItemData?.charges?.sub_total;
-          Math.round(settingData?.values?.activation?.platform_fees);
-          if (totalBill < coupon?.min_spend) {
-            setSuccessMessage(
-              `${translateData.minimumSpend} ${coupon?.min_spend} ${translateData.requiredCoupons}`,
-            );
-          } else {
-            setSuccessMessage(`${translateData.couponsApply}`);
-          }
-        } else {
-          setSuccessMessage("");
-          setCoupon(null);
-        }
-      }
-    });
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [appliedCouponCode, setAppliedCouponCode] = useState("");
+  const handlePress = async (reviewCode?: string) => {
+    const code = (typeof reviewCode === 'string' ? reviewCode : inputValue).trim();
+    if (!code || applyingCoupon) return;
+    setApplyingCoupon(true);
+    setIsValid(false);
+    setCouponValue(null);
+    setAppliedCouponCode("");
+    setSuccessMessage("");
+    try {
+      const result = await dispatch(couponVerifyData({
+        coupon: code,
+        service_id: service_ID,
+        vehicle_type_id: selectedItemData?.vehicle_type_zone?.vehicle_type_id,
+        locations: filteredLocations,
+        service_category_id: String(service_category_ID),
+        weight: parcelWeight,
+      })).unwrap();
+      if (result?.success !== true) throw new Error(result?.message || "This coupon cannot be applied.");
+      setCouponValue(result);
+      setInputValue(code);
+      setAppliedCouponCode(code);
+      setIsValid(true);
+      setSuccessMessage(translateData.couponsApply || "Coupon applied");
+    } catch (error: any) {
+      const message = error?.message || "Unable to apply coupon. Please try again.";
+      setSuccessMessage(message);
+      notificationHelper("", message, "error");
+    } finally {
+      setApplyingCoupon(false);
+    }
   };
 
   const gotoCoupon = () => {
@@ -788,6 +874,10 @@ export function BookRide() {
   const removeCoupon = () => {
     setInputValue("");
     setCouponValue("");
+    setCoupon(null);
+    setAppliedCouponCode("");
+    setIsValid(false);
+    setSuccessMessage("");
   };
 
   const getCoupon = (val: string) => {
@@ -795,14 +885,23 @@ export function BookRide() {
   };
 
   useEffect(() => {
-    dispatch(
-      allDriver({
-        zones: zoneValue?.data?.[0]?.id,
-        is_online: 1,
-        is_on_ride: 0,
-      }),
-    );
-  }, [dispatch, zoneValue?.data]);
+    if (!driverZoneId) return;
+
+    const refreshAvailableDrivers = () =>
+      dispatch(
+        allDriver({
+          zones: driverZoneId,
+          is_online: 1,
+          is_on_ride: 0,
+        }),
+      );
+
+    refreshAvailableDrivers();
+    if (!isPulsing) return;
+
+    const refreshInterval = setInterval(refreshAvailableDrivers, 15000);
+    return () => clearInterval(refreshInterval);
+  }, [dispatch, driverZoneId, isPulsing]);
 
   const requestContactsPermission = async () => {
     const isSimulator = Platform.OS === "ios" && !process.env.IS_DEVICE;
@@ -814,6 +913,7 @@ export function BookRide() {
 
       const goToChooseRider = () =>
         navigation.navigate("ChooseRiderScreen", {
+          ...route.params,
           destination,
           stops,
           pickupLocation,
@@ -823,6 +923,7 @@ export function BookRide() {
           service_category_ID,
           selectedImage,
           parcelWeight,
+          receiverName,countryCode,phoneNumber,
           pickupCoords,
           destinationCoords,
         });
@@ -880,49 +981,34 @@ export function BookRide() {
   };
 
   useEffect(() => {
-    const geocodeAddress = async (address: string) => {
-      try {
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-            address,
-          )}&key=${Google_Map_Key}`,
-        );
-        const dataMap = await response.json();
-        if (dataMap.results?.length > 0) {
-          const location = dataMap.results[0].geometry.location;
-          return {
-            lat: location.lat,
-            lng: location.lng,
-          };
-        }
-      } catch (error) {
-        console.error("Error geocoding address:", error);
-      }
-      return null;
-    };
+    const expectedStopCount = Array.isArray(stops) ? stops.length : 0;
+    const incomingStops = Array.isArray(routeStopsCoords) ? routeStopsCoords : [];
+    const isComplete =
+      incomingStops.length === expectedStopCount &&
+      incomingStops.every(
+        coordinate =>
+          Number.isFinite(coordinate?.lat) && Number.isFinite(coordinate?.lng),
+      );
 
-    const fetchCoordinates = async () => {
-      try {
-        const stopsCoordsPromises = stops.map(geocodeAddress);
-        const stopsResults = await Promise.all(stopsCoordsPromises);
-        setStopsCoords(
-          stopsResults.filter(coords => coords !== null) as Array<{
-            lat: number;
-            lng: number;
-          }>,
-        );
-      } catch (error) {
-        console.error("Error fetching coordinates:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCoordinates();
-  }, [pickupLocation, stops, destination, Google_Map_Key]);
-
+    if (isComplete) {
+      setStopsCoords(incomingStops);
+    } else if (expectedStopCount === 0) {
+      setStopsCoords([]);
+    } else {
+      // Never geocode a short stop label again. It can match another city.
+      setStopsCoords([]);
+      console.error("A selected stop is missing its original selected coordinates.");
+    }
+    setLoading(false);
+  }, [routeStopsCoords, stops]);
   const radioPress = () => {
-    setIsChecked(!isChecked);
+    setIsChecked(true);
+    setRecipientMode('self');
+    setSelectedContactName('');
+    setReceiverName(String(self?.name || ''));
+    setCountryCode(self?.country_code ? (String(self.country_code).startsWith('+') ? String(self.country_code) : `+${self.country_code}`) : '+91');
+    setPhoneNumber(String(self?.phone || ''));
+    setDeliveryErrors({});
   };
 
   const chooseRider = () => {
@@ -939,10 +1025,12 @@ export function BookRide() {
           couponsData={couponValue}
           item={item}
           isDisabled={isExpanding}
+          showSeats={!preferredVehicleKind && !item?.charges?.is_goods_delivery}
           selectedPrefsValue={vehiclePrefs}
-          isSelected={(vehicleIdValue ?? selectedItemData?.id) === item.id}
+          isSelected={String(selectedItemData?.choice_key ?? selectedItemData?.id ?? vehicleIdValue) === String(item.choice_key ?? item.id)}
           onPress={() => {
             if (!isExpanding) {
+              setSelectedItem(item.id);
               setSelectedItemData(item);
               if (
                 taxidoSettingData?.cabbooking_values?.activation?.bidding === 0
@@ -962,6 +1050,7 @@ export function BookRide() {
           }}
           onPressAlternate={() => {
             if (!isExpanding) {
+              setSelectedItem(item.id);
               setSelectedItemData(item);
               setIsVehicleDetailsOpen(true);
               vehicleDetailsSheetRef.current?.present();
@@ -979,6 +1068,7 @@ export function BookRide() {
     [
       selectedPrefs,
       selectedItemData?.id,
+      selectedItemData?.choice_key,
       isExpanding,
       couponValue,
       taxidoSettingData?.cabbooking_values?.activation?.bidding,
@@ -992,26 +1082,11 @@ export function BookRide() {
     mainSheetRef.current?.snapToIndex(1);
   };
 
-  const formattedData =
-    allLocationCoords && allLocationCoords?.length > 0
-      ? `[${allLocationCoords
-          .map(coord =>
-            coord?.lat !== undefined && coord?.lng !== undefined
-              ? `{"lat": ${coord.lat}, "lng": ${coord.lng}}`
-              : null,
-          )
-          .filter(Boolean)
-          .join(", ")}]`
-      : "[]";
-
-  if (formattedData !== "[]") {
-    try {
-      const _parsedData = JSON.parse(formattedData);
-    } catch (error) {
-      console.error("Failed to parse formattedData:", error);
-    }
-  } else {
-  }
+  const formattedData = JSON.stringify(
+    allCoordinatesPresent
+      ? allLocationCoords.map(({ lat, lng }) => ({ lat, lng }))
+      : [],
+  );
 
   const forms = {
     location_coordinates: JSON.parse(formattedData),
@@ -1027,7 +1102,7 @@ export function BookRide() {
     distance_unit: zoneValue?.distance_type,
     payment_method: seletedPayment || "cash",
     wallet_balance: null,
-    coupon: coupon || null,
+    coupon: appliedCouponCode || null,
     description: descriptionText ?? null,
     weight: parcelWeight,
     name: receiverName,
@@ -1035,10 +1110,10 @@ export function BookRide() {
     country_code: countryCode,
     phone: phoneNumber,
     new_rider:
-      otherName?.trim() && otherContect?.trim()
+      recipientMode === 'other' && selectedContactName.trim() && phoneNumber.trim()
         ? {
-            name: otherName,
-            phone: otherContect,
+            name: receiverName,
+            phone: phoneNumber,
           }
         : null,
 
@@ -1057,7 +1132,15 @@ export function BookRide() {
   const newRiderPhone = forms.new_rider?.phone?.trim();
 
   const handleBookRide = async () => {
-    startTimer();
+    if(!validateDelivery()) return;
+    if (!allCoordinatesPresent) {
+      Alert.alert(
+        "Route needs updating",
+        "Go back and reselect each pickup, stop, and destination in the same Indian city.",
+      );
+      return;
+    }
+
     Keyboard.dismiss();
     setBookLoading(true);
     sendToWebView("focusPickup");
@@ -1071,12 +1154,19 @@ export function BookRide() {
 
     const startRideProcess = async () => {
       if (!isExpanding) {
+        const bookingCreated = await BookRideRequest(forms);
+        if (!bookingCreated) {
+          setBookLoading(false);
+          return;
+        }
+
+        await startTimer();
+
         setIsExpanding(true);
         setIsPulsing(true);
         if (webViewRef.current) {
           webViewRef.current.injectJavaScript("startPulsingAnimation();");
         }
-        await BookRideRequest(forms);
         startPulseAnimation();
         setIsPulsing(true);
         focusOnPickup();
@@ -1128,6 +1218,12 @@ export function BookRide() {
       formData.append("wallet_balance", forms.wallet_balance || "");
       formData.append("coupon", forms.coupon || "");
       formData.append("description", forms.description);
+      if (deliveryDetailsRef.current) {
+        const details=deliveryDetailsRef.current;
+        formData.append('delivery_details[goods_type]',details.goods_type);
+        formData.append('delivery_details[restricted_items_confirmed]','1');
+        if(details.gstin){formData.append('delivery_details[gstin]',details.gstin);formData.append('delivery_details[business_name]',details.business_name||'');}
+      }
       formData.append("weight", forms.weight || "");
       formData.append("parcel_receiver[name]", forms.name || "");
       formData.append("parcel_receiver[phone]", forms.phone || "");
@@ -1136,11 +1232,6 @@ export function BookRide() {
         forms.country_code || "",
       );
       formData.append("currency_code", forms.currency_code || "");
-      Object.values(selectedPrefs).forEach((prefArray: any) => {
-        prefArray.forEach((item: any, index: number) => {
-          formData.append(`preferences[${index}]`, item?.id);
-        });
-      });
       if (newRiderName && newRiderPhone) {
         formData.append("new_rider[name]", newRiderName || "");
         formData.append("new_rider[phone]", newRiderPhone || "");
@@ -1197,68 +1288,26 @@ export function BookRide() {
       }
 
       if (response?.ok) {
+        searchDeadlineRef.current=bookingDeadline(responseData,Number(taxidoSettingData?.cabbooking_values?.ride?.find_driver_time_limit));
+        recordCreatedBooking(responseData);
         setRideRequestId(responseData?.id);
         setRideId(responseData?.id);
         setDriverId(responseData?.drivers);
+        return true;
       } else if (responseData) {
         notificationHelper("", responseData?.message, "error");
         setBookLoading(false);
+        return false;
       }
     } catch (error) {
       console.error("BookRideRequest error:", error);
       setBookLoading(false);
+      return false;
     }
+    return false;
   };
 
-  const handleRideAccepted = useCallback(
-    async (rideData: any) => {
-      if (hasNavigatedRef.current || !rideData) {
-        return;
-      }
-      hasNavigatedRef.current = true;
-
-      dispatch(allRides());
-      await stopPulseAnimation();
-
-      if (rideData?.service_category?.service_category_type === "schedule") {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "MyTabs" as never }],
-        });
-        notificationHelper("", translateData.rideScheduled, "success");
-      } else {
-        notificationHelper("", "Ride Accepted Successfully!", "success");
-        // Small timeout to ensure WebSocket event processing doesn't interfere with navigation on Android
-        setTimeout(() => {
-          try {
-            const cleanedData = rideData
-              ? JSON.parse(JSON.stringify(rideData))
-              : null;
-            navigation.navigate("RideActive", {
-              activeRideOTP: cleanedData,
-              filteredLocations: filteredLocations,
-            });
-          } catch (navError) {
-            console.error("Navigation Error:", navError);
-            notificationHelper(
-              "",
-              "Navigation Failed: " + String(navError),
-              "error",
-            );
-          }
-        }, 500);
-      }
-    },
-    [
-      dispatch,
-      navigation,
-      stopPulseAnimation,
-      translateData.rideScheduled,
-      filteredLocations,
-    ],
-  );
-
-  const handleCancelRide = useCallback(async () => {
+  const handleCancelRide = useCallback(async (syncCancellationWithServer = true) => {
     await cancelTimer();
     await AsyncStorage.removeItem("current_ride_request_id");
 
@@ -1273,15 +1322,16 @@ export function BookRide() {
     sendToWebView("fitRoute");
 
     paymentSheetRef.current?.close();
-    mainSheetRef.current?.snapToIndex(2);
+    mainSheetRef.current?.snapToIndex(1);
 
-    if (riderequestId) {
+    if (riderequestId && syncCancellationWithServer) {
       const payload = {
         status: "cancelled",
       };
 
       dispatch(updateRideRequest({ payload: payload, ride_id: riderequestId }))
         .then(_res => {
+          bookingChanged();
           console.log("Ride Cancelled Successfully", _res);
         })
         .catch(_err => {
@@ -1298,6 +1348,29 @@ export function BookRide() {
     paymentSheetRef,
     mainSheetRef,
   ]);
+
+  const handleAdminDeclinedRequest = useCallback(
+    (requestId: string | number | undefined, message?: string) => {
+      const cancelledRequestId = String(requestId ?? "");
+      if (
+        !cancelledRequestId ||
+        cancelledRequestId !== String(riderequestId ?? "") ||
+        handledCancelledRequestRef.current === cancelledRequestId
+      ) {
+        return;
+      }
+
+      handledCancelledRequestRef.current = cancelledRequestId;
+      notificationHelper(
+        "",
+        message || "Your booking was declined by Admin.",
+        "error",
+      );
+      void handleCancelRide(false);
+      dispatch(allRides());
+    },
+    [dispatch, handleCancelRide, riderequestId],
+  );
 
   const backScreen = () => {
     goBack();
@@ -1326,6 +1399,41 @@ export function BookRide() {
     setIsPulsing(false);
   }, [animationRef, cancelTimer]);
 
+  useEffect(()=>{
+    if(focused)return;
+    [vehicleDetailsSheetRef,noVehicleSheetRef,paymentSheetRef,riderSheetRef,couponsSheetRef].forEach(ref=>ref.current?.dismiss());
+  },[focused]);
+
+  const handleRideAccepted = useCallback(async(event:any)=>{
+    if(!focusedRef.current||hasNavigatedRef.current||acceptingRef.current||!riderequestId)return;
+    const incoming=bookingSnapshot(event);
+    if(incoming?.ride_request_id&&String(incoming.ride_request_id)!==String(riderequestId))return;
+    acceptingRef.current=true;
+    try{
+      // A personal-channel event can belong to an older delivery. Resolve the
+      // current request's ride_id first, then read its current PIN/status.
+      const ride=await resolveAcceptedBooking(riderequestId,
+        ()=>dispatch(findDriverRequestsAction()).unwrap(),
+        id=>dispatch(allRide({ride_id:id})).unwrap());
+      if(!ride||!focusedRef.current)return;
+      const status=ride?.ride_status?.slug;
+      if(!['accepted','arrived','started','in_progress','on_going'].includes(status))return;
+      hasNavigatedRef.current=true;
+      bookingChanged();dispatch(allRides());
+      await stopPulseAnimation();
+      if(!focusedRef.current)return;
+      if(ride?.service_category?.service_category_type==='schedule'){
+        navigation.reset({index:0,routes:[{name:'MyTabs'}]});
+        notificationHelper('',translateData.rideScheduled,'success');
+      }else if(['started','in_progress','on_going'].includes(status)){
+        resumeBooking(navigation,'Payment',{rideId:ride.id});
+      }else{
+        resumeBooking(navigation,'RideActive',{activeRideOTP:ride,filteredLocations});
+      }
+    }catch{/* Keep searching; the focused recovery poll will retry. */}
+    finally{acceptingRef.current=false;}
+  },[dispatch,navigation,riderequestId,stopPulseAnimation,filteredLocations,translateData.rideScheduled]);
+
   useEffect(() => {
     return () => {
       if (animationRef.current) clearInterval(animationRef.current);
@@ -1333,14 +1441,17 @@ export function BookRide() {
   }, []);
 
   useEffect(() => {
-    if (!riderequestId || !isPulsing) {
+    if (!focused || !riderequestId || !isPulsing) {
       return;
     }
 
     let echoInstance: any;
+    let disposed=false;
+    const scope=`rider-search:${riderequestId}:${Date.now()}`;
 
     const setupStatusListener = async () => {
-      echoInstance = await getEchoInstance();
+      echoInstance = await getEchoInstance(scope);
+      if(disposed){releaseScopedEcho(scope,echoInstance);return;}
 
       if (echoInstance?.connector?.pusher?.connection) {
         const connection = echoInstance.connector.pusher.connection;
@@ -1365,6 +1476,7 @@ export function BookRide() {
           );
         })
         .listen(".bid.new", (e: any) => {
+          if(disposed||!focusedRef.current)return;
           const newBid = e.data || e;
           if (newBid) {
             const formattedBid = {
@@ -1398,7 +1510,7 @@ export function BookRide() {
         })
         .listen(".bid.accepted", (e: any) => {
           const data = e.data || e;
-          handleRideAccepted(data);
+          if(!disposed&&focusedRef.current)void handleRideAccepted(data);
         });
 
       // --- Channel 2: Rider's personal channel (Sequential Acceptance) ---
@@ -1409,15 +1521,24 @@ export function BookRide() {
           .private(riderChannel)
           .listen(".ride.accepted", (data: any) => {
             const rideData = data.data || data;
-            handleRideAccepted(rideData);
+            if(!disposed&&focusedRef.current)void handleRideAccepted(rideData);
           })
           .listen(".ride.no_driver_found", (data: any) => {
+            if(disposed||!focusedRef.current)return;
             notificationHelper(
               "",
               translateData.noDriverFound || "No driver found",
               "error",
             );
-            handleCancelRide();
+            handleCancelRide(false);
+          })
+          .listen(".ride.request.cancelled", (data: any) => {
+            if(disposed||!focusedRef.current)return;
+            const cancellation = data.data || data;
+            handleAdminDeclinedRequest(
+              cancellation?.ride_request_id,
+              cancellation?.message,
+            );
           });
       }
     };
@@ -1425,23 +1546,84 @@ export function BookRide() {
     setupStatusListener();
 
     return () => {
-      if (echoInstance) {
-        echoInstance.leave(`ride-request.${riderequestId}`);
-        if (riderId) echoInstance.leave(`rider.${riderId}`);
-      }
+      disposed=true;
+      releaseScopedEcho(scope,echoInstance);
     };
   }, [
+    focused,
     riderequestId,
     isPulsing,
     riderId,
     handleRideAccepted,
     handleCancelRide,
+    handleAdminDeclinedRequest,
     translateData.noDriverFound,
   ]);
 
+  // Recover ride acceptance if the private realtime event is missed. The
+  // rider's request exposes ride_id after acceptance; the ride endpoint then
+  // provides the OTP required by the active ride screen.
+  useEffect(() => {
+    if (!focused || !riderequestId || !isPulsing) return;
+
+    let disposed = false;
+    let checking = false;
+
+    const recoverAcceptedRide = async () => {
+      if (disposed || checking || hasNavigatedRef.current) return;
+      checking = true;
+
+      try {
+        const requestResult = await dispatch(findDriverRequestsAction()).unwrap();
+        const requestItems = Array.isArray(requestResult?.data)
+          ? requestResult.data
+          : Array.isArray(requestResult)
+            ? requestResult
+            : [];
+        const currentRequest = requestItems.find(
+          (request: any) => String(request?.id) === String(riderequestId),
+        );
+        const requestStatus = String(currentRequest?.status || "").toLowerCase();
+        if (requestStatus === "cancelled" || requestStatus === "canceled") {
+          handleAdminDeclinedRequest(
+            riderequestId,
+            "Your booking was declined or cancelled.",
+          );
+          return;
+        }
+        const acceptedRideId = currentRequest?.ride_id;
+
+        if (!acceptedRideId || disposed || hasNavigatedRef.current) return;
+
+        const rideResult = await dispatch(
+          allRide({ ride_id: Number(acceptedRideId) }),
+        ).unwrap();
+        const acceptedRide = rideResult?.data?.data ?? rideResult?.data;
+
+        if (acceptedRide?.otp && !disposed) {
+          handleRideAccepted(acceptedRide);
+        }
+      } catch (error) {
+        console.warn("Ride acceptance recovery check failed:", error);
+      } finally {
+        checking = false;
+      }
+    };
+
+    void recoverAcceptedRide();
+    const interval = setInterval(() => {
+      void recoverAcceptedRide();
+    }, 10000);
+
+    return () => {
+      disposed = true;
+      clearInterval(interval);
+    };
+  }, [dispatch, focused, handleAdminDeclinedRequest, handleRideAccepted, isPulsing, riderequestId]);
+
   // --- Channel 3: Driver-specific channels for ride cancellation ---
   useEffect(() => {
-    if (!isPulsing || !Array.isArray(driverId) || driverId.length === 0) {
+    if (!focused || !isPulsing || !Array.isArray(driverId) || driverId.length === 0) {
       return;
     }
 
@@ -1454,10 +1636,11 @@ export function BookRide() {
         echoInstance
           .private(`driver-ride-request-${id}`)
           .listen(".cancel.bidding.ride.request", (payload: any) => {
+            if(!focusedRef.current)return;
             console.log("Ride Request Cancelled:", payload);
 
             Alert.alert(
-              "Ride Cancelled",
+              "Delivery Cancelled",
               `Ride #${
                 payload?.ride_number || riderequestId
               } has been cancelled by the rider.`,
@@ -1478,7 +1661,7 @@ export function BookRide() {
         });
       }
     };
-  }, [isPulsing, driverId, riderequestId, handleCancelRide]);
+  }, [focused,isPulsing, driverId, riderequestId, handleCancelRide]);
 
   useEffect(() => {
     const checkForOngoingRide = async () => {
@@ -1487,7 +1670,7 @@ export function BookRide() {
       if (!countinueRide) return;
 
       try {
-        const storedRideId = await AsyncStorage.getItem(
+        const storedRideId = countinueRideId || await AsyncStorage.getItem(
           "current_ride_request_id",
         );
         if (storedRideId) {
@@ -1495,7 +1678,8 @@ export function BookRide() {
           setRideRequestId(storedRideId);
           setIsExpanding(true);
           setIsTimerRunning(true);
-          startTimer();
+          if(!searchDeadlineRef.current)searchDeadlineRef.current=bookingDeadline({created_at:route.params?.searchStartedAt},Number(taxidoSettingData?.cabbooking_values?.ride?.find_driver_time_limit));
+          startTimer(true);
         }
       } catch (error) {
         console.error("Error checking for ongoing ride:", error);
@@ -1503,9 +1687,9 @@ export function BookRide() {
     };
 
     checkForOngoingRide();
-  }, [startTimer, countinueRide]);
+  }, [startTimer, countinueRide,countinueRideId]);
 
-  if (!pickupCoords || !destinationCoords) {
+  if (!focused || !pickupCoords || !destinationCoords) {
     return null;
   }
 
@@ -1540,7 +1724,7 @@ export function BookRide() {
   return (
     <BottomSheetModalProvider>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={[external.fx_1, { backgroundColor: bgContainer }]}
       >
         <Modal
@@ -1593,7 +1777,7 @@ export function BookRide() {
 
         {loading ? (
           <View>
-            <ActivityIndicator size="large" color={appColors.primary} />
+            <BrandLoader size="large" color={appColors.primary} />
           </View>
         ) : (
           <>
@@ -1647,7 +1831,7 @@ export function BookRide() {
                 >
                   <>
                     <Text style={styles.ridekmText}>
-                      {selectedItemData?.charges?.total_distance}
+                      {displayedDistance}
                     </Text>
                     <Text
                       style={[
@@ -1667,7 +1851,7 @@ export function BookRide() {
                 >
                   <Text>
                     <Text style={styles.rideMinText}>
-                      {selectedItemData?.charges?.duration}
+                      {displayedDuration}
                     </Text>
                   </Text>
                 </View>
@@ -1683,6 +1867,17 @@ export function BookRide() {
                   Google_Map_Key={Google_Map_Key}
                   isPulsing={isPulsing}
                   mapBottomPadding={mapBottomPadding}
+                  nearbyVehicle={nearestAvailableDriver}
+                  vehicleMarkerImage={
+                    selectedItemData?.vehicle_map_icon_url ||
+                    selectedItemData?.vehicle_type?.vehicle_map_icon_url
+                  }
+                  vehicleLabel={
+                    selectedItemData?.name ||
+                    selectedItemData?.vehicle_type?.name ||
+                    "vehicle"
+                  }
+                  onRouteInfo={setMapRouteInfo}
                 />
               </View>
             </View>
@@ -1706,21 +1901,19 @@ export function BookRide() {
 
         <BottomSheet
           ref={mainSheetRef}
-          index={0}
+          index={1}
           snapPoints={mainSnapPoints}
+          bottomInset={isExpanding ? 0 : bookingFooterHeight}
+          enableDynamicSizing={false}
           onChange={handleMainSheetChange}
           enablePanDownToClose={false}
+          enableContentPanningGesture={isExpanding}
           backgroundStyle={{ backgroundColor: bgContainer }}
           handleIndicatorStyle={styles.mainBottomSheet}
           keyboardBehavior="interactive"
           keyboardBlurBehavior="restore"
-        >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 55}
-          >
-            <View>
+         android_keyboardInputMode="adjustResize" >
+            <BottomSheetScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" nestedScrollEnabled showsVerticalScrollIndicator persistentScrollbar style={{flex:1}} contentContainerStyle={{paddingBottom:20}}>
               <View
                 style={[
                   styles.selectedOptionView,
@@ -1753,184 +1946,22 @@ export function BookRide() {
                   </View>
                 )}
               </View>
+              {isGoodsBooking&&!isExpanding&&quoteState.loading&&<Text accessibilityLiveRegion="polite" style={{paddingHorizontal:18,paddingVertical:12,color:textColorStyle}}>Calculating vehicles and fares...</Text>}
+              {isGoodsBooking&&!isExpanding&&!!quoteState.error&&<View accessibilityLiveRegion="polite" style={{marginHorizontal:18,marginBottom:12,padding:14,borderRadius:16,backgroundColor:isDark?'#332719':'#FFF4E5'}}>
+                <Text style={{fontFamily:appFonts.medium,color:textColorStyle}}>{/same city|could not identify this city|location verification|select a nearby address/i.test(quoteState.error) ? 'Route not available' : 'Vehicle fares unavailable'}</Text>
+                <Text style={{marginTop:6,color:textColorStyle}}>{quoteState.error}</Text>
+                <TouchableOpacity accessibilityRole="button" onPress={()=>/same city|could not identify this city|location verification|select a nearby address/i.test(quoteState.error) ? goBack() : setQuoteRetry(value=>value+1)} style={{paddingVertical:12}}><Text style={{fontFamily:appFonts.medium,color:isDark?'#FFBE60':'#A64B00'}}>{/same city|could not identify this city|location verification|select a nearby address/i.test(quoteState.error) ? 'Change delivery location' : 'Retry vehicle fares'}</Text></TouchableOpacity>
+              </View>}
               <View style={styles.vehicleContainer}>
-                <BottomSheetFlatList
-                  nestedScrollEnabled={true}
-                  data={
-                    vehicleTypedata && vehicleTypedata.length > 0
-                      ? vehicleTypedata
-                      : noserviceData
-                  }
-                  renderItem={renderItem}
-                  keyExtractor={(item: any) => item?.id?.toString()}
-                  extraData={selectedPrefs}
-                  showsHorizontalScrollIndicator={false}
-                  initialNumToRender={5}
-                  windowSize={5}
-                  maxToRenderPerBatch={5}
-                  removeClippedSubviews={true}
-                  contentContainerStyle={{ backgroundColor: "transparent" }}
-                  style={{ maxHeight: windowHeight(180) }}
-                />
+                {vehicleChoices(dataList).map((item:any,index:number)=><React.Fragment key={String(item.choice_key??item.id)}>{renderItem({item})}</React.Fragment>)}
+
               </View>
 
-              <BottomSheetScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[
-                  styles.cardView,
-                  { flexDirection: viewRTLStyle },
-                ]}
-                style={{ maxHeight: windowHeight(80) }}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    if (bookLoading || isTimerRunning) {
-                      notificationHelper(
-                        "",
-                        translateData.waitBooking,
-                        "error",
-                      );
-                      return;
-                    }
-                    setIsPreferenceOpen(true);
-                    preferenceSheetRef.current?.present();
-                  }}
-                  style={[
-                    styles.switchUser,
-                    {
-                      flexDirection: viewRTLStyle,
-                      minWidth: windowWidth(120),
-                      marginRight: windowWidth(8),
-                      backgroundColor: isDark
-                        ? appColors.darkHeader
-                        : appColors.lightGray,
-                    },
-                  ]}
-                >
-                  <View style={styles.userIcon}>
-                    <Preference />
-                  </View>
-                  <Text style={[styles.selectText, { color: textColorStyle }]}>
-                    {translateData?.preference}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    if (bookLoading || isTimerRunning) {
-                      notificationHelper(
-                        "",
-                        translateData.waitBooking,
-                        "error",
-                      );
-                      return;
-                    }
-                    setIsPaymentOpen(true);
-                    paymentSheetRef.current?.present();
-                  }}
-                  style={[
-                    styles.switchUser,
-                    {
-                      flexDirection: viewRTLStyle,
-                      minWidth: windowWidth(120),
-                      marginRight: windowWidth(8),
-                      backgroundColor: isDark
-                        ? appColors.darkHeader
-                        : appColors.lightGray,
-                    },
-                  ]}
-                >
-                  <View style={styles.userIcon}>
-                    <Card />
-                  </View>
-                  <Text style={[styles.selectText, { color: textColorStyle }]}>
-                    {seletedPayment
-                      ? seletedPayment?.length > 6
-                        ? `${seletedPayment.substring(0, 6)}...`
-                        : seletedPayment
-                      : translateData.payment}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    if (bookLoading || isTimerRunning) {
-                      notificationHelper(
-                        "",
-                        translateData.waitBooking,
-                        "error",
-                      );
-                      return;
-                    }
-                    setIsRiderOpen(true);
-                    riderSheetRef?.current?.present();
-                  }}
-                  style={[
-                    styles.switchUser,
-                    {
-                      flexDirection: viewRTLStyle,
-                      minWidth: windowWidth(120),
-                      marginRight: windowWidth(8),
-                      backgroundColor: isDark
-                        ? appColors.darkHeader
-                        : appColors.lightGray,
-                    },
-                  ]}
-                >
-                  <View style={styles.userIcon}>
-                    <User />
-                  </View>
-                  <Text style={[styles.selectText, { color: textColorStyle }]}>
-                    {/* {otherName
-                    ? otherName?.length > 5
-                      ? `${otherName.substring(0, 5)}...`
-                      : otherName
-                    : translateData.myself} */}
-                  </Text>
-                </TouchableOpacity>
-                {taxidoSettingData?.cabbooking_values?.activation
-                  ?.coupon_enable == 1 &&
-                  taxidoSettingData?.cabbooking_values?.activation?.bidding ==
-                    0 && (
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        if (bookLoading || isTimerRunning) {
-                          notificationHelper(
-                            "",
-                            translateData.waitBooking,
-                            "error",
-                          );
-                          return;
-                        }
-                        setIsCouponsOpen(true);
-                        couponsSheetRef.current?.present();
-                      }}
-                      style={[
-                        styles.switchUser,
-                        {
-                          flexDirection: viewRTLStyle,
-                          minWidth: windowWidth(120),
-                          marginRight: windowWidth(8),
-                          backgroundColor: isDark
-                            ? appColors.darkHeader
-                            : appColors.lightGray,
-                        },
-                      ]}
-                    >
-                      <View style={styles.userIcon}>
-                        <Coupon />
-                      </View>
-                      <Text
-                        style={[styles.selectText, { color: textColorStyle }]}
-                      >
-                        {translateData.coupons}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-              </BottomSheetScrollView>
+              {isGoodsBooking&&!isExpanding&&<>
+                <DeliveryDetailsFields value={{receiverName,phoneNumber,countryCode,parcelWeight}} onChange={(key,value)=>{({receiverName:setReceiverName,phoneNumber:setPhoneNumber,countryCode:setCountryCode,parcelWeight:setParcelWeight})[key](value);}} image={selectedImage} onImage={setSelectedImage} dark={isDark} errors={deliveryErrors} disabled={bookLoading}/>
+
+              </>}
+
               {taxidoSettingData?.cabbooking_values?.activation?.bidding ==
                 1 && (
                 <View style={[external.mh_10]}>
@@ -2005,8 +2036,8 @@ export function BookRide() {
                   />
                 </View>
               )}
-            </View>
-          </KeyboardAvoidingView>
+            </BottomSheetScrollView>
+
         </BottomSheet>
 
         <BottomSheetModal
@@ -2023,7 +2054,7 @@ export function BookRide() {
           }}
           backdropComponent={renderBackdrop}
           onChange={index => setIsVehicleDetailsOpen(index !== -1)}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={external.fx_1}>
             <ModalContainers
               distance={distance}
@@ -2047,7 +2078,7 @@ export function BookRide() {
           }}
           backdropComponent={renderBackdrop}
           onChange={index => setIsNoVehicleOpen(index !== -1)}
-        >
+         android_keyboardInputMode="adjustResize" >
           <View
             style={{
               flex: 1,
@@ -2087,7 +2118,7 @@ export function BookRide() {
             width: windowWidth(40),
           }}
           backdropComponent={renderBackdrop}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={styles.switchContainer}>
             <View>
               <View
@@ -2123,6 +2154,8 @@ export function BookRide() {
 
         <BottomSheetModal
           ref={riderSheetRef}
+          index={0}
+          enableDynamicSizing={false}
           snapPoints={riderSnapPoints}
           backgroundStyle={{ backgroundColor: bgContainer }}
           handleIndicatorStyle={{
@@ -2133,7 +2166,7 @@ export function BookRide() {
           }}
           backdropComponent={renderBackdrop}
           onChange={index => setIsRiderOpen(index !== -1)}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={[styles.switchContainer]}>
             <View>
               <View
@@ -2238,138 +2271,7 @@ export function BookRide() {
             </View>
           </BottomSheetView>
         </BottomSheetModal>
-        <BottomSheetModal
-          ref={preferenceSheetRef}
-          snapPoints={preferanceSnapPoints}
-          backgroundStyle={{ backgroundColor: bgContainer }}
-          handleIndicatorStyle={{
-            backgroundColor: isDark
-              ? appColors.whiteColor
-              : appColors.primaryText,
-            width: windowWidth(40),
-          }}
-          backdropComponent={renderBackdrop}
-          onChange={index => setIsPreferenceOpen(index !== -1)}
-        >
-          <BottomSheetView style={[styles.switchContainer]}>
-            <View>
-              <View
-                style={[
-                  styles.switchRiderView,
-                  { flexDirection: viewRTLStyle },
-                ]}
-              >
-                <Text
-                  style={[
-                    commonStyles.mediumText23,
-                    { color: textColorStyle, textAlign: textRTLStyle },
-                  ]}
-                >
-                  {translateData.selectPreference}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => preferenceSheetRef.current?.close()}
-                  activeOpacity={0.7}
-                  style={{ bottom: windowHeight(1.7) }}
-                >
-                  <Close />
-                </TouchableOpacity>
-              </View>
-              <View style={{ marginTop: windowHeight(10) }}>
-                <FlatList
-                  data={preferences}
-                  keyExtractor={item => item?.id.toString()}
-                  ListEmptyComponent={
-                    <View
-                      style={{
-                        padding: windowHeight(10),
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontFamily: appFonts.medium,
-                          color: appColors.primaryText,
-                        }}
-                      >
-                        {translateData.noPreference}
-                      </Text>
-                    </View>
-                  }
-                  renderItem={({ item }) => {
-                    const vehicleId = selectedItemData?.id?.toString();
-                    const vehiclePrefs = vehicleId
-                      ? selectedPrefs[vehicleId] || []
-                      : [];
-                    const isChecked = vehiclePrefs.some(p => p.id === item.id);
-
-                    return (
-                      <TouchableOpacity
-                        style={styles.itemContainer}
-                        onPress={() => togglePreference(item)}
-                        activeOpacity={0.7}
-                      >
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginVertical: windowHeight(5),
-                          }}
-                        >
-                          <View
-                            style={[
-                              styles.round,
-                              {
-                                backgroundColor: isDark
-                                  ? appColors.darkHeader
-                                  : appColors.lightGray,
-                              },
-                            ]}
-                          >
-                            <Image
-                              source={{ uri: item?.icon_image_url }}
-                              style={{
-                                height: windowHeight(40),
-                                width: windowWidth(40),
-                                resizeMode: "contain",
-                              }}
-                            />
-                          </View>
-                          <View style={{ marginHorizontal: windowWidth(12) }}>
-                            <Text
-                              style={[
-                                styles.prefName,
-                                { color: textColorStyle },
-                              ]}
-                            >
-                              {item?.name}
-                            </Text>
-                            <Text style={styles.prefPrice}>
-                              {zoneValue?.currency_symbol}
-                              {item?.price}
-                            </Text>
-                          </View>
-                        </View>
-                        <Checkbox
-                          isChecked={isChecked}
-                          onPress={() => togglePreference(item)}
-                          label=""
-                          style={
-                            isChecked
-                              ? styles.check
-                              : isDark
-                              ? styles.radioBox1
-                              : styles.radioBox
-                          }
-                        />
-                      </TouchableOpacity>
-                    );
-                  }}
-                />
-              </View>
-            </View>
-          </BottomSheetView>
-        </BottomSheetModal>
+        
 
         <CouponsBottomSheet
           ref={couponsSheetRef}
@@ -2381,7 +2283,7 @@ export function BookRide() {
           viewRTLStyle={viewRTLStyle}
           translateData={translateData}
           inputValue={inputValue}
-          setInputValue={setInputValue}
+          setInputValue={(value: string) => { setInputValue(value); setAppliedCouponCode(""); setCouponValue(null); setIsValid(false); setSuccessMessage(""); }}
           handlePress={handlePress}
           isValid={isValid}
           couponValue={couponValue}
@@ -2391,25 +2293,163 @@ export function BookRide() {
           onChange={index => setIsCouponsOpen(index !== -1)}
         />
 
-        {!(
-          isVehicleDetailsOpen ||
-          isNoVehicleOpen ||
-          isPaymentOpen ||
-          isRiderOpen ||
-          isCouponsOpen ||
-          isPreferenceOpen ||
-          isExpanding ||
-          isKeyboardVisible
-        ) && (
-          <View style={[styles.bookBtn, { backgroundColor: bgContainer }]}>
+        {showBookingFooter && (
+          <View onLayout={event=>{const height=event.nativeEvent.layout.height;setBookingFooterHeight(previous=>Math.abs(previous-height)>1?height:previous);}} style={[styles.bookBtn, { backgroundColor: bgContainer }]}>
+            <View style={{paddingBottom:10,flexShrink:0}}>
+              <GestureScrollView
+                horizontal
+                nestedScrollEnabled
+                disallowInterruption
+                showsHorizontalScrollIndicator
+                persistentScrollbar
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={[
+                  styles.cardView,
+                  { flexDirection: viewRTLStyle },
+                ]}
+                style={{ height: 64, flexGrow: 0 }}
+              >
+                
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (bookLoading || isTimerRunning) {
+                      notificationHelper(
+                        "",
+                        translateData.waitBooking,
+                        "error",
+                      );
+                      return;
+                    }
+                    setIsPaymentOpen(true);
+                    paymentSheetRef.current?.present();
+                  }}
+                  style={[
+                    styles.switchUser,
+                    {
+                      flexDirection: viewRTLStyle,
+                      minWidth: windowWidth(120),
+                      marginRight: windowWidth(8),
+                      backgroundColor: isDark
+                        ? appColors.darkHeader
+                        : appColors.lightGray,
+                    },
+                  ]}
+                >
+                  <View style={styles.userIcon}>
+                    <Card />
+                  </View>
+                  <Text style={[styles.selectText, { color: textColorStyle }]}>
+                    {seletedPayment
+                      ? seletedPayment?.length > 6
+                        ? `${seletedPayment.substring(0, 6)}...`
+                        : seletedPayment
+                      : translateData.payment}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (bookLoading || isTimerRunning) {
+                      notificationHelper(
+                        "",
+                        translateData.waitBooking,
+                        "error",
+                      );
+                      return;
+                    }
+                    setIsRiderOpen(true);
+                    riderSheetRef?.current?.present();
+                  }}
+                  style={[
+                    styles.switchUser,
+                    {
+                      flexDirection: viewRTLStyle,
+                      minWidth: windowWidth(120),
+                      marginRight: windowWidth(8),
+                      backgroundColor: isDark
+                        ? appColors.darkHeader
+                        : appColors.lightGray,
+                    },
+                  ]}
+                >
+                  <View style={styles.userIcon}>
+                    <User size={28} />
+                  </View>
+                  <Text style={[styles.selectText, { color: textColorStyle }]}>
+                    {recipientMode === 'other' && selectedContactName
+                      ? selectedContactName.length > 12
+                        ? `${selectedContactName.substring(0, 12)}...`
+                        : selectedContactName
+                      : translateData.myself}
+                  </Text>
+                </TouchableOpacity>
+                {taxidoSettingData?.cabbooking_values?.activation
+                  ?.coupon_enable == 1 &&
+                  taxidoSettingData?.cabbooking_values?.activation?.bidding ==
+                    0 && (
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        if (bookLoading || isTimerRunning) {
+                          notificationHelper(
+                            "",
+                            translateData.waitBooking,
+                            "error",
+                          );
+                          return;
+                        }
+                        setIsCouponsOpen(true);
+                        couponsSheetRef.current?.present();
+                      }}
+                      style={[
+                        styles.switchUser,
+                        {
+                          flexDirection: viewRTLStyle,
+                          minWidth: windowWidth(120),
+                          marginRight: windowWidth(8),
+                          backgroundColor: isDark
+                            ? appColors.darkHeader
+                            : appColors.lightGray,
+                        },
+                      ]}
+                    >
+                      <View style={styles.userIcon}>
+                        <Coupon />
+                      </View>
+                      <Text
+                        style={[styles.selectText, { color: textColorStyle }]}
+                      >
+                        {translateData.coupons}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+              </GestureScrollView>
+            </View>
             <Button
-              title={`Book ${selectedItemData?.name}`}
-              onPress={handleBookRide}
+              title={preferredVehicleKind || resolvedSelectedVehicle?.charges?.is_goods_delivery ? 'Review Booking' : `Book ${resolvedSelectedVehicle?.name ?? ''}`}
+              onPress={() => {
+                if(preferredVehicleKind || resolvedSelectedVehicle?.charges?.is_goods_delivery){
+                  if(!resolvedSelectedVehicle?.id){notificationHelper('','Vehicle fares are still loading. Please wait a moment.','error');return;}
+                  if(String(selectedItemData?.id) !== String(resolvedSelectedVehicle.id)){
+                    setSelectedItem(resolvedSelectedVehicle.id);
+                    setSelectedItemData(resolvedSelectedVehicle);
+                  }
+                  if(!validateDelivery())return;
+                  Keyboard.dismiss();
+                  setReviewVisible(true);
+                }else handleBookRide();
+              }}
               loading={bookLoading}
               disabled={bookLoading}
             />
           </View>
         )}
+        <BookingReview visible={reviewVisible} vehicle={selectedItemData} locations={allLocations} receiver={receiverName} weight={parcelWeight}
+          coupon={couponValue} couponCode={appliedCouponCode} couponEnabled={Number(taxidoSettingData?.cabbooking_values?.activation?.coupon_enable)===1}
+          couponLoading={applyingCoupon} couponMessage={successMessage} finalPrice={taxidoSettingData?.cabbooking_values?.activation?.bidding==1?fareValue:Number(selectedItemData?.charges?.total||0)+(selectedPrefs[String(selectedItemData?.id)]||[]).reduce((sum:number,pref:any)=>sum+Number(pref.price||0),0)}
+          payment={seletedPayment||'cash'} busy={bookLoading} onClose={()=>setReviewVisible(false)} onApplyCoupon={handlePress} onRemoveCoupon={removeCoupon}
+          onConfirm={details=>{deliveryDetailsRef.current=details;setReviewVisible(false);handleBookRide();}}/>
       </KeyboardAvoidingView>
     </BottomSheetModalProvider>
   );

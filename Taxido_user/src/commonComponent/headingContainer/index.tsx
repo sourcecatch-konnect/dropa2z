@@ -1,4 +1,5 @@
-import { Text, View, TouchableOpacity, SafeAreaView } from "react-native";
+import {View, TouchableOpacity, SafeAreaView} from 'react-native';
+import {Text} from '../../design/Typography';
 import React from "react";
 import { Back } from "@utils/icons";
 import { styles } from "./style";
@@ -6,6 +7,7 @@ import { appColors } from "@src/themes";
 import { useAppNavigation } from "@src/utils/navigation";
 import { useValues } from "@src/utils/context/index";
 import { HeaderPropType } from "../type";
+import {ReferenceLogo} from '../../design/ReferenceChrome';
 
 export function HeaderContainer({
   value,
@@ -16,24 +18,17 @@ export function HeaderContainer({
   const { textColorStyle, bgContainer, imageRTLStyle, viewRTLStyle, isDark } =
     useValues();
   const { goBack } = useAppNavigation();
-  const flexGrowValue: number | null = show ? null : 0.45;
-  const justifyContentValue: "space-between" | null = show
-    ? "space-between"
-    : null;
-
   return (
-    <SafeAreaView
-      style={[
-        styles.viewContainer,
-        { justifyContent: justifyContentValue as any },
-        { flexDirection: viewRTLStyle },
-      ]}
-    >
+    <SafeAreaView style={{marginHorizontal:16, paddingVertical:10, justifyContent:'center'}}>
+      <View style={{alignItems:'center',paddingBottom:10}}><ReferenceLogo width={130}/></View>
+      <View style={{flexDirection:viewRTLStyle,alignItems:'center',minHeight:40}}>
       <TouchableOpacity
         onPress={() => goBack()}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
         style={{
-          flexGrow: flexGrowValue as number,
           flexDirection: viewRTLStyle,
+          minWidth:44,minHeight:44,justifyContent:'center',
         }}
       >
         <View
@@ -49,14 +44,15 @@ export function HeaderContainer({
           <Back />
         </View>
       </TouchableOpacity>
-      <Text style={[styles.textContainer, { color: textColorStyle }]}>
+      <Text accessibilityRole="header" style={[styles.textContainer, { color: textColorStyle,flex:1,fontSize:22,fontWeight:'700',textAlign:'left',marginHorizontal:10 }]}>
         {value}
       </Text>
       {show && (
-        <TouchableOpacity onPress={onPressIcon} activeOpacity={0.7}>
+        <TouchableOpacity onPress={onPressIcon} activeOpacity={0.7} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}}>
           {icon}
         </TouchableOpacity>
       )}
+      </View>
     </SafeAreaView>
   );
 }

@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
 import {StyleSheet} from "react-native";
 import {commonStyles} from "../../../../styles/commonStyle";
 import {external} from "../../../../styles/externalStyle";
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
   imgBg: {
     height: windowHeight(82),
     width: "100%",
-    borderRadius: windowHeight(6),
+    borderRadius: 14,
   },
   roundedShadowContainer: {
     width: windowHeight(22),
@@ -45,9 +46,11 @@ const styles = StyleSheet.create({
   mainContainer: {
     backgroundColor: appColors.whiteColor,
     width: "47.3%",
-    height: windowHeight(160),
+    minHeight: windowHeight(160),
     marginBottom: windowHeight(15),
-    borderRadius: windowHeight(6),
+    borderRadius: 14,
+  
+    ...riderCardFinish,
   },
   imageView: {
     padding: windowHeight(5),
@@ -61,12 +64,13 @@ const styles = StyleSheet.create({
     color: appColors.primary,
     fontFamily: appFonts.medium,
     width: windowWidth(120),
-    height: windowHeight(30),
+    minHeight: windowHeight(30),
+    flexShrink: 1,
     marginTop: windowHeight(18),
   },
   mainView: {
     justifyContent: "space-between",
-    height: windowHeight(20),
+    minHeight: windowHeight(20),
     alignItems: "center",
     marginVertical: windowHeight(8),
     marginHorizontal: windowWidth(5),

@@ -1,12 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
-import {
-  TouchableOpacity,
-  Text,
-  View,
-  FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-} from 'react-native'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import {TouchableOpacity, View, FlatList, NativeScrollEvent, NativeSyntheticEvent} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import { SvgUri } from 'react-native-svg'
 import { useTheme } from '@react-navigation/native'
 import { useDispatch, useSelector } from 'react-redux'
@@ -23,6 +17,9 @@ export function RenderServiceList({
   serviceId,
 }: any) {
   const { serviceData } = useSelector((state: any) => state.service)
+  const offeredServices = useMemo(() => (serviceData?.data ?? []).filter((service: any) =>
+    service.type === 'parcel' && Number(service.status ?? 1) === 1,
+  ), [serviceData])
   const dispatch = useDispatch<AppDispatch>()
   const { isDark } = useValues()
   const { colors } = useTheme()
@@ -43,18 +40,18 @@ export function RenderServiceList({
   }, [])
 
   useEffect(() => {
-    if (serviceData?.data?.length && serviceId) {
-      const index = serviceData.data.findIndex((i: any) => i.id === serviceId)
+    if (offeredServices.length && serviceId) {
+      const index = offeredServices.findIndex((i: any) => i.id === serviceId)
       if (index !== -1) {
         setSelectedItemIndex(index)
         flatListRef.current?.scrollToIndex({ index, animated: true })
       }
-    } else if (serviceData?.data?.length && selectedItemIndex === null) {
-      const firstItem = serviceData.data[0]
+    } else if (offeredServices.length && selectedItemIndex === null) {
+      const firstItem = offeredServices[0]
       setSelectedItemIndex(0)
-      handleItemPress(0, firstItem.slug, firstItem.id, firstItem.name)
+      handleItemPress(0, firstItem.type || firstItem.slug, firstItem.id, firstItem.name)
     }
-  }, [serviceData, serviceId])
+  }, [offeredServices, serviceId])
 
   const updateArrows = () => {
     const maxScroll = contentWidth.current - visibleWidth.current
@@ -96,11 +93,11 @@ export function RenderServiceList({
       ]}
       onPress={() => {
         setSelectedItemIndex(index)
-        handleItemPress(index, item.slug, item.id, item.name)
+        handleItemPress(index, item.type || item.slug, item.id, item.name)
       }}
     >
       <View style={styles.iconAndTextContainer}>
-        <SvgUri width={42} height={42} uri={item?.service_icon_url} />
+        {item?.service_icon_url && <SvgUri width={42} height={42} uri={item.service_icon_url} />}
         <Text
           style={[
             styles.serviceTitle,
@@ -135,7 +132,7 @@ export function RenderServiceList({
 
       <FlatList
         ref={flatListRef}
-        data={serviceData?.data || []}
+        data={offeredServices}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(_, index) => index.toString()}

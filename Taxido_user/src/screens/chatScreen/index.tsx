@@ -1,18 +1,10 @@
+import {KeyboardViewport} from '../../design/KeyboardViewport';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {BrandLoader} from '../../design/BrandLogo';
+import {ReferenceScreen,ReferenceLogo} from '../../design/ReferenceChrome';
 import React, { useState, useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  BackHandler,
-  ScrollView,
-  ActivityIndicator,
-  RefreshControl,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import {View, TouchableOpacity, FlatList, Image, BackHandler, ScrollView, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import { commonStyles } from "../../styles/commonStyle";
 import { external } from "../../styles/externalStyle";
 import { Back, Send, Clip } from "@utils/icons";
@@ -34,13 +26,16 @@ export function ChatScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { colors } = useTheme();
-  const { driverId, riderId, rideId, driverName, driverImage, from }: any =
+  const { driverId, riderId, rideId, driverName, driverImage, from: requestedFrom }: any =
     route.params || {};
+  const from=requestedFrom==='help'||!Number(rideId)||!Number(driverId)?'help':requestedFrom;
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState<string>("");
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [supportAdminId, setSupportAdminId] = useState<string | null>(null);
+  const [supportLoadFailed, setSupportLoadFailed] = useState(false);
   const {
     bgFullStyle,
     isDark,
@@ -53,17 +48,48 @@ export function ChatScreen() {
   const { self } = useSelector((state: any) => state.account);
   const inputRef = useRef<TextInput>(null);
   const flatListRef = useRef<FlatList>(null);
+  const lastMessageIdRef = useRef<number>(0);
+  const insets=useSafeAreaInsets();
+  const sending=React.useRef(false);
+  const [sendError,setSendError]=useState('');
 
-  const currentUserId = `${riderId}`;
-  const adminId = "1";
-  const chatWithUserId = from === "help" ? adminId : `${driverId}`;
+  useEffect(() => {
+    if (from !== "help") return;
+
+    let isMounted = true;
+    api
+      .get("chat/support")
+      .then(response => {
+        const adminId = response.data?.data?.admin_id;
+        if (isMounted && adminId) {
+          setSupportAdminId(String(adminId));
+          setSupportLoadFailed(false);
+        } else if (isMounted) {
+          setSupportLoadFailed(true);
+        }
+      })
+      .catch(error => {
+        console.log("Unable to load chat support account", error);
+        if (isMounted) setSupportLoadFailed(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [from]);
+
+  const currentUserId = String(riderId ?? self?.id ?? '');
+  const adminId = supportAdminId;
+  const chatWithUserId = from === "help" ? adminId ?? "" : `${driverId}`;
 
   // roomId convention for the backend
   const roomId =
     from === "help"
-      ? [parseInt(adminId), parseInt(currentUserId)]
+      ? adminId && currentUserId
+        ? [parseInt(adminId), parseInt(currentUserId)]
           .sort((a, b) => a - b)
           .join("_")
+        : ""
       : [parseInt(rideId), parseInt(currentUserId), parseInt(chatWithUserId)]
           .sort((a, b) => a - b)
           .join("_");
@@ -188,14 +214,38 @@ export function ChatScreen() {
     };
   }, [roomId]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (incremental = false) => {
     if (!roomId || roomId.includes("NaN")) return;
     try {
+      const afterId = lastMessageIdRef.current;
       const response = await api.get("chat/messages", {
-        params: { room_id: roomId },
+        params: incremental
+          ? { room_id: roomId, after_id: afterId }
+          : { room_id: roomId },
       });
       if (response.data?.status && Array.isArray(response.data?.data)) {
-        setMessages([...response.data.data].reverse());
+        const incoming = [...response.data.data].reverse();
+        const latestId = incoming.reduce(
+          (latest, message) => Math.max(latest, Number(message.id) || 0),
+          afterId,
+        );
+        lastMessageIdRef.current = Math.max(afterId, latestId);
+
+        if (incremental && afterId > 0) {
+          if (incoming.length > 0) {
+            setMessages(previous => {
+              const knownIds = new Set(previous.map(message => String(message.id)));
+              const newMessages = incoming.filter(
+                message => !knownIds.has(String(message.id)),
+              );
+              return newMessages.length > 0
+                ? [...newMessages, ...previous]
+                : previous;
+            });
+          }
+        } else {
+          setMessages(incoming);
+        }
       }
     } catch (e) {
       console.log("fetchMessages error", e);
@@ -210,7 +260,22 @@ export function ChatScreen() {
 
   // Initial Message Fetch
   useEffect(() => {
-    fetchMessages();
+    lastMessageIdRef.current = 0;
+    let cancelled = false;
+    let pollingInterval: ReturnType<typeof setInterval> | undefined;
+
+    const startPolling = async () => {
+      await fetchMessages();
+      if (!cancelled) {
+        pollingInterval = setInterval(() => fetchMessages(true), 3000);
+      }
+    };
+
+    startPolling();
+    return () => {
+      cancelled = true;
+      if (pollingInterval) clearInterval(pollingInterval);
+    };
   }, [roomId]);
 
   const pickImages = async () => {
@@ -224,9 +289,11 @@ export function ChatScreen() {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() && selectedImages.length === 0) return;
+    if(sending.current||!roomId||roomId.includes('NaN')||(!input.trim()&&!selectedImages.length))return;
+    sending.current=true;setUploading(true);setSendError('');
+    const controller=new AbortController();
+    const deadline=setTimeout(()=>controller.abort(),25000);
 
-    const token = await getValue("token");
     const messageText = input.trim();
     const imagesToSend = [...selectedImages];
 
@@ -234,6 +301,7 @@ export function ChatScreen() {
     setSelectedImages([]);
 
     try {
+      const token=await getValue("token");
       const receiverId = from === "help" ? adminId : driverId;
       const language = await getValue("selectedLanguage");
       const defaultLng = await getValue("defaultLanguage");
@@ -267,7 +335,7 @@ export function ChatScreen() {
         });
         body = formData;
         // Fetch in RN often needs this explicitly for multipart
-        headers["Content-Type"] = "multipart/form-data";
+        // Let React Native supply the multipart boundary.
       } else {
         body = JSON.stringify({
           room_id: roomId,
@@ -278,6 +346,7 @@ export function ChatScreen() {
       }
 
       const response = await fetch(`${URL}/api/chat/send`, {
+        signal: controller.signal,
         method: "POST",
         body: body,
         headers: headers,
@@ -285,8 +354,13 @@ export function ChatScreen() {
 
       const responseData = await response.json();
 
+      if(!response.ok || !responseData?.status || !responseData?.data) throw new Error(responseData?.message||"Message was not sent. Please try again.");
       if (responseData?.status && responseData?.data) {
         const data = responseData.data;
+        lastMessageIdRef.current = Math.max(
+          lastMessageIdRef.current,
+          Number(data.id) || 0,
+        );
         const newMessage = {
           ...data,
           id: data.id || data.created_at || `msg_send_${Date.now()}`,
@@ -301,12 +375,15 @@ export function ChatScreen() {
         scrollToBottom();
       }
     } catch (e) {
-      console.log("send error", e);
-    }
+      setSendError(controller.signal.aborted?'Sending timed out. Please retry.':(e as any)?.message||'Failed to send message');
+      setInput(previous=>previous||messageText);
+      setSelectedImages(previous=>previous.length?previous:imagesToSend);
+    } finally {clearTimeout(deadline);sending.current=false;setUploading(false);}
   };
 
   return (
-    <View style={[commonStyles.flexContainer]}>
+    <ReferenceScreen><View style={[[commonStyles.flexContainer], {backgroundColor:'transparent'}]}>
+      <View style={{alignItems:'center',paddingVertical:10,backgroundColor:bgFullStyle}}><ReferenceLogo width={130}/></View>
       <View
         style={[
           styles.view_Main,
@@ -345,14 +422,17 @@ export function ChatScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView
+      <KeyboardViewport
         style={{
           backgroundColor: isDark ? appColors.primaryText : appColors.lightGray,
           flex: 1,
-        }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 20}
+        }} iosOffset={100}
       >
+        {from === "help" && supportLoadFailed && (
+          <Text style={{ color: "#B42318", paddingHorizontal: 16, paddingVertical: 8 }}>
+            Unable to load Dropa2z support. Please check your connection and try again.
+          </Text>
+        )}
         <View
           style={{
             flex: 1,
@@ -400,6 +480,7 @@ export function ChatScreen() {
                     style={[
                       styles.messageContainer,
                       isMe ? styles.senderMessage : styles.receiverMessage,
+                      !isMe && {backgroundColor:isDark ? "#25282D" : "#FFFFFF",borderWidth:1,borderColor:isDark ? "#444A46" : "#E5E7EB"},
                     ]}
                   >
                     {item?.message !== "" && (
@@ -409,7 +490,7 @@ export function ChatScreen() {
                           !isMe
                             ? styles.senderMessageText
                             : styles.receiverMessageText,
-                          { textAlign: "left" },
+                          { textAlign: "left",color:isMe ? "#FFFFFF" : isDark ? "#FFFFFF" : "#17191C",lineHeight:22 },
                         ]}
                       >
                         {item.message}
@@ -493,9 +574,11 @@ export function ChatScreen() {
             </ScrollView>
           )}
 
+          {!!sendError&&<Text accessibilityRole="alert" style={{color:isDark?'#FFAAA4':'#B42318',padding:10}}>{sendError}</Text>}
           <View
             style={[
               styles.inputContainer,
+              {paddingBottom:Math.max(insets.bottom,8),flexShrink:0},
               {
                 backgroundColor: isDark
                   ? appColors.primaryText
@@ -526,19 +609,21 @@ export function ChatScreen() {
                   ]}
                   value={input}
                   onChangeText={setInput}
-                  placeholder={translateData.typeHere}
+                  placeholder={translateData?.typeHere||'Type a message'}
                   multiline
+                  editable={!!roomId}
                   placeholderTextColor={appColors.subtitle}
                 />
               </View>
               <View style={styles.sendBtnView}>
                 {uploading ? (
-                  <ActivityIndicator size="small" color={appColors.primary} />
+                  <BrandLoader size="small" color={appColors.primary} />
                 ) : (
                   <TouchableOpacity
                     style={styles.sendButton}
                     onPress={sendMessage}
                     activeOpacity={0.7}
+                    accessibilityRole="button" accessibilityLabel="Send message" disabled={!roomId||roomId.includes('NaN')||uploading}
                   >
                     <Send />
                   </TouchableOpacity>
@@ -547,7 +632,7 @@ export function ChatScreen() {
             </View>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </View>
+      </KeyboardViewport>
+    </View></ReferenceScreen>
   );
 }

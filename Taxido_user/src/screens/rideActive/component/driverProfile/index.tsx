@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, Linking } from 'react-native'
+import {View, Image, TouchableOpacity, Linking} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from 'react'
 import { Info, Star, Message, Call } from '@utils/icons'
 import { commonStyles } from '@src/styles/commonStyle'

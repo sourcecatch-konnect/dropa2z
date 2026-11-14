@@ -1,3 +1,4 @@
+import {mapVehicleMarker} from '../../../design/mapVehicleMarkers';
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { View, Platform, PermissionsAndroid } from 'react-native'
 import Geolocation from '@react-native-community/geolocation'
@@ -176,8 +177,7 @@ export function ArrivedMap({ Pickuplocation, driverId }: any) {
   }, [driverLocation, isWebViewReady])
 
   const vehicleIcon = JSON.stringify(
-    selfDriver?.vehicle_info?.vehicle_type_map_icon_url ||
-    'https://maps.gstatic.com/mapfiles/ms2/micons/car.png',
+    mapVehicleMarker(selfDriver,selfDriver?.vehicle_info?.vehicle_type_map_icon_url),
   )
 
 
@@ -217,16 +217,16 @@ export function ArrivedMap({ Pickuplocation, driverId }: any) {
     const darkStyle = [
       { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
       { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-      { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#557468" }] },
       {
         featureType: "administrative.locality",
         elementType: "labels.text.fill",
-        stylers: [{ color: "#d59563" }]
+        stylers: [{ color: "#63D5A7" }]
       },
       {
         featureType: "poi",
         elementType: "labels.text.fill",
-        stylers: [{ color: "#d59563" }]
+        stylers: [{ color: "#63D5A7" }]
       },
       {
         featureType: "poi.park",
@@ -236,7 +236,7 @@ export function ArrivedMap({ Pickuplocation, driverId }: any) {
       {
         featureType: "poi.park",
         elementType: "labels.text.fill",
-        stylers: [{ color: "#6b9a76" }]
+        stylers: [{ color: "#9A7C6B" }]
       },
       {
         featureType: "road",
@@ -256,7 +256,7 @@ export function ArrivedMap({ Pickuplocation, driverId }: any) {
       {
         featureType: "road.highway",
         elementType: "geometry",
-        stylers: [{ color: "#746855" }]
+        stylers: [{ color: "#557468" }]
       },
       {
         featureType: "road.highway",
@@ -266,7 +266,7 @@ export function ArrivedMap({ Pickuplocation, driverId }: any) {
       {
         featureType: "road.highway",
         elementType: "labels.text.fill",
-        stylers: [{ color: "#f3d19c" }]
+        stylers: [{ color: "#9CF3D0" }]
       },
       {
         featureType: "transit",
@@ -276,7 +276,7 @@ export function ArrivedMap({ Pickuplocation, driverId }: any) {
       {
         featureType: "transit.station",
         elementType: "labels.text.fill",
-        stylers: [{ color: "#d59563" }]
+        stylers: [{ color: "#63D5A7" }]
       },
       {
         featureType: "water",

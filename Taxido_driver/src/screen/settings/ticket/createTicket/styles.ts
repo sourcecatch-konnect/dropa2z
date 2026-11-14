@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appColors from '../../../../theme/appColors'
 import {
@@ -11,6 +12,9 @@ const styles = StyleSheet.create({
   inputContainer: {
     marginHorizontal: windowWidth(4),
     marginVertical: windowHeight(1.5),
+  
+    padding: 18,
+    borderRadius: 22,
   },
   fieldTitle: {
     fontFamily: appFonts.medium,
@@ -38,10 +42,14 @@ const styles = StyleSheet.create({
     padding: windowHeight(1.5),
     borderRadius: windowHeight(1),
     height: windowHeight(15),
+  
+    ...referenceSurfaces.control,
   },
   dropDownContainer: {
     borderColor: appColors.border,
     color: appColors.secondaryFont,
+  
+    ...referenceSurfaces.control,
   },
   text: {
     fontFamily: appFonts.regular,
@@ -78,6 +86,8 @@ const styles = StyleSheet.create({
     height: windowHeight(20),
     padding: windowHeight(2),
     borderRadius: windowHeight(1),
+  
+    ...referenceSurfaces.control,
   },
   docContainer: {
     borderWidth: windowHeight(0.1),

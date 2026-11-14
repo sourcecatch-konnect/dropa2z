@@ -78,6 +78,21 @@ class RideController extends Controller
         return $this->repository->update($request->all(), $ride->id);
     }
 
+    public function updateParcelStop(Request $request, Ride $ride)
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'in:arrived,delivered'],
+            'stop_index' => ['required', 'integer', 'min:1'],
+        ]);
+
+        return $this->repository->updateParcelStop($validated, $ride->id);
+    }
+
+    public function confirmPickupVehicle(Request $request, Ride $ride)
+    {
+        return $this->repository->confirmPickupVehicle($ride->id);
+    }
+
     /**
      * Remove the specified resource from storage.
      */

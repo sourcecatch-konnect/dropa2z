@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import {
   appColors,
@@ -87,6 +88,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(10),
     borderRadius: windowWidth(8),
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
   borderPayment: {
     borderBottomWidth: windowHeight(0.9),
@@ -115,6 +118,8 @@ const styles = StyleSheet.create({
     borderWidth: windowHeight(1),
     borderRadius: windowWidth(8),
     overflow: 'hidden',
+  
+    ...riderCardFinish,
   },
   modalPaymentView: {
     justifyContent: 'space-between',
@@ -210,6 +215,8 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(15),
     borderWidth: windowHeight(1),
     borderRadius: windowWidth(8),
+  
+    ...riderCardFinish,
   },
   buttonAdd: {
     backgroundColor: appColors.primary,

@@ -6,8 +6,8 @@ export function Star1() {
     <Svg width={16} height={16} fill="none">
       <G clipPath="url(#a)">
         <Path
-          fill="#FFB400"
-          stroke="#FFB400"
+          fill="#00FF99"
+          stroke="#00FF99"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={1.5}

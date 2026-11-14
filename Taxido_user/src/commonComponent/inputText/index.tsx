@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import {TouchableOpacity, View} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import { style } from "./style";
 import { appColors } from "@src/themes";
 import { external } from "../../styles/externalStyle";
@@ -7,6 +8,7 @@ import { windowHeight } from "@src/themes";
 import { useValues } from "@src/utils/context/index";
 import { InputTextProps } from "../type";
 import { useSelector } from "react-redux";
+import {useReferenceTheme} from '../../design/ReferenceChrome';
 
 export function InputText({
   title,
@@ -34,6 +36,7 @@ export function InputText({
 
   // <-- Add focus state
   const [isFocused, setIsFocused] = useState(false);
+  const reference=useReferenceTheme();
 
   return (
     <View style={style.container}>
@@ -50,9 +53,10 @@ export function InputText({
           { backgroundColor: backgroundColor || bgFullStyle },
           {
             // <-- Use isFocused to change border color
-            borderColor: isFocused ? appColors.primary : borderColor,
+            borderColor: warningText ? appColors.textRed : isFocused ? reference.accent : borderColor || appColors.border,
             borderWidth: windowHeight(1),
           },
+          reference.active && {borderRadius:14,minHeight:48},
         ]}
       >
         {icon && <View style={{ paddingHorizontal: show ? windowHeight(7) : windowHeight(5), left: windowHeight(4) }}>{icon}</View>}

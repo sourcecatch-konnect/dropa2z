@@ -1,5 +1,8 @@
+import {notificationContent} from './notificationPresentation';
 import messaging from "@react-native-firebase/messaging";
-import notifee, { EventType, AndroidImportance } from "@notifee/react-native";
+import notifee, { EventType, AndroidStyle, AndroidImportance } from "@notifee/react-native";
+import {bookingChanged,queueBookingNotification} from './bookingSignals';
+import {updateBookingActivityFromPush} from './bookingActivityNotification';
 
 // Request notification permission
 export async function requestUserPermission() {
@@ -31,7 +34,7 @@ export async function getFCMToken() {
 async function createNotificationChannel() {
   const channelId = await notifee.createChannel({
     id: "default",
-    name: "Default Channel",
+    name: "Dropa2z delivery updates",
     importance: AndroidImportance.HIGH,
   });
 
@@ -42,22 +45,21 @@ async function createNotificationChannel() {
 async function showLocalNotification(remoteMessage) {
   const channelId = await createNotificationChannel();
 
-  const title =
-    remoteMessage.notification?.title ||
-    remoteMessage.data?.title ||
-    "New Notification";
-
-  const body =
-    remoteMessage.notification?.body || remoteMessage.data?.body || "";
+  const {title,body}=notificationContent(remoteMessage);
 
   await notifee.displayNotification({
+    ...(remoteMessage.messageId?{id:remoteMessage.messageId}:{}),
+    data: remoteMessage.data || {},
     title: title,
     body: body,
     android: {
       channelId,
-      smallIcon: "ic_launcher", // make sure this icon exists
+      smallIcon: "dropa2z_notification",
+      color: "#FC9F03",
+      style: {type: AndroidStyle.BIGTEXT, text:body}, // make sure this icon exists
       pressAction: {
         id: "default",
+        launchActivity:'default',
       },
     },
   });
@@ -66,15 +68,15 @@ async function showLocalNotification(remoteMessage) {
 export function NotificationServices() {
   // Foreground message
   const unsubscribe = messaging().onMessage(async remoteMessage => {
-
+    bookingChanged();
+    await updateBookingActivityFromPush(remoteMessage);
     // Show system notification when app is open
     await showLocalNotification(remoteMessage);
   });
 
   // When notification opens app from background
-  messaging().onNotificationOpenedApp(remoteMessage => {
-
-    // Navigate screen here if needed
+  const unsubscribeOpened=messaging().onNotificationOpenedApp(remoteMessage => {
+    void queueBookingNotification(remoteMessage.data||{});
   });
 
   // When notification opens app from quit state
@@ -82,26 +84,27 @@ export function NotificationServices() {
     .getInitialNotification()
     .then(remoteMessage => {
       if (remoteMessage) {
+        void queueBookingNotification(remoteMessage.data||{});
       }
     });
 
   // Foreground notification press (Notifee)
   const unsubscribeNotifee = notifee.onForegroundEvent(({ type, detail }) => {
     if (type === EventType.PRESS) {
-
-      // Navigate here if needed
+      void queueBookingNotification(detail.notification?.data||{});
     }
   });
 
   return () => {
     unsubscribe();
+    unsubscribeOpened();
     unsubscribeNotifee();
   };
 }
 
 // Handle background messages
 messaging().setBackgroundMessageHandler(async remoteMessage => {
-
+  await updateBookingActivityFromPush(remoteMessage);
   // Show notification for data-only payload
   if (!remoteMessage.notification) {
     await showLocalNotification(remoteMessage);
@@ -111,5 +114,6 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
 // Handle notification press in background
 notifee.onBackgroundEvent(async ({ type, detail }) => {
   if (type === EventType.PRESS) {
+    await queueBookingNotification(detail.notification?.data||{});
   }
 });

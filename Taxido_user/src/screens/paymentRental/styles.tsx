@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appColors, fontSizes, windowHeight, windowWidth, appFonts } from '@src/themes';
 
@@ -47,7 +48,9 @@ const styles = StyleSheet.create({
         borderRadius: windowHeight(28),
         alignItems: 'center',
         justifyContent: 'center'
-    },
+    ,
+    ...riderCardFinish,
+  },
     call: {
         height: windowHeight(40),
         width: windowHeight(40),
@@ -55,7 +58,9 @@ const styles = StyleSheet.create({
         borderRadius: windowHeight(5),
         alignItems: 'center',
         justifyContent: 'center',
-    },
+    
+    ...riderCardFinish,
+  },
     number: {
         marginHorizontal: windowWidth(12),
         fontSize: fontSizes.FONT22,
@@ -224,7 +229,9 @@ const styles = StyleSheet.create({
         borderRadius: windowHeight(5),
         marginTop: windowHeight(8),
         justifyContent: 'space-between',
-    },
+    
+    ...riderCardFinish,
+  },
     starIcon: {
         marginHorizontal: windowWidth(12),
         alignItems: 'center',

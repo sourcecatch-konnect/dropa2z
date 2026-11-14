@@ -48,15 +48,17 @@ class LocationController extends Controller
      */
     public function store(Request $request)
     {
+        $this->validateLocation($request);
         return $this->repository->store($request);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function show(Request $request)
+    public function show(Location $location)
     {
-        return $this->repository->store($request);
+        $this->authorizeLocation($location);
+        return $location;
     }
 
     /**
@@ -67,7 +69,8 @@ class LocationController extends Controller
      */
     public function update(Request $request, Location $location)
     {
-        return $this->repository->update($request->all(), $location?->id);
+        $this->authorizeLocation($location);
+        return $this->repository->update($this->validateLocation($request), $location?->id);
     }
 
     /**
@@ -78,7 +81,26 @@ class LocationController extends Controller
      */
     public function destroy(Location $location)
     {
+        $this->authorizeLocation($location);
         return $this->repository->destroy($location?->id);
+    }
+
+    private function authorizeLocation(Location $location): void
+    {
+        abort_unless(getCurrentRoleName() === RoleEnum::ADMIN ||
+            (int) $location->rider_id === (int) getCurrentUserId(), 403);
+    }
+
+    private function validateLocation(Request $request): array
+    {
+        return $request->validate([
+            'title' => 'required|string|max:255',
+            'location' => 'required|string|max:2000',
+            'type' => 'required|string|max:50',
+            'location_coordinates' => 'required|array',
+            'location_coordinates.lat' => 'required|numeric|between:-90,90',
+            'location_coordinates.lng' => 'required|numeric|between:-180,180',
+        ]);
     }
 
     public function filter($locations)

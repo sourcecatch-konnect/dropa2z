@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import {Image, TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import { styles } from "../style";
 import { appColors } from "@src/themes";
 import { ArrowService } from "@utils/icons";

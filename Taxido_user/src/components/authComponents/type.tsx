@@ -4,6 +4,7 @@ export interface AuthContainerProps {
     container: ReactNode;
     topSpace: any,
     imageShow: boolean,
+    keyboardVisible?: boolean,
 }
 
 

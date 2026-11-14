@@ -1,8 +1,12 @@
+import {CardHeading} from "../../../../design/CardHeading";
+import {DesignIcon} from "../../../../design/DesignIcon";
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
 import {useValues} from "@src/utils/context/index";
 import React, {useEffect, useState} from "react";
-import {View, TouchableOpacity, Text} from "react-native";
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import {styles} from "./style";
-import {BackArrow, ChangeLanguage, DarkTheme, RTL} from "@src/utils/icons";
+import {BackArrow, ChangeLanguage, DarkTheme} from "@src/utils/icons";
 import {external} from "@src/styles/externalStyle";
 import {commonStyles} from "@src/styles/commonStyle";
 import {LanguageBottomSheet} from "./component/languageBottomSheet";
@@ -18,7 +22,6 @@ import {languageDataGet} from "@src/api/store/actions";
 
 export function AppPageScreen() {
   const {
-    isRTL,
     setIsRTL,
     isDark,
     textRTLStyle,
@@ -37,7 +40,7 @@ export function AppPageScreen() {
   const [selectedLang, setSelectedLang] = useState("en");
   const [languageTitle, setLanguageTitle] = useState("English");
 
-  const {translateData} = useSelector(state => state.setting);
+  const {translateData,languageData} = useSelector(state => state.setting);
   const [toggles, setToggles] = useState([]);
   const dispatch = useDispatch();
 
@@ -82,15 +85,8 @@ export function AppPageScreen() {
         onPress: () => handleToggle("toggle4"),
         icon: <DarkTheme />,
       },
-      {
-        id: "toggle5",
-        title: translateData.rtl,
-        value: isRTL,
-        onPress: () => handleToggle("toggle5"),
-        icon: <RTL />,
-      },
     ]);
-  }, [translateData, isDark, isRTL, notificationValue]);
+  }, [translateData, isDark, notificationValue]);
 
   const handleToggle = async (toggleId: string) => {
     try {
@@ -98,12 +94,6 @@ export function AppPageScreen() {
         case "toggle4":
           setIsDark(prev => {
             AsyncStorage.setItem("darkTheme", JSON.stringify(!prev));
-            return !prev;
-          });
-          break;
-        case "toggle5":
-          setIsRTL(prev => {
-            AsyncStorage.setItem("rtl", JSON.stringify(!prev));
             return !prev;
           });
           break;
@@ -126,12 +116,13 @@ export function AppPageScreen() {
   };
 
   return (
-    <View style={[styles.container, {backgroundColor: linearColorStyle}]}>
+    <ReferenceScreen><View style={[[styles.container, {backgroundColor: linearColorStyle}], {backgroundColor:'transparent'}]}>
       <View style={[styles.headerContainer, {backgroundColor: bgFullStyle}]}>
         <HeaderContainer value={translateData.appPages} />
       </View>
 
-      <View style={[styles.appPagesContainer, {backgroundColor: bgFullStyle}]}>
+      <View style={{marginHorizontal:20,marginTop:20}}><CardHeading icon="settings-2" title={translateData.preferences || "Preferences"}/></View>
+      <View style={[styles.appPagesContainer, {marginTop:0,backgroundColor: bgFullStyle,borderColor:isDark?appColors.darkBorder:appColors.border}]}>
         {toggles.map((toggle, index) => (
           <View key={toggle.id}>
             <View
@@ -139,7 +130,7 @@ export function AppPageScreen() {
               <View
                 style={[
                   styles.iconContainer,
-                  {backgroundColor: linearColorStyle},
+                  {backgroundColor:isDark ? "#3B2B19" : "#FFF2DF"},
                 ]}>
                 {toggle.icon}
               </View>
@@ -164,13 +155,14 @@ export function AppPageScreen() {
 
         <TouchableOpacity
           activeOpacity={0.7}
+          accessibilityRole="button" accessibilityLabel="Change language"
           onPress={openModal}
           style={[styles.listItemContainer, {flexDirection: viewRTLStyle}]}>
           <View
-            style={[styles.iconContainer, {backgroundColor: linearColorStyle}]}>
-            <ChangeLanguage />
+            style={[styles.iconContainer, {backgroundColor:isDark ? "#3B2B19" : "#FFF2DF"}]}>
+            <DesignIcon name="globe" color={isDark ? "#FFBE60" : "#A64B00"}/>
           </View>
-          <View style={[external.fg_95]}>
+          <View style={{flex:1,minWidth:0,gap:5}}>
             <Text
               style={[
                 styles.listItemText,
@@ -181,13 +173,13 @@ export function AppPageScreen() {
             <Text
               style={[
                 commonStyles.regularText,
-                external.mh_15,
                 {
+                  color:isDark ? "#C5CAD0" : "#656C76",
                   textAlign: textRTLStyle,
-                  marginHorizontal: windowHeight(8),
+                  marginHorizontal: 0,
                 },
               ]}>
-              {selectedLang === "en"
+              {languageData?.data?.find((item:any)=>item.locale===selectedLang)?.name || (selectedLang === "en"
                 ? "English"
                 : selectedLang === "ar"
                 ? "Arabic"
@@ -195,7 +187,7 @@ export function AppPageScreen() {
                 ? "French"
                 : selectedLang === "es"
                 ? "Spanish"
-                : "English"}
+                : "English")}
             </Text>
           </View>
           <View style={{transform: [{scale: imageRTLStyle}]}}>
@@ -211,6 +203,6 @@ export function AppPageScreen() {
         setSelectedLanguage={setSelectedLanguage}
         setSelectedLang={setSelectedLang}
       />
-    </View>
+    </View></ReferenceScreen>
   );
 }

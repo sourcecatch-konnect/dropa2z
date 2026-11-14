@@ -1,4 +1,6 @@
-import { View, Text, Image, TouchableOpacity, ActivityIndicator } from "react-native";
+import {BrandLoader} from '../../../../design/BrandLogo';
+import {View, Image, TouchableOpacity, ActivityIndicator} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useValues } from "@src/utils/context/index";;
@@ -9,7 +11,7 @@ import { appColors } from "@src/themes";
 import { getValue } from "@src/utils/localstorage";
 import useStoredLocation from "@src/components/helper/useStoredLocation";
 
-export function ProfileContainer() {
+export function ProfileContainer({compact=false,darkText=false}: {compact?:boolean;darkText?:boolean}) {
   const navigation = useNavigation<any>();
   const { viewRTLStyle, Google_Map_Key, isRTL } = useValues();
   const { self } = useSelector((state: any) => state.account);
@@ -29,10 +31,10 @@ export function ProfileContainer() {
       let finalLat = lat ? parseFloat(lat) : latitude;
       let finalLng = lng ? parseFloat(lng) : longitude;
 
-      if (!finalLat || !finalLng || !Google_Map_Key) return;
+      if (!finalLat || !finalLng) return;
 
       try {
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${finalLat},${finalLng}&key=${Google_Map_Key}`;
+        const url = `https://dropa2z.com/api/maps/reverse-geocode?lat=${finalLat}&lng=${finalLng}`;
         const response = await fetch(url);
         const data = await response.json();
 
@@ -80,7 +82,7 @@ export function ProfileContainer() {
   );
 
   const gotoLocation = () => {
-    navigation.navigate("LocationSelect", { screenValue: "HomeScreen" })
+    navigation.navigate("LocationSelect", { screenValue: "HomeScreen",field:'pickupLocation' })
   }
   const [loading, setLoading] = useState(true);
 
@@ -97,20 +99,20 @@ export function ProfileContainer() {
     }, [])
   );
   return (
-    <View style={[styles.mainView, { flexDirection: viewRTLStyle }]}>
+    <View style={[styles.mainView, { flexDirection: viewRTLStyle },compact&&{height:undefined,minHeight:46,marginTop:0}]}>
 
-      <TouchableOpacity onPress={gotoLocation} style={styles.viewText}>
-        <Text style={[styles.selfName, { textAlign: isRTL ? 'right' : 'left' }]}>
-          <LocationMarker /> {city?.split(" ")[0] || translateData?.fecthing} <ArrowDown color={appColors.whiteColor} />
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Change pickup location" onPress={gotoLocation} style={[styles.viewText,compact&&{flex:1}]}>
+        <Text numberOfLines={1} style={[styles.selfName, { textAlign: isRTL ? 'right' : 'left' },compact&&{fontSize:16,lineHeight:21,color:darkText?'#17191C':'#FFFFFF'}]}>
+          <LocationMarker color={darkText?appColors.primary:'#FFFFFF'}/> {city?.split(" ")[0] || translateData?.fecthing} <ArrowDown color={darkText?'#17191C':appColors.whiteColor} />
         </Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-          <Text style={styles.text}>{fullAddress?.length > 32 ? `${fullAddress.substring(0, 32)}...` : fullAddress}
+          <Text numberOfLines={1} style={[styles.text,compact&&{fontSize:11,lineHeight:16,flex:1,minWidth:0,marginHorizontal:0,color:darkText?'#656C76':'#FFFFFF'}]}>{compact?fullAddress:fullAddress?.length > 32 ? `${fullAddress.substring(0, 32)}...` : fullAddress}
           </Text>
         </View>
       </TouchableOpacity >
 
-      <TouchableOpacity onPress={handleImagePress} style={styles.imageView} activeOpacity={0.7}>
+      {!compact&&<TouchableOpacity onPress={handleImagePress} style={styles.imageView} activeOpacity={0.7}>
         {self?.profile_image_url ? (
           <Image
             style={styles.imageStyle}
@@ -118,10 +120,10 @@ export function ProfileContainer() {
           />
         ) : (
           <View style={styles.textView}>
-            {loading ? <ActivityIndicator size="small" color={appColors.primary} /> : <Text style={styles.charText}>{char || translateData?.guestChar}</Text>}
+            {loading ? <BrandLoader size="small" color={appColors.primary} /> : <Text style={styles.charText}>{char || translateData?.guestChar}</Text>}
           </View>
         )}
-      </TouchableOpacity>
+      </TouchableOpacity>}
     </View >
   );
 }

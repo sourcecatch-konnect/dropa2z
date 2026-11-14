@@ -1,5 +1,7 @@
+import {BrandLoader} from '../../design/BrandLogo';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert } from "react-native";
+import {View, TouchableOpacity, Image, ActivityIndicator, Alert} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Back, AddressMarker } from "@src/utils/icons";
@@ -11,6 +13,7 @@ import { external } from "@src/styles/externalStyle";
 import { useSelector } from "react-redux";
 import { setValue } from "@src/utils/localstorage";
 import useSmartLocation from "@src/components/helper/locationHelper";
+import { indianCoordinates } from "@src/utils/deliveryPlaces";
 
 // Define route params interface
 interface RouteParams {
@@ -22,6 +25,8 @@ interface RouteParams {
   service_category_slug?: string;
   formattedDate?: string;
   formattedTime?: string;
+  initialLatitude?: number;
+  initialLongitude?: number;
 }
 
 // Memoized components to prevent unnecessary re-renders
@@ -84,7 +89,7 @@ const ConfirmButton = React.memo(({
     activeOpacity={0.8}
   >
     {fetchingAddress ? (
-      <ActivityIndicator size="large" color={appColors.whiteColor} />
+      <BrandLoader size="large" color={appColors.whiteColor} />
     ) : (
       <Text style={styles.confirmText}>{translateData.confirmLocation || "Confirm Location"}</Text>
     )}
@@ -96,74 +101,75 @@ export function LocationSelect() {
   const webViewRef = useRef<WebView>(null);
   const navigation = useNavigation();
   const route = useRoute();
-  const { field, screenValue, service_ID, service_name, service_category_ID, service_category_slug, formattedDate, formattedTime } = (route.params || {}) as RouteParams;
+  const { field, screenValue, service_ID, service_name, service_category_ID, service_category_slug, preferredVehicleKind, formattedDate, formattedTime, initialLatitude, initialLongitude } = (route.params || {}) as RouteParams & { preferredVehicleKind?: string };
   const { currentLatitude, currentLongitude } = useSmartLocation();
   const [initialCoords, setInitialCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [mapCenterCoords, setMapCenterCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [currentAddress, setCurrentAddress] = useState("");
   const [loadingMap, setLoadingMap] = useState(true);
   const [fetchingAddress, setFetchingAddress] = useState(false);
+  const [addressError, setAddressError] = useState("");
+  const addressRequest = useRef(0);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { translateData, taxidoSettingData } = useSelector((state: any) => state.setting);
   const mapType = taxidoSettingData?.cabbooking_values?.location?.map_provider;
 
   useEffect(() => {
-    const lat = currentLatitude;
-    const lon = currentLongitude;
-
-    if (lat && lon) {
-      const coords = { latitude: lat, longitude: lon };
+    // Initialize once; later GPS fixes must not reset a map the user is moving.
+    if (initialCoords) return;
+    const selected = indianCoordinates(initialLatitude, initialLongitude)
+      || indianCoordinates(currentLatitude, currentLongitude);
+    if (selected) {
+      const coords = { latitude: selected.lat, longitude: selected.lng };
       setInitialCoords(coords);
       setMapCenterCoords(coords);
       setLoadingMap(false);
     } else {
-      // Fallback if location is not detected immediately
+      // Show India for manual selection rather than inventing a GPS location.
       const timer = setTimeout(() => {
-        const fallbackCoords = { latitude: 37.78825, longitude: -122.4324 }; // Default to SF if GPS fails
+        const fallbackCoords = { latitude: 22.5937, longitude: 78.9629 };
         setInitialCoords(fallbackCoords);
-        setMapCenterCoords(fallbackCoords);
+        setAddressError("Location unavailable. Move the map to choose your address.");
         setLoadingMap(false);
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [currentLatitude, currentLongitude]);
+  }, [currentLatitude, currentLongitude, initialLatitude, initialLongitude, initialCoords]);
 
   // Memoize fetchAddress to prevent recreation
   const fetchAddress = useCallback(async (lat: number, lng: number) => {
+    const request = ++addressRequest.current;
+    setCurrentAddress("");
+    setAddressError("");
     if (!Google_Map_Key) {
-      console.error("[fetchAddress] Google Maps API Key is missing!");
-      setCurrentAddress("Configuration error: Missing API Key.");
+      setAddressError("Address service is not configured. Please contact support.");
+      setFetchingAddress(false);
       return;
     }
 
     setFetchingAddress(true);
     try {
-      let response = await fetch(
+      const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${Google_Map_Key}`
       );
-      let json = await response.json();
-
-      if (json.status === 'OK' && json.results?.length === 0) {
-        response = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${Google_Map_Key}`
-        );
-        json = await response.json();
-      }
-
-      if (json.status === 'OK' && json.results?.length > 0) {
-        const bestResult = json.results[0];
+      const json = await response.json();
+      if (request !== addressRequest.current) return;
+      const bestResult = json.results?.find((result: any) => result.address_components?.some(
+        (component: any) => component.types?.includes('country') && component.short_name === 'IN',
+      ));
+      if (json.status === 'OK' && bestResult?.formatted_address) {
         const cleanedAddress = bestResult?.formatted_address;
         setCurrentAddress(cleanedAddress);
       } else {
         console.warn("[fetchAddress] Geocoding API returned no results:", json.status);
-        setCurrentAddress("Could not find address for this location.");
+        setAddressError("No Indian address found here. Move the map and try again.");
       }
 
     } catch (error) {
       console.error("[fetchAddress] Failed to fetch address:", error);
-      setCurrentAddress("Failed to connect to address service.");
+      if (request === addressRequest.current) setAddressError("Unable to load the address. Check your connection and move the map to retry.");
     } finally {
-      setFetchingAddress(false);
+      if (request === addressRequest.current) setFetchingAddress(false);
     }
   }, [Google_Map_Key]);
 
@@ -181,22 +187,44 @@ export function LocationSelect() {
   }, [mapCenterCoords, fetchAddress]);
 
   const handleWebViewMessage = useCallback((event: any) => {
-    const data = JSON.parse(event?.nativeEvent?.data);
-    if (data?.type === 'mapMove') {
-      const { lat, lng } = data?.payload;
-      setMapCenterCoords({ latitude: lat, longitude: lng });
-    }
+    try {
+      const data = JSON.parse(event?.nativeEvent?.data);
+      if (data?.type !== 'mapMove') return;
+      const { lat, lng } = data?.payload || {};
+      ++addressRequest.current;
+      setCurrentAddress("");
+      if (!indianCoordinates(lat, lng)) {
+        setMapCenterCoords(null);
+        setFetchingAddress(false);
+        setAddressError("Please select an address in India.");
+        return;
+      }
+      setFetchingAddress(true);
+      setAddressError("");
+      setMapCenterCoords({ latitude: Number(lat), longitude: Number(lng) });
+    } catch (_) { /* Ignore messages unrelated to map coordinates. */ }
   }, []);
 
   const handleConfirmLocation = useCallback(async () => {
-    if (!currentAddress || !mapCenterCoords || fetchingAddress) {
+    if (!currentAddress || !mapCenterCoords || fetchingAddress || loadingMap) {
       Alert.alert(translateData.locationNotReady, translateData.locationDescription);
       return;
     }
     if (screenValue === "HomeScreen") {
-      await setValue('user_latitude_Selected', mapCenterCoords?.latitude.toString());
-      await setValue('user_longitude_Selected', mapCenterCoords?.longitude.toString());
-      (navigation as any).replace("MyTabs");
+      if (!field || field === "pickupLocation") {
+        await setValue('user_latitude_Selected', mapCenterCoords?.latitude.toString());
+        await setValue('user_longitude_Selected', mapCenterCoords?.longitude.toString());
+      }
+      (navigation as any).navigate("MyTabs", {
+        screen: "HomeScreen",
+        params: {
+          selectedAddress: currentAddress,
+          fieldValue: field || "pickupLocation",
+          pinLatitude: mapCenterCoords?.latitude,
+          pinLongitude: mapCenterCoords?.longitude,
+          ...(service_ID ? { service_ID, service_name, service_category_ID, service_category_slug, preferredVehicleKind, formattedDate, formattedTime } : {}),
+        },
+      });
       return;
     }
     (navigation as any).navigate(screenValue, {
@@ -208,10 +236,11 @@ export function LocationSelect() {
       service_name,
       service_category_ID,
       service_category_slug,
+      preferredVehicleKind,
       formattedDate,
       formattedTime,
     });
-  }, [currentAddress, mapCenterCoords, fetchingAddress, screenValue, field, navigation, service_ID, service_name, service_category_ID, service_category_slug, formattedDate, formattedTime]);
+  }, [currentAddress, mapCenterCoords, fetchingAddress, loadingMap, screenValue, field, navigation, service_ID, service_name, service_category_ID, service_category_slug, preferredVehicleKind, formattedDate, formattedTime]);
 
   const getMapHTML = useCallback((coords: { latitude: number; longitude: number }, mapType: string, isDark: boolean) => {
     if (mapType === 'osm') {
@@ -365,7 +394,7 @@ export function LocationSelect() {
   // Memoize loading state component
   const loadingComponent = useMemo(() => (
     <View style={styles.loaderContainer}>
-      <ActivityIndicator size="large" color={appColors.primary} />
+      <BrandLoader size="large" color={appColors.primary} />
     </View>
   ), []);
 
@@ -397,7 +426,7 @@ export function LocationSelect() {
 
       <AddressInput
         fetchingAddress={fetchingAddress}
-        currentAddress={currentAddress}
+        currentAddress={addressError || currentAddress}
         isDark={isDark}
         viewRTLStyle={viewRTLStyle}
       />

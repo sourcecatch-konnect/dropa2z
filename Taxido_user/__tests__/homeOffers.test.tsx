@@ -1,0 +1,33 @@
+import React from 'react';
+import renderer,{act} from 'react-test-renderer';
+import {TodayOfferContainer} from '../src/components/homeScreen/todaysOffer';
+import {notificationHelper} from '../src/commonComponent';
+const mockNavigate=jest.fn(),mockDispatch=jest.fn();
+jest.mock('../src/utils/navigation',()=>({useAppNavigation:()=>({navigate:mockNavigate})}));
+jest.mock('../src/utils/context',()=>({useValues:()=>({isDark:false})}));
+jest.mock('react-redux',()=>({useSelector:(fn:any)=>fn({setting:{translateData:{}}}),useDispatch:()=>mockDispatch}));
+jest.mock('../src/design/DesignIcon',()=>({DesignIcon:()=>null}));
+jest.mock('../src/design/Typography',()=>({Text:(props:any)=>require('react').createElement('Text',props,props.children)}));
+jest.mock('../src/screens/bottomTab/profileTab/promoCode/component/coupons',()=>({Coupons:(props:any)=>require('react').createElement('Coupons',props)}));
+jest.mock('../src/api/store/actions',()=>({couponListData:(params:any)=>({type:'coupons',params})}));
+jest.mock('../src/commonComponent',()=>({notificationHelper:jest.fn()}));
+let tree:renderer.ReactTestRenderer;
+beforeEach(()=>{jest.clearAllMocks();mockDispatch.mockReturnValue({unwrap:async()=>({data:[]})});});
+afterEach(()=>act(()=>tree?.unmount()));
+it('shows real coupon cards and loads the parcel offer list before View all navigation',async()=>{
+  const coupons=[{id:1,code:'SAVE10'},{id:2,code:'SAVE20'},{id:3,code:'SAVE30'},{id:4,code:'SAVE40'}];
+  act(()=>{tree=renderer.create(<TodayOfferContainer title="Promos & coupons" serviceId={7} couponsData={coupons}/>);});
+  expect(tree.root.findByType('Coupons').props.couponsList.data).toEqual(coupons.slice(0,3));
+  await act(async()=>{await tree.root.findAllByProps({accessibilityLabel:'View all promos and coupons'})[0].props.onPress();});
+  expect(mockDispatch).toHaveBeenCalledWith({type:'coupons',params:{service_id:7}});
+  expect(mockNavigate).toHaveBeenCalledWith('PromoCodeScreen');
+});
+it('shows an honest empty state and keeps the screen usable if loading offers fails',async()=>{
+  mockDispatch.mockReturnValue({unwrap:async()=>{throw Error('Connection failed');}});
+  act(()=>{tree=renderer.create(<TodayOfferContainer couponsData={[]}/>);});
+  expect(JSON.stringify(tree.toJSON())).toContain('No offers available right now');
+  await act(async()=>{await tree.root.findAllByProps({accessibilityLabel:'View all promos and coupons'})[0].props.onPress();});
+  expect(mockNavigate).not.toHaveBeenCalled();
+  expect(notificationHelper).toHaveBeenCalledWith('','Connection failed','error');
+  expect(tree.root.findAllByProps({accessibilityLabel:'View all promos and coupons'})[0].props.disabled).toBe(false);
+});

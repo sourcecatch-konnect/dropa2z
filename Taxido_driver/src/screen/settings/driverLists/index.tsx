@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Image, FlatList, BackHandler, StyleSheet, RefreshControl } from 'react-native'
+import {View, TouchableOpacity, Image, FlatList, BackHandler, StyleSheet, RefreshControl} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useMemo, useCallback, memo, useRef, useState } from 'react'
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet'
 import { BackButton, notificationHelper } from '../../../commonComponents'
@@ -497,7 +498,7 @@ const DriverList = () => {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView
             style={{
               padding: windowHeight(2),

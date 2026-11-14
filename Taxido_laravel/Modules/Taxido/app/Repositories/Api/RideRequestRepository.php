@@ -21,6 +21,7 @@ use Modules\Taxido\Http\Resources\RideDetailResource;
 use Modules\Taxido\Http\Traits\RideRequestTrait;
 use Modules\Taxido\Broadcasts\DriverRideRequestBroadcast;
 use Modules\Taxido\Http\Resources\Drivers\RideRequestResource;
+use Modules\Taxido\Notifications\RiderRideStatusNotification;
 
 class RideRequestRepository extends BaseRepository
 {
@@ -84,6 +85,21 @@ class RideRequestRepository extends BaseRepository
                     'changed_at' => now(),
                 ]);
 
+                // Once a driver accepted the request, the trip is stored in the
+                // rides table. Cancelling only the request left that ride active
+                // and kept the driver marked as busy. Run the normal ride
+                // cancellation path too so driver state and cancellation rules
+                // stay in sync.
+                $linkedRide = $rideRequest->ride()->with('ride_status')->first();
+                if ($linkedRide && $linkedRide->ride_status?->slug !== RideStatusEnum::CANCELLED) {
+                    $cancellationReason = $request['cancellation_reason']
+                        ?? ($roleName == RoleEnum::DRIVER ? 'Cancelled by driver' : 'Cancelled by rider');
+                    app(RideRepository::class)->update([
+                        'status' => RideStatusEnum::CANCELLED,
+                        'cancellation_reason' => $cancellationReason,
+                    ], $linkedRide->id);
+                }
+
                 $taxidoSettings = getTaxidoSettings();
                 $isBiddingEnabled = (bool) (int) ($taxidoSettings['activation']['bidding'] ?? 0);
                 if ($rideRequest->ride_type === 'bidding' || $isBiddingEnabled) {
@@ -94,6 +110,16 @@ class RideRequestRepository extends BaseRepository
             DB::commit();
             if (function_exists('fastcgi_finish_request')) {
                 fastcgi_finish_request();
+            }
+
+            // Notify every driver who received this request so their incoming
+            // request sheet can close immediately. Polling also removes it as
+            // a fallback when real-time delivery is unavailable.
+            if ($shouldCancel) {
+                foreach ($rideRequest->drivers()->pluck('driver_id') as $driverId) {
+                    event(new DriverRideRequestBroadcast($rideRequest->fresh(), (int) $driverId, 'cancelled'));
+                }
+                \App\Models\User::find($rideRequest->rider_id)?->notify(new RiderRideStatusNotification($rideRequest, 'cancelled'));
             }
 
             return response()->json(['id' => $rideRequest->id]);
@@ -124,13 +150,30 @@ class RideRequestRepository extends BaseRepository
                 throw new Exception(__('taxido::static.rides.only_driver_can_accept_ride_request_directly'), 400);
             }
 
+            $this->ensureDriverCanRespond($request->ride_request_id, $driver->id);
+
             $ride = $this->createRide($request);
             $rideRequest = RideRequest::findOrFail($request->ride_request_id);
             if ($rideRequest) {
                 $rideRequest->update([
                     'current_driver_id'            => null,
                     'driver_acceptance_expires_at' => null,
+                    'find_driver_expires_at'       => null,
                 ]);
+                // The API resource accessor can serialize `rider` to an array.
+                // Resolve the actual notifiable model so a notification failure
+                // can never turn a successful driver acceptance into a 500.
+                try {
+                    \App\Models\User::find($rideRequest->rider_id)?->notify(
+                        new RiderRideStatusNotification($rideRequest, 'accepted')
+                    );
+                } catch (\Throwable $notificationError) {
+                    Log::warning('Accepted-ride notification failed', [
+                        'ride_request_id' => $rideRequest->id,
+                        'rider_id' => $rideRequest->rider_id,
+                        'error' => $notificationError->getMessage(),
+                    ]);
+                }
             }
 
             return new RideDetailResource($ride);
@@ -150,6 +193,8 @@ class RideRequestRepository extends BaseRepository
             if (!$driver || !$ride_request_id) {
                 throw new Exception(__('taxido::static.rides.invalid_request'), 400);
             }
+
+            $this->ensureDriverCanRespond($ride_request_id, $driver->id);
 
             $rideRequest = RideRequest::findOrFail($ride_request_id);
             $rejected   = $rideRequest->rejected_driver_ids ?? [];
@@ -185,19 +230,41 @@ class RideRequestRepository extends BaseRepository
         }
     }
 
+    private function ensureDriverCanRespond(int $rideRequestId, int $driverId): RideRequest
+    {
+        $rideRequest = RideRequest::whereKey($rideRequestId)
+            ->whereHas('drivers', fn ($query) => $query->where('driver_id', $driverId))
+            ->where(function ($query) use ($driverId) {
+                $query->where(function ($directAssignment) {
+                    $directAssignment->whereNull('current_driver_id')
+                        ->whereNull('driver_acceptance_expires_at');
+                })->orWhere(function ($instantAssignment) use ($driverId) {
+                    $instantAssignment->where('current_driver_id', $driverId)
+                        ->where('driver_acceptance_expires_at', '>', now());
+                });
+            })
+            ->first();
+
+        if (! $rideRequest) {
+            throw new Exception(__('taxido::static.rides.invalid_request'), 400);
+        }
+
+        return $rideRequest;
+    }
+
     public function rental($request)
     {
         DB::beginTransaction();
         try {
             if ($this->verifyVehicleType($request)) {
                 $rider_id = $request->rider_id ?? getCurrentUserId();
-                if ($this->verifyRideWalletBalance($rider_id)) {
-                    $formattedLocations = $request->locations;
-                    $no_of_days = $this->getNoOfDaysAttribute($request->start_time, $request->end_time);
-                    $request->no_of_days = $no_of_days;
-                    $rentalVehicle = RentalVehicle::findOrFail($request->rental_vehicle_id);
-                    $symbol = $rentalVehicle?->zone?->currency?->symbol ?? getDefaultCurrencySymbol();
-                    $charges = $this->calRentalVehicleCharges($request, $rentalVehicle);
+                $formattedLocations = $request->locations;
+                $no_of_days = $this->getNoOfDaysAttribute($request->start_time, $request->end_time);
+                $request->no_of_days = $no_of_days;
+                $rentalVehicle = RentalVehicle::findOrFail($request->rental_vehicle_id);
+                $symbol = $rentalVehicle?->zone?->currency?->symbol ?? getDefaultCurrencySymbol();
+                $charges = $this->calRentalVehicleCharges($request, $rentalVehicle);
+                $this->verifyRideWalletBalance($rider_id, $request->payment_method ?? 'cash', $charges['total'] ?? 0);
                     $rideRequest = $this->model->create([
                         'rider_id' => $rider_id,
                         'ride_number' => 100000 + ((RideRequest::max('id') + 1) + Ride::max('id') + 1),
@@ -247,7 +314,6 @@ class RideRequestRepository extends BaseRepository
                     }
 
                     return response()->json(['id' => $rideRequest->id, 'data' => new RideRequestResource($rideRequest), 'drivers' => $driver_id]);
-                }
             }
         } catch (Exception $e) {
             DB::rollback();

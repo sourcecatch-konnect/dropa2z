@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
-import { View, Text, TouchableOpacity, Image, ScrollView, BackHandler, ImageBackground } from 'react-native'
+import {View, TouchableOpacity, Image, ScrollView, BackHandler, ImageBackground} from 'react-native';
+import {Text} from '../../design/Typography';
 import appColors from '../../theme/appColors'
 import { fontSizes, windowHeight, windowWidth } from '../../theme/appConstant'
 import appFonts from '../../theme/appFonts'
@@ -143,7 +144,7 @@ export function FleetDriverDashBoard() {
                                     <Text style={{ fontFamily: appFonts.medium, color: appColors.white }}>{cancelTotal}</Text>
                                 </View>
                             </View>
-                            <View style={{ borderTopWidth: 1.5, borderStyle: 'dashed', marginVertical: windowHeight(1), marginHorizontal: windowHeight(2), borderColor: '#81BFAF' }} />
+                            <View style={{ borderTopWidth: 1.5, borderStyle: 'dashed', marginVertical: windowHeight(1), marginHorizontal: windowHeight(2), borderColor: '#BF9881' }} />
                             <Text style={{ textAlign: 'center', paddingBottom: windowHeight(1), color: appColors.white, fontFamily: appFonts.medium }}>{translateData.viewRides}</Text>
                         </ImageBackground>
                     </View>

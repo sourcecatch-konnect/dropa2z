@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, memo } from 'react'
-import { FlatList, Pressable, ScrollView, Text, View } from 'react-native'
+import {FlatList, Pressable, ScrollView, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import appColors from '../../../theme/appColors'
 import { styles } from './styles'
 import RideContainer from '../rideContainer/index'
@@ -43,34 +44,31 @@ export function RideStatus() {
 
   const renderItem = useMemo(() => {
     return ({ item }: { item: any }) => (
-      <View
-        style={{
-          backgroundColor: isDark ? appColors.bgDark : appColors.white,
-          borderRadius: windowHeight(5),
-        }}
-      >
+      <View style={{flex:1,minWidth:0}}>
         <Pressable
           onPress={() => setSelected(item?.id)}
+          accessibilityRole="tab"
+          accessibilityState={{selected:item?.id===selected}}
           style={[
             styles.container,
             {
               backgroundColor:
                 item?.id === selected
-                  ? appColors.primary
+                  ? '#FC9F03'
                   : isDark
                     ? appColors.bgDark
                     : appColors.white,
               borderColor: colors.border,
             },
-            item?.id === selected ? { borderColor: appColors.primary } : null,
+            item?.id === selected ? { borderColor: '#FC9F03' } : null,
           ]}
         >
           <Text
             style={[
               styles.mediumTextBlack12,
               item?.id === selected
-                ? { color: appColors.white }
-                : { color: appColors.primary },
+                ? { color: '#17191C' }
+                : { color: isDark ? appColors.white : '#111111' },
             ]}
           >
             {item?.title}
@@ -106,23 +104,10 @@ export function RideStatus() {
         <View
           style={[
             styles.listContainer,
-            { backgroundColor: isDark ? appColors.bgDark : appColors.white },
+            { backgroundColor: isDark ? '#25282D' : '#F0F1F3', borderColor:isDark?'#41464E':'#E5E7EB' },
           ]}
         >
-          <FlatList
-            showsHorizontalScrollIndicator={false}
-            horizontal
-            renderItem={renderItem}
-            data={rideStatusData}
-            inverted={rtl}
-            initialNumToRender={3}
-            maxToRenderPerBatch={3}
-            contentContainerStyle={{
-              justifyContent: 'space-between',
-              width: '100%',
-            }}
-            keyExtractor={item => item?.id.toString()}
-          />
+          <View accessibilityRole="tablist" style={{flexDirection:rtl?'row-reverse':'row',padding:4,gap:4}}>{rideStatusData.map(item=><React.Fragment key={item.id}>{renderItem({item})}</React.Fragment>)}</View>
         </View>
       )}
 

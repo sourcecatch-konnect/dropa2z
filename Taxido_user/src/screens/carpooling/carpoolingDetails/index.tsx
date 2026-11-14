@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, BackHandler } from 'react-native'
+import {View, Image, TouchableOpacity, ScrollView, BackHandler} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect } from 'react'
 import { Header } from '@src/commonComponent'
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes'

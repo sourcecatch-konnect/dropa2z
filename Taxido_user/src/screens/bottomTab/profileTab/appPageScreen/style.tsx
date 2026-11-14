@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import { StyleSheet } from "react-native";
 import { commonStyles } from "../../../../styles/commonStyle";
 import { appColors } from "@src/themes";
@@ -8,39 +10,19 @@ const styles = StyleSheet.create({
   container: {
     ...commonStyles.flexContainer,
   },
-  headerContainer: {
-    backgroundColor: appColors.whiteColor,
-    height: windowHeight(60),
-    justifyContent: "center",
-  },
+  headerContainer: {backgroundColor:appColors.whiteColor},
   appPagesContainer: {
-    width: "90%",
-    backgroundColor: appColors.whiteColor,
-    marginTop: windowHeight(16),
-    borderRadius: windowHeight(6),
-    marginHorizontal: windowHeight(16),
-    paddingHorizontal: windowWidth(16),
-    paddingVertical: windowHeight(9),
+    alignSelf:'stretch', margin:20, paddingHorizontal:16, paddingVertical:4,
+    borderWidth:1,borderColor:'#E5E7EB',borderRadius:22,
+    backgroundColor:appColors.whiteColor,
+    shadowColor:'#17191C',shadowOpacity:.04,shadowRadius:10,shadowOffset:{width:0,height:4},
   },
   listItemContainer: {
-    ...external.fd_row,
-    ...external.ai_center,
-    marginVertical: windowHeight(9),
+    flexDirection:'row', alignItems:'center', minHeight:76, gap:12,
+    paddingVertical:14,
   },
-  iconContainer: {
-    width: windowHeight(33),
-    height: windowHeight(33),
-    backgroundColor: appColors.lightGray,
-    borderRadius: windowHeight(33),
-    ...external.ai_center,
-    ...external.js_center,
-  },
-  listItemText: {
-    ...commonStyles.regularText,
-    color: appColors.primaryText,
-    marginHorizontal: windowHeight(8),
-    flexGrow: 0.95,
-  },
+  iconContainer: {width:44,height:44,borderRadius:14,alignItems:'center',justifyContent:'center'},
+  listItemText: {...commonStyles.regularText,color:appColors.primaryText,fontSize:16,flex:1,minWidth:0},
   symbolView: {
     width: windowHeight(32),
     height: windowHeight(32),
@@ -49,6 +31,8 @@ const styles = StyleSheet.create({
     borderColor: appColors.blackColor,
     borderWidth: windowHeight(1),
     borderRadius: windowWidth(25),
+  
+    ...riderCardFinish,
   },
   flagImage: {
     width: windowHeight(30),

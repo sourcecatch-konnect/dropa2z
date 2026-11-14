@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import { fontSizes, windowHeight, windowWidth } from './context'
 import appColors from '../../../theme/appColors'
@@ -11,16 +12,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(12),
   },
   messageContainer: {
-    padding: windowHeight(8),
+    padding: 14,
     marginBottom: windowHeight(9),
     maxWidth: '80%',
   },
   senderMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: appColors.primary,
+    backgroundColor: '#17191C',
     borderTopLeftRadius: windowHeight(12),
     borderBottomLeftRadius: windowHeight(12),
     borderTopRightRadius: windowHeight(12),
+  
+    ...referenceSurfaces.control,
   },
   senderMessageText: {},
   senderMessageTime: {
@@ -33,6 +36,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: windowHeight(12),
     borderTopRightRadius: windowHeight(12),
     marginHorizontal: windowWidth(10),
+  
+    ...referenceSurfaces.control,
   },
   receiverMessageText: {
     color: appColors.graybackground,
@@ -59,18 +64,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: windowHeight(20),
     paddingHorizontal: windowHeight(14),
+  
+    borderTopWidth:1,borderColor:"#E5E7EB",
   },
   input: {
+    minHeight:44,
+    maxHeight:112,
+    paddingVertical:10,
     fontWeight: '400',
     fontFamily: appFonts.medium,
     fontSize: fontSizes.FONT17,
-    width: '70%',
+    flex: 1,
+    minWidth: 0,
   },
   sendButton: {
-    width: windowWidth(42),
-    height: windowHeight(28),
-    backgroundColor: appColors.primary,
-    borderRadius: windowHeight(6),
+    flexShrink:0,
+    width: 44,
+    height: 44,
+    backgroundColor: '#FC9F03',
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -92,12 +104,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   textInputView: {
-    height: windowHeight(40),
+    paddingHorizontal:8,
+    gap:8,
+    minHeight: 56,
+    paddingVertical: 6,
     elevation: 1,
     width: '100%',
     borderRadius: windowHeight(6),
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
   },
   templetionStyle: {
     fontWeight: '400',
@@ -155,7 +170,12 @@ const styles = StyleSheet.create({
     marginHorizontal: windowWidth(18),
   },
   listContainer: {
-    marginTop: windowHeight(20),
+    flex:1,
+    marginTop:12,
+    borderWidth:0,
+    backgroundColor:'transparent',
+    elevation:0,
+    shadowOpacity:0,
   },
   onlineText: {
     color: appColors.primary,

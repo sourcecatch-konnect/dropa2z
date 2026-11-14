@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native';
 import { commonStyles } from '../../../../../../styles/commonStyle';
 import { appFonts, fontSizes, appColors, windowHeight, windowWidth } from '@src/themes';
@@ -6,7 +8,7 @@ export const styles = StyleSheet.create({
   container: {
     borderRadius: windowHeight(5.5),
     marginHorizontal: windowWidth(24),
-    paddingVertical: windowHeight(9),
+    paddingVertical: 18,
     shadowColor: appColors.blackColor,
     shadowOffset: {
       width: windowHeight(0),
@@ -16,6 +18,8 @@ export const styles = StyleSheet.create({
     shadowRadius: 1.0,
     elevation: 0.9,
     marginTop: windowHeight(2),
+  
+    ...referenceSurfaces.card,
   },
   userImage: {
     width: windowHeight(53),
@@ -28,15 +32,19 @@ export const styles = StyleSheet.create({
     ...commonStyles.mediumTextBlack,
   },
   walletContainer: {
-    backgroundColor: appColors.primary,
-    marginHorizontal: windowWidth(15),
-    height: windowHeight(42),
+    backgroundColor: "#17191C",
+    marginHorizontal: 14,
+    minHeight: 58,
     borderRadius: windowHeight(5.5),
     alignItems: 'center',
     paddingHorizontal: windowWidth(15),
     marginTop: windowHeight(15),
     justifyContent: 'space-between',
     marginBottom: windowHeight(4),
+  
+    ...referenceSurfaces.control,
+  
+    ...riderCardFinish,
   },
   walletBalance: {
     ...commonStyles.regularText,
@@ -55,15 +63,17 @@ export const styles = StyleSheet.create({
     backgroundColor: appColors.primary,
     borderRadius: windowHeight(74),
     marginHorizontal: windowHeight(10),
+  
+    ...riderCardFinish,
   },
   userView: {
-    paddingHorizontal: windowHeight(3),
+    paddingRight: 14, flex:1, minWidth:0,
   },
     ratingBox:{
-    height:windowHeight(20),
+    minHeight:28,
     alignItems:'center',
     borderRadius:windowWidth(55),
-    paddingHorizontal:windowWidth(15),
+    paddingHorizontal:8, gap:4, flexDirection:"row",
     justifyContent:'space-between'
   }
 });

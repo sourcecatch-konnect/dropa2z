@@ -1,19 +1,10 @@
+import {KeyboardViewport} from '../../../design/KeyboardViewport';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {BrandLoader} from '../../../design/BrandLogo';
+import {ReferenceScreen,ReferenceLogo} from '../../../design/ReferenceChrome';
 import React, { useState, useEffect } from 'react'
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  BackHandler,
-  ActivityIndicator,
-  ScrollView,
-  Modal,
-  Pressable,
-  Platform,
-  RefreshControl,
-} from 'react-native'
+import {View, TouchableOpacity, FlatList, Image, BackHandler, ActivityIndicator, ScrollView, Modal, Pressable, Platform, RefreshControl, KeyboardAvoidingView} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import appColors from '../../../theme/appColors'
 import { getValue } from '../../../utils/localstorage'
 import { URL } from '../../../api/config'
@@ -31,22 +22,29 @@ import { launchImageLibrary } from 'react-native-image-picker'
 
 export function Chat() {
   const route = useRoute()
-  const { driverId, riderId, rideId, riderName, riderImage, from }: any =
+  const { driverId, riderId, rideId, riderName, riderImage, from: requestedFrom }: any =
     route.params || {}
+  const self=useSelector((state:any)=>state.account?.selfDriver ?? state.account?.self);
+  const from=requestedFrom==='help'||!Number(rideId)||!Number(riderId)?'help':requestedFrom;
   const { goBack } = useAppNavigation()
   const [messages, setMessages] = useState<any[]>([])
   const [input, setInput] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [supportAdminId, setSupportAdminId] = useState<string | null>(null)
   const [uploading, setUploading] = useState<boolean>(false)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedImages, setSelectedImages] = useState<any[]>([])
   const flatListRef = React.useRef<FlatList>(null)
+  const lastMessageIdRef = React.useRef<number>(0)
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null)
   const { colors } = useTheme()
   const { viewRtlStyle, textRtlStyle, rtl, isDark } = useValues()
   const { translateData } = useSelector((state: any) => state.setting)
   const navigation = useNavigation()
+  const insets=useSafeAreaInsets();
+  const sending=React.useRef(false);
+  const [sendError,setSendError]=useState('');
 
   useEffect(() => {
     const backAction = () => {
@@ -63,23 +61,56 @@ export function Chat() {
     return () => backHandler.remove()
   }, [navigation])
 
+  useEffect(() => {
+    if (from !== 'help') return
+
+    let isMounted = true
+    api
+      .get('chat/support')
+      .then(response => {
+        const adminId = response.data?.data?.admin_id
+        if (isMounted && adminId) {
+          setSupportAdminId(String(adminId))
+          setError(null)
+        } else if (isMounted) {
+          setError('Unable to load Dropa2z support. Please try again.')
+          setLoading(false)
+        }
+      })
+      .catch(error => {
+        console.log('Unable to load chat support account', error)
+        if (isMounted) {
+          setError('Unable to load Dropa2z support. Please check your connection.')
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [from])
+
   const ride_Id = `${rideId}`
-  const currentUserId = `${driverId}`
-  const chatWithUserId = from === 'help' ? '1' : `${riderId}`
-  const adminId = '1'
+  const currentUserId = String(driverId ?? self?.id ?? '')
+  const adminId = supportAdminId
+  const chatWithUserId = from === 'help' ? adminId ?? '' : `${riderId}`
 
   // roomId convention for the backend
   const roomId =
     from === 'help'
-      ? [parseInt(adminId), parseInt(currentUserId)]
+      ? adminId && currentUserId
+        ? [parseInt(adminId), parseInt(currentUserId)]
           .sort((a, b) => a - b)
           .join('_')
+        : ''
       : [parseInt(ride_Id), parseInt(currentUserId), parseInt(chatWithUserId)]
           .sort((a, b) => a - b)
           .join('_')
 
   // Real-time Chat Listener
   useEffect(() => {
+    if (!roomId || roomId.includes('NaN')) return
+
     let echo: any
 
     const setupEcho = async () => {
@@ -147,11 +178,16 @@ export function Chat() {
     }
   }, [roomId])
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (incremental = false) => {
+    if (!roomId || roomId.includes('NaN')) return
+
     try {
-      setLoading(true)
+      if (!incremental) setLoading(true)
+      const afterId = lastMessageIdRef.current
       const response = await api.get('chat/messages', {
-        params: { room_id: roomId },
+        params: incremental
+          ? { room_id: roomId, after_id: afterId }
+          : { room_id: roomId },
       })
       if (response.data?.status && Array.isArray(response.data?.data)) {
         // Ensure every fetched message has an ID for FlatList stability
@@ -159,13 +195,35 @@ export function Chat() {
           ...m,
           id: m.id || m.created_at || `msg_fetched_${Math.random()}`,
         }))
-        // Backend history order: newest first for FlatList inverted
-        setMessages([...fetchedMessages].reverse())
+        // Backend returns the newest page in chronological order; the inverted
+        // list displays newest messages at the top.
+        const incoming = [...fetchedMessages].reverse()
+        const latestId = incoming.reduce(
+          (latest, message) => Math.max(latest, Number(message.id) || 0),
+          afterId,
+        )
+        lastMessageIdRef.current = Math.max(afterId, latestId)
+
+        if (incremental && afterId > 0) {
+          if (incoming.length > 0) {
+            setMessages(previous => {
+              const knownIds = new Set(previous.map(message => String(message.id)))
+              const newMessages = incoming.filter(
+                message => !knownIds.has(String(message.id)),
+              )
+              return newMessages.length > 0
+                ? [...newMessages, ...previous]
+                : previous
+            })
+          }
+        } else {
+          setMessages(incoming)
+        }
       }
-      setLoading(false)
+      if (!incremental) setLoading(false)
     } catch (e) {
       console.log('fetchMessages error', e)
-      setLoading(false)
+      if (!incremental) setLoading(false)
     }
   }
 
@@ -177,7 +235,22 @@ export function Chat() {
 
   // Initial Message Fetch
   useEffect(() => {
-    fetchMessages()
+    lastMessageIdRef.current = 0
+    let cancelled = false
+    let pollingInterval: ReturnType<typeof setInterval> | undefined
+
+    const startPolling = async () => {
+      await fetchMessages()
+      if (!cancelled) {
+        pollingInterval = setInterval(() => fetchMessages(true), 3000)
+      }
+    }
+
+    startPolling()
+    return () => {
+      cancelled = true
+      if (pollingInterval) clearInterval(pollingInterval)
+    }
   }, [roomId])
 
   const pickImages = async () => {
@@ -200,7 +273,10 @@ export function Chat() {
   }
 
   const sendMessage = async () => {
-    if (!input.trim() && selectedImages.length === 0) return
+    if(sending.current||!roomId||roomId.includes('NaN')||(!input.trim()&&!selectedImages.length))return;
+    sending.current=true;setUploading(true);setSendError('');
+    const controller=new AbortController();
+    const deadline=setTimeout(()=>controller.abort(),25000);
 
     const messageText = input.trim()
     const imagesToSend = [...selectedImages]
@@ -212,7 +288,7 @@ export function Chat() {
       message: messageText,
       images: imagesToSend.map(asset => ({ url: asset.uri })), // Format for UI
       sender_id: currentUserId,
-      receiver_id: from === 'help' ? '1' : riderId,
+      receiver_id: from === 'help' ? adminId : riderId,
       created_at: new Date().toISOString(),
       isOptimistic: true, // Tag to identify pending messages
     }
@@ -256,7 +332,7 @@ export function Chat() {
         })
         body = formData
         // Fetch in RN often needs this explicitly for multipart
-        headers['Content-Type'] = 'multipart/form-data'
+        // Let React Native supply the multipart boundary.
       } else {
         body = JSON.stringify({
           room_id: roomId,
@@ -267,15 +343,21 @@ export function Chat() {
       }
 
       const response = await fetch(`${URL}/api/chat/send`, {
-        method: 'POST',
+        signal: controller.signal,
+        method: "POST",
         body: body,
         headers: headers,
       })
 
       const responseData = await response.json()
 
+      if(!response.ok || !responseData?.status || !responseData?.data) throw new Error(responseData?.message||"Message was not sent. Please try again.");
       if (responseData?.status && responseData?.data) {
         const data = responseData.data
+        lastMessageIdRef.current = Math.max(
+          lastMessageIdRef.current,
+          Number(data.id) || 0,
+        )
         const sentMessage = {
           ...data,
           id: data.id || data.created_at || `msg_send_${Date.now()}`,
@@ -292,13 +374,16 @@ export function Chat() {
     } catch (err) {
       console.log('send error', err)
       setMessages(prev => prev.filter(m => m.id !== tempId))
-      setError('Failed to send message')
-    }
+      setSendError(controller.signal.aborted?'Sending timed out. Please retry.':(err as any)?.message||'Failed to send message');
+      setInput(previous=>previous||messageText);
+      setSelectedImages(previous=>previous.length?previous:imagesToSend);
+    } finally {clearTimeout(deadline);sending.current=false;setUploading(false);}
   }
 
 
   return (
-    <View style={styles.containerMain}>
+    <ReferenceScreen><View style={[styles.containerMain, {backgroundColor:'transparent'}]}>
+      <View style={{alignItems:'center',paddingVertical:10,backgroundColor:colors.card}}><ReferenceLogo driver width={130}/></View>
       {/* Header */}
       <View
         style={[
@@ -333,6 +418,9 @@ export function Chat() {
         </View>
       </View>
 
+      <KeyboardViewport
+        style={{ flex: 1 }} iosOffset={100}
+      >
       {/* Messages */}
       <FlatList
         ref={flatListRef}
@@ -393,7 +481,7 @@ export function Chat() {
                           styles.senderMessageText,
                           {
                             color: isDark
-                              ? appColors.darkText
+                              ? "#FFFFFF"
                               : appColors.primaryFont,
                           },
                           { textAlign: rtl ? 'right' : 'left' },
@@ -476,9 +564,15 @@ export function Chat() {
         }
       />
 
+      {from === 'help' && error && (
+        <Text style={{ color: '#B42318', paddingHorizontal: 16, paddingVertical: 8 }}>
+          {error}
+        </Text>
+      )}
+
       {/* Selected image previews before sending */}
       {selectedImages?.length > 0 && (
-        <ScrollView horizontal style={{ padding: 5 }}>
+        <ScrollView horizontal style={{ padding: 5,maxHeight:84,flexGrow:0 }}>
           {selectedImages.map((asset, idx) => (
             <Image
               key={idx}
@@ -489,10 +583,12 @@ export function Chat() {
         </ScrollView>
       )}
 
+      {!!sendError&&<Text accessibilityRole="alert" style={{color:isDark?'#FFAAA4':'#B42318',padding:10}}>{sendError}</Text>}
       {/* Input */}
       <View
         style={[
           styles.inputContainer,
+          {paddingBottom:Math.max(insets.bottom,8),flexShrink:0},
           { backgroundColor: colors.background, flexDirection: viewRtlStyle },
         ]}
       >
@@ -512,27 +608,30 @@ export function Chat() {
             ]}
             value={input}
             onChangeText={setInput}
-            placeholder={`${translateData.typeHere}`}
+            placeholder={translateData?.typeHere||'Type a message'}
             multiline
-            placeholderTextColor={appColors.secondaryFont}
+            editable={!!roomId}
+            placeholderTextColor={isDark?"#BBC1CA":appColors.secondaryFont}
           />
           <TouchableOpacity
             style={styles.sendButton}
             onPress={sendMessage}
             activeOpacity={0.7}
+            accessibilityRole="button" accessibilityLabel="Send message" disabled={!roomId||roomId.includes('NaN')||uploading}
           >
-            <Icons.SendChat />
+            <Icons.SendChat color="#17191C"/>
           </TouchableOpacity>
         </View>
       </View>
 
       {uploading && (
-        <ActivityIndicator
+        <BrandLoader
           size="small"
           color={appColors.primary}
           style={{ marginVertical: 10 }}
         />
       )}
+      </KeyboardViewport>
 
       {/* Fullscreen modal */}
       <Modal
@@ -563,6 +662,6 @@ export function Chat() {
           )}
         </Pressable>
       </Modal>
-    </View>
+    </View></ReferenceScreen>
   )
 }

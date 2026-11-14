@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors ,windowHeight, windowWidth} from '@src/themes'; 
 import { external } from '../../../../../../styles/externalStyle';
@@ -15,6 +16,8 @@ export const styles = StyleSheet.create({
     marginHorizontal: windowWidth(20),
     marginBottom: windowHeight(4),
     paddingVertical: windowHeight(13),
+  
+    ...riderCardFinish,
   },
   text: {
     ...external.ti_center,

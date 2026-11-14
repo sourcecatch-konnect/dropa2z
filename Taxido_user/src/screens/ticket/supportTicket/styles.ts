@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
 
@@ -5,12 +6,14 @@ const styles = StyleSheet.create({
   ticketContainer: {
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
-    paddingHorizontal: windowWidth(15),
-    paddingBottom: windowHeight(10),
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     borderRadius: windowHeight(5),
+  
+    ...riderCardFinish,
   },
   row: {
-    width: "100%"
+    alignItems:"center", gap:10, width: "100%"
   },
   ticketStyle: {
     color: appColors.primary,
@@ -31,6 +34,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     maxWidth: windowWidth(300)
+  ,
+    ...riderCardFinish,
   },
   statusText: {
     color: appColors.primary,
@@ -55,6 +60,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(19),
     paddingVertical: windowHeight(5),
     borderRadius: windowHeight(20),
+  
+    ...riderCardFinish,
   },
   priorityView: {
     backgroundColor: appColors.lightRed,
@@ -62,20 +69,22 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(5),
     borderRadius: windowHeight(20),
     marginHorizontal: windowWidth(10),
+  
+    ...riderCardFinish,
   },
   priorityText: {
     color: appColors.textRed,
     fontFamily: appFonts.regular,
   },
   headerView: {
-    height: windowHeight(54),
+    minHeight: 68,
     justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: windowHeight(12),
   },
   backButton: {
-    height: windowHeight(32),
-    width: windowHeight(32),
+    height: 44,
+    width: 44,
     borderColor: appColors.border,
     borderWidth: windowHeight(1),
     alignItems: "center",
@@ -88,8 +97,8 @@ const styles = StyleSheet.create({
     color: appColors.primaryText,
   },
   addBtn: {
-    height: windowHeight(32),
-    width: windowHeight(32),
+    height: 44,
+    width: 44,
     borderColor: appColors.border,
     borderWidth: windowHeight(1),
     alignItems: "center",
@@ -124,13 +133,13 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.regular,
   },
   renderTicketItemView: {
-    marginHorizontal: windowWidth(20),
-    marginTop: windowHeight(15),
+    marginBottom: 14,
 
   },
-  formatDateView: { width: "75%" },
+  ticketIcon:{height:42,width:42,borderRadius:14,backgroundColor:"#FFF2DF",alignItems:"center",justifyContent:"center"},
+  formatDateView: { flex:1,minWidth:0 },
   status_Container: {
-    width: "25%",
+    maxWidth: "32%",
     justifyContent: "center",
   },
 });

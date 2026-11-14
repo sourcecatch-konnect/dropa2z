@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import {View, ScrollView, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import { SvgUri } from 'react-native-svg';
 import { useTheme } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';

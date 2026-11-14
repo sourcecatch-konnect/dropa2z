@@ -1,4 +1,5 @@
-import { View, Text, Image } from "react-native";
+import {View, Image} from 'react-native';
+import {Text} from '../../design/Typography';
 import React from "react";
 import { useValues } from "../../utils/context";
 import appColors from "../../theme/appColors";

@@ -1,5 +1,6 @@
 import React from "react";
-import { TouchableOpacity, View, Text } from "react-native";
+import {TouchableOpacity, View} from 'react-native';
+import {Text} from '../../design/Typography';
 import styles from "./styles";
 import { useValues } from "@src/utils/context/index";
 import { CheckBoxProps } from "../type";

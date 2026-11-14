@@ -1,5 +1,7 @@
 import React, {useState, useEffect, useCallback} from "react";
-import {View, BackHandler, TouchableOpacity, Text} from "react-native";
+import {View, BackHandler, TouchableOpacity} from 'react-native';
+import {CardHeading} from '../../../../../design/CardHeading';
+import {Text} from '../../../../../design/Typography';
 import {InputText} from "@src/commonComponent";
 import {styles} from "../style";
 import {useValues} from "@src/utils/context/index";
@@ -27,11 +29,11 @@ export function DataContainer({setForm: setParentForm}: any) {
   const {self} = useSelector((state: any) => state.account);
 
   const [currentCallingCode, setCurrentCallingCode] = useState(() => {
-    const code = self?.country_code || "1";
+    const code = self?.country_code || "91";
     return code.startsWith("+") ? code : `+${code}`;
   });
 
-  const [cca2Code, setCca2Code] = useState(undefined);
+  const [cca2Code, setCca2Code] = useState("IN");
   const [loading, setLoading] = useState(false);
   const loadingContext = useLoadingContext();
   const addressLoaded = loadingContext?.addressLoaded;
@@ -42,8 +44,8 @@ export function DataContainer({setForm: setParentForm}: any) {
   const [form, setForm] = useState({
     username: self?.name || "",
     email: self?.email || "",
-    countryCode: self?.country_code || "+1",
-    cca2: cca2Code,
+    countryCode: self?.country_code || "+91",
+    cca2: cca2Code || "IN",
     phoneNumber: self?.phone ? self.phone.toString() : "",
   });
   const {navigate} = useAppNavigation();
@@ -60,11 +62,11 @@ export function DataContainer({setForm: setParentForm}: any) {
         username: self?.name || "",
         email: self?.email || "",
         phoneNumber: self?.phone ? self.phone.toString() : "",
-        countryCode: self?.country_code || "+1",
+        countryCode: self?.country_code || "+91",
       }));
       _setPhoneNumber(self?.phone ? self.phone.toString() : "");
 
-      const code = self?.country_code || "1";
+      const code = self?.country_code || "91";
       const formattedCode = code.startsWith("+") ? code : `+${code}`;
       setCurrentCallingCode(formattedCode);
     }
@@ -156,6 +158,7 @@ export function DataContainer({setForm: setParentForm}: any) {
         </View>
       ) : (
         <>
+          <CardHeading icon="user-round" title={translateData.personalDetails || "Personal Details"}/>
           <InputText
             title={translateData.userName}
             showTitle={true}
@@ -181,19 +184,20 @@ export function DataContainer({setForm: setParentForm}: any) {
 
           <TouchableOpacity
             onPress={() => gotoEdit("mobile")}
-            style={{flexDirection: "row"}}
+            accessibilityRole="button" accessibilityLabel="Edit mobile number"
+            style={{flexDirection: viewRTLStyle,gap:10}}
             activeOpacity={0.7}>
             <View
               style={{
                 marginTop: windowHeight(10),
-                width: windowWidth(70),
-                height: windowHeight(40),
+                width: 64,
+                minHeight:50,
                 backgroundColor: isDark
                   ? appColors.darkPrimary
                   : appColors.lightGray,
                 borderColor: isDark ? appColors.darkBorder : appColors.border,
                 borderWidth: 1,
-                borderRadius: windowHeight(5),
+                borderRadius:14,
                 alignItems: "center",
                 justifyContent: "center",
               }}>
@@ -207,15 +211,14 @@ export function DataContainer({setForm: setParentForm}: any) {
             <View
               style={{
                 marginTop: windowHeight(10),
-                width: windowWidth(308),
-                height: windowHeight(40),
+                flex:1, minWidth:0,
+                minHeight:50,
                 backgroundColor: isDark
                   ? appColors.darkPrimary
                   : appColors.lightGray,
                 borderColor: isDark ? appColors.darkBorder : appColors.border,
                 borderWidth: 1,
-                marginHorizontal: windowWidth(15),
-                borderRadius: windowHeight(5),
+                borderRadius:14,
                 justifyContent: "space-between",
                 alignItems: "center",
                 flexDirection: viewRTLStyle,
@@ -251,6 +254,7 @@ export function DataContainer({setForm: setParentForm}: any) {
             {translateData.email}
           </Text>
           <TouchableOpacity
+            accessibilityRole="button" accessibilityLabel="Edit email address"
             onPress={() => gotoEdit("email")}
             style={{
               backgroundColor: isDark
@@ -258,8 +262,8 @@ export function DataContainer({setForm: setParentForm}: any) {
                 : appColors.lightGray,
               borderColor: isDark ? appColors.darkBorder : appColors.border,
               borderWidth: 1,
-              height: windowHeight(40),
-              borderRadius: windowHeight(5),
+              minHeight:50,
+              borderRadius:14,
               justifyContent: "space-between",
               alignItems: "center",
               flexDirection: viewRTLStyle,

@@ -1,0 +1,20 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public Google Maps/Firebase client API identifiers already shipped in mobile/web clients; restrict them in Google Cloud."
+condition = "AND"
+regexTarget = "secret"
+regexes = ['''AIza[0-9A-Za-z_-]{35}''']
+paths = [
+  '''^Taxido_(driver|user)/android/app/src/main/AndroidManifest\.xml$''',
+  '''^Taxido_(driver|user)/src/utils/context/index\.tsx$''',
+  '''^Taxido_laravel/public/images/svg/edit_files/(analytics|app)\.js$''',
+]
+
+[[allowlists]]
+description = "CocoaPods dependency checksums are not API credentials."
+condition = "AND"
+regexTarget = "secret"
+regexes = ['''^[a-f0-9]{40,64}$''']
+paths = ['''^Taxido_driver/ios/Podfile\.lock$''']

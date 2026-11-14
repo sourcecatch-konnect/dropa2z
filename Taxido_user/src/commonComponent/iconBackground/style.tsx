@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     height: windowHeight(35),
     ...external.ai_center,
     ...external.js_center,
-    borderRadius: windowHeight(5.9),
+    borderRadius: 14,
     backgroundColor: appColors.iconBg,
     borderColor: appColors.whiteColor,
     ...commonStyles.shadowContainer,

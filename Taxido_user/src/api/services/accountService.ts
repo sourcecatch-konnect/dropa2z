@@ -1,6 +1,10 @@
 import { editProfile, userSelf, deleteAccount, country, phoneOrEmail, verifyPhoneOrEmail } from "../endpoints/accountEndPoint";
 import { UpdateProfileInterface } from "../interface/accountInterface";
 import { GET_API, PUT_API, DELETE_API, POST_API } from "../methods";
+import {requireApiSuccess} from '../responseError';
+
+export const deletionPolicy = async () =>
+  requireApiSuccess(await GET_API('rider/deletion-policy'), 'Unable to load account deletion information.');
 
 export const selfData = async () => {
   return GET_API(userSelf)
@@ -52,14 +56,8 @@ export const verifyMobileEmail = async (data: UpdateProfileInterface) => {
     });
 };
 
-export const accountDelete = async () => {
-  return DELETE_API(deleteAccount)
-    .then(res => {
-      return res;
-    })
-    .catch(e => {
-      return e?.response;
-    });
+export const accountDelete = async (confirmation:{confirmation:string;acknowledged:boolean}) => {
+  return requireApiSuccess(await DELETE_API(deleteAccount,{data:confirmation}), 'Could not delete your account. Please try again.');
 };
 
 const accountServices = {

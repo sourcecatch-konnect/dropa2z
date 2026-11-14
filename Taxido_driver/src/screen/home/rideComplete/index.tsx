@@ -1,20 +1,15 @@
-import {
-  View,
-  Text,
-  Platform,
-  PermissionsAndroid,
-  BackHandler,
-  Modal,
-  TouchableOpacity,
-  TextInput,
-} from 'react-native'
+import {DeliveryBackButton} from '../../../design/DeliveryBackButton';
+import {View, Platform, PermissionsAndroid, BackHandler, Alert, TouchableOpacity, ScrollView} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme, useRoute, useFocusEffect } from '@react-navigation/native'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   rideDataGets,
   rideDataPut,
+  rideParcelStopUpdate,
   selfDriverData,
+  allpayment,
 } from '../../../api/store/action'
 import styles from './styles'
 import commanStyles from '../../../style/commanStyles'
@@ -28,7 +23,6 @@ import { DriverProfile } from '../../../commonComponents'
 import { Map } from '../../mapView'
 import { useValues } from '../../../utils/context'
 import Geolocation from 'react-native-geolocation-service'
-import OTPTextView from 'react-native-otp-textinput'
 import {
   fontSizes,
   windowHeight,
@@ -37,10 +31,10 @@ import {
 import appFonts from '../../../theme/appFonts'
 import {
   BottomSheetModal,
+  BottomSheetScrollView,
   BottomSheetView,
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet'
-import { FAB } from 'react-native-paper'
 import Icons from '../../../utils/icons/icons'
 import getEchoInstance from '../../../utils/echo'
 import { rideDataGet } from '../../../api/store/action'
@@ -56,6 +50,7 @@ export function RideComplete() {
   const dispatch = useDispatch<AppDispatch>()
   const { rideData }: any = route.params
   const [rideDataState, setRideDataState] = useState<any>(null)
+  const [rideDetailsLoading, setRideDetailsLoading] = useState<boolean>(true)
   const [elapsedTime, setElapsedTime] = useState<string>('00:00:00')
   const [totalDistance, setTotalDistance] = useState<number>(0)
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0)
@@ -64,16 +59,14 @@ export function RideComplete() {
   const [locations, setLocations] = useState<any>(null)
   const { translateData } = useSelector((state: any) => state.setting)
   const [completeLoading, setCompleteLoading] = useState<boolean>(false)
+  const [cashPaymentLoading, setCashPaymentLoading] = useState<boolean>(false)
+  const cashFarePreparedRef = useRef(false)
+  const completionInFlight=useRef(false)
+  const cashInFlight=useRef(false)
+  const [parcelStepLoading, setParcelStepLoading] = useState<boolean>(false)
   const { isDark } = useValues()
-  const [otp, setOtp] = useState<string>('')
-  const [correctOtp, setCorrectOtp] = useState<string>('')
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
-  const otpBottomSheetRef = useRef<BottomSheetModal>(null)
-  const [isOtpSheetOpen, setIsOtpSheetOpen] = useState<boolean>(false)
-  const isVerificationSuccess = useRef<boolean>(false)
-  const [showActions, setShowActions] = useState<boolean>(false)
   const [showExtraFareSheet, setShowExtraFareSheet] = useState<boolean>(false)
-  const [visible, setVisible] = useState<boolean>(false)
 
   const [extraFareCharges, setExtraFareCharges] = useState<
     Array<{ id: string; title: string; amount: string }>
@@ -89,24 +82,41 @@ export function RideComplete() {
   useEffect(() => {
     if (!rideData?.id) return;
 
+    let isMounted = true;
     let echoInstance: any = null;
+
+    const applyRideUpdate = (incoming: any) => {
+      const details = incoming?.data?.data ?? incoming?.data ?? incoming?.ride ?? incoming;
+      if (!details || typeof details !== 'object') return;
+      setRideDataState((previous: any) => ({
+        ...rideData,
+        ...(previous ?? {}),
+        ...details,
+      }));
+    };
+
+    // Stop controls need the full persisted itinerary; realtime is optional.
+    const fetchRideDetails = async () => {
+      setRideDetailsLoading(true);
+      try {
+        const details = await dispatch(rideDataGet(Number(rideData.id))).unwrap();
+        if (isMounted) applyRideUpdate(details);
+      } catch (err) {
+        console.warn('[RideComplete] Could not load full ride details:', err);
+      } finally {
+        if (isMounted) setRideDetailsLoading(false);
+      }
+    };
+    fetchRideDetails();
 
     const setupEcho = async () => {
       try {
         echoInstance = await getEchoInstance();
-        if (!echoInstance) return;
-
-        // Fetch initial data
-        dispatch(rideDataGet(rideData.id))
-          .unwrap()
-          .then((res: any) => {
-            setRideDataState(res);
-          });
+        if (!echoInstance || !isMounted) return;
 
         echoInstance.private(`ride-status.${rideData.id}`)
           .listen('.ride.status', (data: any) => {
-            const statusData = data?.ride || data;
-            setRideDataState(statusData);
+            applyRideUpdate(data?.ride || data);
           });
       } catch (err) {
         console.error('[RideComplete] Echo error:', err);
@@ -116,27 +126,22 @@ export function RideComplete() {
     setupEcho();
 
     return () => {
+      isMounted = false;
       if (echoInstance) {
         echoInstance.leave(`ride-status.${rideData.id}`);
       }
     };
-  }, [rideData?.id]);
+  }, [rideData?.id, dispatch]);
 
   useEffect(() => {
     bottomSheetModalRef.current?.present()
-    isVerificationSuccess.current = false
   }, [])
 
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        if (isOtpSheetOpen) {
-          otpBottomSheetRef.current?.close()
-          return true
-        } else {
-          navigation.navigate('TabNav')
-          return true
-        }
+        navigation.navigate('TabNav')
+        return true
       }
 
       const subscription = BackHandler.addEventListener(
@@ -145,7 +150,7 @@ export function RideComplete() {
       )
 
       return () => subscription.remove()
-    }, [isOtpSheetOpen, navigation]),
+    }, [navigation]),
   )
 
   const requestLocationPermission = async () => {
@@ -228,43 +233,42 @@ export function RideComplete() {
   }, [isRunning, rideDataState?.start_time])
 
   const gotoComplete = async () => {
-    if (rideDataState?.service?.service_type === 'parcel') {
-      setCompleteLoading(true)
-      try {
-        dispatch(rideDataGet(rideDataState.id))
-          .unwrap()
-          .then((res: any) => {
-            const fetchedOtp = res?.parcel_delivered_otp
-            if (fetchedOtp) {
-              setCorrectOtp(fetchedOtp)
-              bottomSheetModalRef.current?.close()
-              otpBottomSheetRef.current?.present(1)
-            } else {
-              notificationHelper('', translateData.deliveryOtp, 'error')
-            }
-          })
-          .catch(() => {
-            notificationHelper('', translateData.rideDetailsNotFound, 'error')
-          })
-          .finally(() => {
-            setCompleteLoading(false)
-          })
-      } catch (error) {
-        notificationHelper('', translateData.fetchDetails, 'error')
-        setCompleteLoading(false)
-      }
-    } else {
-      handleConfirm()
+    if (rideDetailsLoading) {
+      notificationHelper('', 'Loading the booked trip details. Please try again in a moment.', 'error')
+      return
     }
+    if (isParcelTrip && deliveredStopCount < parcelStopCount) {
+      notificationHelper('', 'Mark the parcel delivered at each stop before completing this trip.', 'error')
+      return
+    }
+    const cashDue =
+      String(activeRide?.payment_method ?? '').toLowerCase() === 'cash' &&
+      String(activeRide?.payment_status ?? '').toUpperCase() !== 'COMPLETED'
+
+    if (cashDue) {
+      Alert.alert(
+        'Confirm cash received',
+        'Only continue after collecting the final fare, including any extra or waiting charges.',
+        [
+          { text: 'Not received', style: 'cancel' },
+          { text: 'Cash received', onPress: () => void collectCashAndComplete() },
+        ],
+      )
+      return
+    }
+
+    void handleConfirm()
   }
 
-  const handleConfirm = (verifiedOtp: string | null = null) => {
+  const handleConfirm = async () => {
+    if(completionInFlight.current)return;
+    completionInFlight.current=true;
     setCompleteLoading(true)
     const end = getCurrentTime()
     setEndTime(end)
 
     // Create a copy of the location coordinates array
-    let updatedLocationCoordinates = [...(rideData?.location_coordinates || [])]
+    let updatedLocationCoordinates = [...asArray(activeRide?.location_coordinates)]
 
     // If there are location coordinates, update the last one (destination) with current GPS location
     if (updatedLocationCoordinates?.length > 0 && locations) {
@@ -289,82 +293,186 @@ export function RideComplete() {
       distance: totalDistance.toFixed(2),
       distance_unit: 'km',
       location_coordinates: updatedLocationCoordinates,
-      extra_charges:
-        extraFareCharges?.map((item: any) => ({
-          title: item?.title,
-          amount: Number(item?.amount),
-        })) || [],
-    }
-
-    if (verifiedOtp) {
-      payloadData.parcel_delivered_otp = verifiedOtp
+      extra_charges: cashFarePreparedRef.current
+        ? []
+        : extraFareCharges?.map((item: any) => ({
+            title: item?.title,
+            amount: Number(item?.amount),
+          })) || [],
     }
 
     // Add extra fare charges to payload if any exist
-    if (extraFareCharges?.length > 0) {
+    if (!cashFarePreparedRef.current && extraFareCharges?.length > 0) {
       payloadData.extra_fare_charges = extraFareCharges.map(charge => ({
         title: charge.title,
         amount: parseFloat(charge.amount),
       }))
     }
 
-    dispatch(rideDataPut({ data: payloadData, ride_id: rideData?.id }))
-      .then(async (res: any) => {
-        if (res?.payload?.id) {
-          dispatch(selfDriverData())
-          dispatch(rideDataGets())
-          navigation.navigate('RideDetails', { ride_Id: rideData?.id })
-        } else {
-          notificationHelper('', translateData.failedComplet, 'error')
+    try {
+      const response = await dispatch(
+        rideDataPut({ data: payloadData, ride_id: activeRide?.id }),
+      ).unwrap()
+      if (!(response?.id ?? response?.data?.id)) {
+        throw new Error(response?.message || translateData.failedComplet)
+      }
+      dispatch(selfDriverData())
+      dispatch(rideDataGets())
+      navigation.navigate('RideDetails', { ride_Id: activeRide?.id })
+    } catch (error: any) {
+      try {
+        const result=await dispatch(rideDataGet(Number(activeRide?.id))).unwrap();
+        const fresh=result?.data??result;
+        if(fresh?.ride_status?.slug==='completed'){
+          dispatch(selfDriverData());dispatch(rideDataGets());
+          navigation.navigate('RideDetails',{ride_Id:activeRide.id});return;
         }
-      })
-      .catch(error => { })
-      .finally(() => {
-        setCompleteLoading(false)
-      })
+      }catch{/* No automatic payment retry on uncertain connection. */}
+      notificationHelper(
+        '',
+        error?.message || translateData.failedComplet,
+        'error',
+      )
+    } finally {
+      completionInFlight.current=false;
+      setCompleteLoading(false)
+    }
   }
 
-  const otpVerify = () => {
-    if (otp == correctOtp) {
-      isVerificationSuccess.current = true
-      otpBottomSheetRef.current?.close()
-      handleConfirm(otp)
-    } else {
-      setOtp('')
-      notificationHelper('', translateData.otpWrong, 'error')
-    }
-  }
-  const otpVerify1 = (text: any) => {
-    if (text == correctOtp) {
-      isVerificationSuccess.current = true
-      otpBottomSheetRef.current?.close()
-      handleConfirm(text)
-    } else {
-      setOtp('')
-      notificationHelper('', translateData.otpWrong, 'error')
-    }
-  }
-  const handleOtpSheetChange = useCallback((index: number) => {
-    setIsOtpSheetOpen(index >= 0)
-  }, [])
+  const collectCashAndComplete = async () => {
+    if (cashInFlight.current) return
+    cashInFlight.current=true
+    setCashPaymentLoading(true)
+    try {
+      const paymentResponse = await dispatch(
+        allpayment({
+          ride_id: Number(activeRide?.id),
+          payment_method: 'cash',
+          extra_charges: extraFareCharges.map((charge: any) => ({
+            title: charge.title,
+            amount: Number(charge.amount),
+          })),
+        } as any),
+      ).unwrap()
+      if (!(paymentResponse?.id ?? paymentResponse?.data?.id)) {
+        throw new Error(paymentResponse?.message || 'Cash payment was not confirmed by the server.')
+      }
 
-  const handleOtpDismiss = useCallback(() => {
-    setOtp('')
-    if (!isVerificationSuccess.current) {
-      bottomSheetModalRef.current?.present()
+      const refreshedResponse = await dispatch(
+        rideDataGet(Number(activeRide?.id)),
+      ).unwrap()
+      const refreshedRide = refreshedResponse?.data?.data ?? refreshedResponse?.data ?? refreshedResponse
+      if (String(refreshedRide?.payment_status ?? '').toUpperCase() !== 'COMPLETED') {
+        throw new Error('The server has not confirmed payment yet. Please refresh and try again.')
+      }
+      setRideDataState((previous: any) => ({
+        ...rideData,
+        ...(previous ?? {}),
+        ...refreshedRide,
+      }))
+      cashFarePreparedRef.current = true
+      await handleConfirm()
+    } catch (error: any) {
+      try{
+        const result=await dispatch(rideDataGet(Number(activeRide?.id))).unwrap();
+        const fresh=result?.data?.data??result?.data??result;
+        if(String(fresh?.payment_status).toUpperCase()==='COMPLETED'){
+          setRideDataState((previous:any)=>({...rideData,...previous,...fresh}));
+          cashFarePreparedRef.current=true;
+          await handleConfirm();return;
+        }
+      }catch{/* Only read status after an uncertain payment response. */}
+      notificationHelper(
+        '',
+        error?.message || 'Could not confirm cash payment. Please try again.',
+        'error',
+      )
+    } finally {
+      cashInFlight.current=false;
+      setCashPaymentLoading(false)
     }
-  }, [])
+  }
+
+  const asArray = (value: any): any[] => {
+    if (Array.isArray(value)) return value
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value)
+        return Array.isArray(parsed) ? parsed : []
+      } catch (_error) {
+        return []
+      }
+    }
+    return []
+  }
+  const activeRide = { ...rideData, ...(rideDataState ?? {}) }
+  const serviceType = String(
+    activeRide?.service?.service_type ??
+      activeRide?.service?.type ??
+      activeRide?.service_type ??
+      '',
+  ).toLowerCase()
+  const itinerary = asArray(activeRide?.locations)
+  const itineraryCoordinates = asArray(activeRide?.location_coordinates)
+  const bookedIntermediateStopCount = Math.max(
+    Math.max(itineraryCoordinates.length, itinerary.length, 2) - 2,
+    0,
+  )
+  // Some existing bookings expose a generic service type even though the
+  // persisted itinerary clearly contains parcel handoff stops. Treat every
+  // multi-stop itinerary as a parcel workflow so the controls cannot vanish.
+  const isParcelTrip =
+    serviceType === 'parcel' ||
+    serviceType === 'freight' ||
+    activeRide?.service?.slug === 'parcel' ||
+    activeRide?.service?.slug === 'freight' ||
+    bookedIntermediateStopCount > 0
+  const isGoodsDelivery = ['parcel', 'freight'].includes(serviceType) ||
+    ['parcel', 'freight'].includes(activeRide?.service?.slug)
+  const parcelStopCount = isParcelTrip
+    ? isGoodsDelivery
+      ? Math.max(Math.max(itineraryCoordinates.length, itinerary.length) - 1, 0)
+      : bookedIntermediateStopCount
+    : 0
+  const parcelStops = Array.from({ length: parcelStopCount }, (_item, index) =>
+    activeRide?.parcel_delivery_progress?.stops?.[index] || {
+      stop_index: index + 1,
+      status: 'pending',
+    },
+  )
+  const deliveredStopCount = parcelStops.filter((stop: any) => stop?.status === 'delivered').length
+  const nextStopIndex = parcelStops.findIndex((stop: any) => stop?.status !== 'delivered') + 1
+
+  const itineraryLabel = (index: number) => {
+    const item = itinerary[index]
+    if (typeof item === 'string') return item
+    return item?.address || item?.formatted_address || item?.name || `Stop ${index}`
+  }
+
+  const handleParcelAction = async (stopIndex: number, action: 'arrived' | 'delivered') => {
+    if (stopIndex !== nextStopIndex || stopIndex < 1) {
+      return
+    }
+    setParcelStepLoading(true)
+    try {
+      const updatedRide = await dispatch(rideParcelStopUpdate({
+        ride_id: activeRide.id,
+        action,
+        stop_index: stopIndex,
+      })).unwrap()
+      setRideDataState(updatedRide)
+    } catch (error: any) {
+      notificationHelper('', error?.message || 'Could not update this drop. Please try again.', 'error')
+    } finally {
+      setParcelStepLoading(false)
+    }
+  }
 
   const gotoOtherMap = (maptype: any) => {
-    navigation.navigate('MapWebView', {
-      lat: rideDataState?.location_coordinates?.[
-        rideDataState?.location_coordinates?.length - 1
-      ]?.lat,
-      lng: rideDataState?.location_coordinates?.[
-        rideDataState?.location_coordinates?.length - 1
-      ]?.lng,
-      type: maptype,
-    })
+    const nextIndex=nextStopIndex>0?nextStopIndex:Math.max(itineraryCoordinates.length-1,1);
+    const destination=itineraryCoordinates[nextIndex];
+    if(maptype==='google') {navigation.navigate('DeliveryNavigation',{title:'Navigate to next drop',destinations:destination?[{...destination,title:itineraryLabel(nextIndex)}]:[]});return;}
+    navigation.navigate('MapWebView',{lat:destination?.lat,lng:destination?.lng,type:maptype});
   }
 
   const handleAddCharge = useCallback((newCharge: any) => {
@@ -378,29 +486,21 @@ export function RideComplete() {
   const handleSaveExtraFare = () => {
     extraFareSheetRef.current?.close()
     setShowExtraFareSheet(false)
-    setShowActions(false) // Hide FAB when extra fare sheet is closed
   }
 
   const handleExtraFareSheetChange = useCallback((index: number) => {
     setShowExtraFareSheet(index >= 0)
-    if (index >= 0) {
-      setShowActions(false) // Hide FAB when extra fare sheet is opened
-    }
-  }, [])
-
-  useEffect(() => {
-    setVisible(true)
   }, [])
 
   return (
     <View style={commanStyles.main}>
-      {rideDataState?.service_category?.service_category_type !== 'rental' ? (
+      {activeRide?.service_category?.service_category_type !== 'rental' ? (
         <View style={styles.mapSection}>
           <Map
             stoplocation={
-              rideDataState?.location_coordinates &&
-                rideDataState.location_coordinates?.length > 2
-                ? rideDataState.location_coordinates
+              activeRide?.location_coordinates &&
+                activeRide.location_coordinates?.length > 2
+                ? activeRide.location_coordinates
                   .slice(1, -1)
                   .map((item: any) => ({
                     latitude: parseFloat(item.lat),
@@ -409,158 +509,35 @@ export function RideComplete() {
                 : [] // empty if no middle points
             }
             Destinationlocation={
-              rideDataState?.location_coordinates?.[
-              rideDataState.location_coordinates?.length - 1
+              activeRide?.location_coordinates?.[
+              activeRide.location_coordinates?.length - 1
               ]
             }
-            driverId={rideDataState?.driver?.id}
-            rideDetails={rideDataState}
+            driverId={activeRide?.driver?.id}
+            rideDetails={activeRide}
           />
         </View>
       ) : (
         <View />
       )}
       <View style={styles.extraSection}></View>
-      <View style={styles.backButton}>
-        <BackButton />
-      </View>
-
-      <Modal
-        visible={visible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setVisible(false)}
-        onDismiss={() => setVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          onPress={() => setVisible(false)}
-          activeOpacity={0.9}
-        >
-          <View
-            style={[
-              styles.modalBox,
-              {
-                backgroundColor: isDark
-                  ? appColors.darkThemeSub
-                  : appColors.white,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.modalTitle,
-                { color: isDark ? appColors.white : appColors.black },
-              ]}
-            >
-              {translateData.goGoogleMap}
-            </Text>
-            <Text
-              style={[
-                styles.modalText,
-                { color: isDark ? appColors.darkText : appColors.primaryFont },
-              ]}
-            >
-              {translateData.googleMapConfirm}
-            </Text>
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.closeIcon}
-              onPress={() => setVisible(false)}
-            >
-              <Icons.CloseSimple color={appColors.black} />
-            </TouchableOpacity>
-            <View
-              style={[
-                {
-                  flexDirection: viewRtlStyle,
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                },
-              ]}
-            >
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.closeButton}
-                onPress={() => {
-                  gotoOtherMap('google')
-                  setVisible(false)
-                }}
-              >
-                <Text style={styles.closeText}>{translateData.googleMap}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <DeliveryBackButton/>
 
       <BottomSheetModalProvider>
-        {showActions && !showExtraFareSheet && (
-          <>
-            <FAB
-              icon={Icons.GoogleMap}
-              style={[
-                styles.fabMini,
-                {
-                  backgroundColor: isDark
-                    ? appColors.darkThemeSub
-                    : appColors.white,
-                },
-                { bottom: '57.5%' },
-              ]}
-              onPress={() => gotoOtherMap('google')}
-            />
-            <FAB
-              icon={Icons.Wazemap}
-              style={[
-                styles.fabMini,
-                {
-                  backgroundColor: isDark
-                    ? appColors.darkThemeSub
-                    : appColors.white,
-                },
-                { bottom: '50%' },
-              ]}
-              onPress={() => gotoOtherMap('waze')}
-            />
-            <FAB
-              icon={Icons.BingMap}
-              style={[
-                styles.fabMini,
-                {
-                  backgroundColor: isDark
-                    ? appColors.darkThemeSub
-                    : appColors.white,
-                },
-                { bottom: '42.5%' },
-              ]}
-              onPress={() => gotoOtherMap('bing')}
-            />
-          </>
-        )}
         {!showExtraFareSheet && (
-          <FAB
-            icon={Icons.Map}
-            style={[
-              styles.fab,
-              {
-                backgroundColor: isDark
-                  ? appColors.darkThemeSub
-                  : appColors.white,
-              },
-            ]}
-            onPress={() => setShowActions(!showActions)}
-          />
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open Google Maps navigation" onPress={() => gotoOtherMap('google')} style={{ position: 'absolute', top: 12, right: 14, zIndex: 30, width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? appColors.darkThemeSub : appColors.white, borderWidth: 1.5, borderColor: isDark ? '#71665A' : '#5B5148', alignItems: 'center', justifyContent: 'center', elevation: 3 }}>
+            <Icons.GoogleMap />
+          </TouchableOpacity>
         )}
 
         <BottomSheetModal
           ref={bottomSheetModalRef}
           index={0}
-          snapPoints={['32%']}
+          snapPoints={['52%', '72%']}
+          enableDynamicSizing={false}
           enablePanDownToClose={false}
-          enableContentPanningGesture={false}
-          enableHandlePanningGesture={false}
+          enableContentPanningGesture={true}
+          enableHandlePanningGesture={true}
           handleIndicatorStyle={{
             backgroundColor: appColors.primary,
             width: '13%',
@@ -568,8 +545,8 @@ export function RideComplete() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
-          <BottomSheetView style={styles.bottomSheetlayer}>
+         android_keyboardInputMode="adjustResize" >
+          <BottomSheetScrollView style={{flex:1}} contentContainerStyle={{padding:10,paddingBottom:16,gap:7}} keyboardShouldPersistTaps="handled">
             {rideData?.service_category?.service_category_type === 'rental' ? (
               <View
                 style={[
@@ -578,63 +555,79 @@ export function RideComplete() {
                 ]}
               ></View>
             ) : null}
-            <View style={styles.greenSection}>
+            <View style={{width:'100%',gap:12}}>
               <View
                 style={[
-                  styles.additionalSection,
-                  { backgroundColor: colors.card, borderColor: colors.border },
+                  {padding:7,borderRadius:14,borderWidth:1.5},
+                  { backgroundColor: colors.card, borderColor: isDark ? '#71665A' : '#5B5148' },
                 ]}
               >
                 <DriverProfile
-                  userDetails={rideData?.rider}
+                  userDetails={activeRide?.rider}
                   borderRadius={windowHeight(25)}
                   showInfoIcon={true}
                   iconColor={appColors.primary}
                   backgroundColor={appColors.white}
-                  rideDetails={rideData}
+                  rideDetails={activeRide}
+                  compact={true}
                 />
               </View>
-              <View style={styles.buttonContainer}>
-                <View style={styles.halfButton}>
+              {isParcelTrip && rideDetailsLoading && (
+                <Text style={[styles.parcelStopsTitle, { color: colors.text }]}>
+                  Loading booked parcel stops…
+                </Text>
+              )}
+              {isParcelTrip && !rideDetailsLoading && parcelStopCount === 0 && (
+                <Text style={[styles.parcelStopsTitle, { color: colors.text }]}>
+                  No delivery destinations are saved for this booking.
+                </Text>
+              )}
+              {isParcelTrip && parcelStopCount > 0 && (
+                <View style={[styles.parcelStopsCard, { backgroundColor: colors.card, borderColor: isDark ? '#71665A' : '#5B5148' }]}>
+                  <View style={styles.parcelStopsHeader}>
+                    <Text style={[styles.parcelStopsTitle, { color: colors.text }]}>Parcel stops</Text>
+                    <Text style={[styles.parcelStopsCount, { color: appColors.primary }]}>
+                      {deliveredStopCount}/{parcelStopCount} delivered
+                    </Text>
+                  </View>
+                  <ScrollView style={styles.parcelStopsList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                    {parcelStops.map((stop: any, index: number) => {
+                      const stopNumber = index + 1
+                      const isDelivered = stop?.status === 'delivered'
+                      const isNextStop = stopNumber === nextStopIndex
+                      return (
+                        <View key={`parcel-stop-${stopNumber}`} style={[styles.parcelStopRow, { borderTopColor: colors.border }]}>
+                          <Text numberOfLines={1} style={[styles.parcelStopName, { color: colors.text }]}>
+                            {`${isGoodsDelivery && stopNumber === parcelStopCount ? 'Final drop' : `Stop ${stopNumber}`}: ${itineraryLabel(stopNumber)}`}
+                          </Text>
+                          <TouchableOpacity
+                            disabled={!isNextStop || isDelivered || parcelStepLoading}
+                            onPress={() => handleParcelAction(stopNumber, stop?.arrived_at ? 'delivered' : 'arrived')}
+                            style={[
+                              styles.parcelStopAction,
+                              { backgroundColor: isDelivered ? appColors.primary : isNextStop ? appColors.primary : appColors.lightGray },
+                            ]}
+                          >
+                            <Text style={[styles.parcelStopActionText, { color: isDelivered || isNextStop ? "#17191C" : appColors.primaryFont }]}>
+                              {isDelivered ? 'Parcel delivered ✓' : isNextStop ? (stop?.arrived_at ? 'Parcel delivered' : 'Arrived at drop') : 'Waiting'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+              <View style={{flexDirection:'row',gap:8,width:'100%',alignItems:'stretch'}}>
+                <View style={{flex:0.85,minWidth:0}}>
                   {totalAmount > 0 ? (
-                    <View>
-                      <TouchableOpacity
-                        style={{
-                          height: windowHeight(6.5),
-                          width: windowWidth(40),
-                          backgroundColor: isDark
-                            ? appColors.darkThemeSub
-                            : appColors.lightGray,
-                          borderRadius: windowWidth(2),
-                          alignItems: 'center',
-                          paddingVertical: windowHeight(1.5),
-                          marginHorizontal: windowWidth(5),
-                        }}
-                        onPress={() => {
-                          extraFareSheetRef.current?.present()
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontFamily: appFonts.regular,
-                            fontSize: windowWidth(3.3),
-                            color: isDark ? appColors.white : appColors.black,
-                          }}
-                        >
-                          {translateData?.extra}
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: appFonts.regular,
-                            fontSize: fontSizes.FONT4,
-                            color: isDark ? appColors.white : appColors.black,
-                          }}
-                        >
-                          {rideData?.currency_symbol}
-                          {totalAmount}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity
+                      style={{ minHeight: 50, width: '100%', backgroundColor: isDark ? appColors.darkThemeSub : appColors.lightGray, borderRadius: 10, borderWidth: 1.5, borderColor: isDark ? '#71665A' : '#5B5148', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 }}
+                      onPress={() => extraFareSheetRef.current?.present()}
+                    >
+                      <Text style={{ fontFamily: appFonts.regular, fontSize: 12, color: isDark ? appColors.white : appColors.black }} numberOfLines={1}>{translateData?.extra}</Text>
+                      <Text style={{ fontFamily: appFonts.medium, fontSize: 15, color: isDark ? appColors.white : appColors.black }} numberOfLines={1}>{rideData?.currency_symbol}{totalAmount}</Text>
+                    </TouchableOpacity>
                   ) : (
                     <Button
                       onPress={() => {
@@ -645,72 +638,34 @@ export function RideComplete() {
                         isDark ? appColors.darkThemeSub : appColors.lightGray
                       }
                       color={isDark ? appColors.white : appColors.black}
+                      borderColor={isDark?'#71665A':'#5B5148'}
+                      borderWidth={1.5}
+                      margin={0}
+                      textStyle={{fontSize:12,textAlign:'center',paddingHorizontal:4}}
                     />
                   )}
                 </View>
-                <View style={styles.halfButton}>
+                <View style={{flex:1.35,minWidth:0}}>
                   <Button
                     onPress={gotoComplete}
-                    title={translateData.completeRides}
+                    title={
+                      String(activeRide?.payment_method ?? '').toLowerCase() === 'cash' &&
+                      String(activeRide?.payment_status ?? '').toUpperCase() !== 'COMPLETED'
+                      ? 'Cash received &\ncomplete trip'
+                        : translateData.completeRides
+                    }
                     backgroundColor={appColors.primary}
                     color={appColors.white}
-                    loading={completeLoading}
+                    loading={completeLoading || cashPaymentLoading}
+                    margin={0}
+                    borderColor={isDark?'#71665A':'#5B5148'}
+                    borderWidth={1.5}
+                    textStyle={{fontSize:13,lineHeight:16,textAlign:'center',paddingHorizontal:5}}
                   />
                 </View>
               </View>
             </View>
-          </BottomSheetView>
-        </BottomSheetModal>
-
-        <BottomSheetModal
-          ref={otpBottomSheetRef}
-          index={0}
-          snapPoints={['30%']}
-          onChange={handleOtpSheetChange}
-          onDismiss={handleOtpDismiss}
-          handleIndicatorStyle={{
-            backgroundColor: colors.border,
-            width: '13%',
-          }}
-          backgroundStyle={{ backgroundColor: colors.card }}
-        >
-          <BottomSheetView style={styles.otpSheetContainer}>
-            <View>
-              <Text style={[styles.otpTitle, { color: colors.text }]}>
-                {translateData.deliveryOtps}
-              </Text>
-              <Text style={[styles.otpSubtitle, { color: colors.text }]}>
-                {translateData.otpNotice}
-              </Text>
-            </View>
-            <OTPTextView
-              handleTextChange={text => {
-                setOtp(text)
-
-                if (text?.length == 4) {
-                  otpVerify1(text) // pass the real 4-digit value
-                }
-              }}
-              inputCount={4}
-              keyboardType="numeric"
-              tintColor={appColors.primary}
-              offTintColor={colors.border}
-              containerStyle={styles.otpContainer}
-              textInputStyle={[
-                styles.otpInput,
-                { color: isDark ? appColors.white : appColors.black },
-              ]}
-            />
-
-            <View style={styles.otpButtonContainer}>
-              <Button
-                title={translateData.verifyDone}
-                backgroundColor={appColors.primary}
-                color={appColors.white}
-                onPress={otpVerify}
-              />
-            </View>
-          </BottomSheetView>
+          </BottomSheetScrollView>
         </BottomSheetModal>
 
         <BottomSheetModal
@@ -725,7 +680,7 @@ export function RideComplete() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <ExtraFareSheetContent
             translateData={translateData}
             isDark={isDark}

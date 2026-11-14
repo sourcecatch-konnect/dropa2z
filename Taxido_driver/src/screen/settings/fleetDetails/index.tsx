@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { BackHandler, ScrollView, Text, TextInput, View } from "react-native";
+import {BackHandler, ScrollView, View} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import styles from "./styles";
 import { useIsFocused, useNavigation, useTheme } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";

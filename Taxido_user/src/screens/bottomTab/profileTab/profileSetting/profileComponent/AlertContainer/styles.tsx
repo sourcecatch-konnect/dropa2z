@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { external } from '../../../../../../styles/externalStyle';
 import { commonStyles } from '../../../../../../styles/commonStyle';
@@ -14,6 +15,8 @@ export const styles = StyleSheet.create({
     ...external.pt_10,
     backgroundColor: appColors.alertBg,
     borderRadius: windowHeight(8),
+  
+    ...riderCardFinish,
   },
   alertText: {
     ...commonStyles.regularText,

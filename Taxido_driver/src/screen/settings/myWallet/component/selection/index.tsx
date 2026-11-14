@@ -1,5 +1,6 @@
 import React, { memo, useMemo } from "react";
-import { View, TouchableOpacity, Text } from "react-native";
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import { useSelector } from "react-redux";
 import styles from "./styles";
 import { useValues } from "../../../../../utils/context";

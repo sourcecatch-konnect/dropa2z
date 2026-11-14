@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import {
   appColors,
@@ -19,8 +20,10 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: appColors.lightGray,
     width: "100%",
-    borderRadius: windowHeight(6),
+    borderRadius: 16,
     marginRight: windowWidth(12),
+  
+    ...riderCardFinish,
   },
   paymentView: {
     flex: 1,
@@ -97,7 +100,7 @@ const styles = StyleSheet.create({
     width: windowWidth(48),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: windowHeight(6),
+    borderRadius: 16,
     marginTop: windowHeight(10),
     marginHorizontal: windowWidth(18),
     position: "absolute",
@@ -113,10 +116,12 @@ const styles = StyleSheet.create({
     zIndex: 1,
     borderWidth: 1,
     borderColor: appColors.primary,
-    borderRadius: windowHeight(6),
+    borderRadius: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     overflow: "hidden",
+  
+    ...riderCardFinish,
   },
   kmText: {
     color: appColors.whiteColor,
@@ -143,7 +148,7 @@ const styles = StyleSheet.create({
   plusBtn: {
     height: windowHeight(35),
     width: windowHeight(35),
-    borderRadius: windowHeight(4),
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     margin: windowHeight(4),
@@ -156,7 +161,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: appColors.lightGray,
     justifyContent: "space-between",
-    borderRadius: windowHeight(4),
+    borderRadius: 16,
   },
   title: {
     marginTop: windowHeight(4),
@@ -172,7 +177,9 @@ const styles = StyleSheet.create({
     marginHorizontal: windowWidth(15),
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
-    borderRadius: windowWidth(8),
+    borderRadius: 16,
+  
+    ...riderCardFinish,
   },
   containerCouponMain: {
     alignItems: "center",
@@ -181,7 +188,9 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(15),
     marginBottom: windowHeight(5),
     borderWidth: windowHeight(1),
-    borderRadius: windowWidth(8),
+    borderRadius: 16,
+  
+    ...riderCardFinish,
   },
   invalidPromoText: {
     color: appColors.alertRed,
@@ -206,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.primary,
     height: windowHeight(30),
     width: windowWidth(90),
-    borderRadius: windowHeight(6.5),
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: windowWidth(7),
@@ -242,7 +251,7 @@ const styles = StyleSheet.create({
   },
   imageBg: {
     borderWidth: windowHeight(1),
-    borderRadius: windowHeight(8),
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     width: windowWidth(55),
@@ -264,7 +273,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: windowWidth(9),
-    borderRadius: windowHeight(8),
+    borderRadius: 16,
     marginHorizontal: windowWidth(6),
     height: windowHeight(35),
   },
@@ -303,7 +312,7 @@ const styles = StyleSheet.create({
     width: "80%",
     padding: windowHeight(18.5),
     backgroundColor: appColors.whiteColor,
-    borderRadius: windowHeight(9.8),
+    borderRadius: 16,
     alignItems: "center",
   },
   modalText: {
@@ -323,7 +332,7 @@ const styles = StyleSheet.create({
   },
   button: {
     padding: windowHeight(8.5),
-    borderRadius: windowHeight(5),
+    borderRadius: 16,
     width: "45%",
     alignItems: "center",
   },
@@ -351,10 +360,12 @@ const styles = StyleSheet.create({
     marginBottom: windowHeight(10),
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
-    borderRadius: windowHeight(8),
+    borderRadius: 16,
     backgroundColor: appColors.lightGray,
     justifyContent: "center",
     ...external.mt_10,
+  
+    ...riderCardFinish,
   },
   RideRecommendPrice: {
     color: appColors.primaryText,
@@ -384,7 +395,9 @@ const styles = StyleSheet.create({
   },
   pressable: {
     backgroundColor: appColors.selectPrimary,
-    borderRadius: windowHeight(10),
+    borderRadius: 16,
+  
+    ...riderCardFinish,
   },
   switchRiderView: {
     justifyContent: "space-between",
@@ -475,6 +488,8 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(6),
     paddingHorizontal: windowWidth(16),
     borderRadius: windowHeight(25),
+  
+    ...riderCardFinish,
   },
   timerText: {
     fontSize: fontSizes.FONT20,
@@ -521,6 +536,8 @@ const styles = StyleSheet.create({
     paddingVertical: windowHeight(6),
     paddingHorizontal: windowWidth(16),
     borderRadius: windowHeight(25),
+  
+    ...riderCardFinish,
   },
   vehicleContainer: {
     marginHorizontal: windowWidth(18),
@@ -545,7 +562,7 @@ const styles = StyleSheet.create({
     height: windowHeight(55),
     width: windowHeight(60),
     backgroundColor: "red",
-    borderRadius: windowHeight(7),
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },

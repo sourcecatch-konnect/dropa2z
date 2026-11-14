@@ -1,7 +1,8 @@
 
 import { BarProgress, Header } from '@src/commonComponent'
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import DropDownPicker from "react-native-dropdown-picker";
 import { Calendar } from "react-native-calendars";
 import { RightArrows, LeftArrow } from "@utils/icons";

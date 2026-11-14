@@ -1,5 +1,7 @@
-import { Text, TextInput, View } from 'react-native';
+import {View} from 'react-native';
+import {Text, TextInput} from '../../../../design/Typography';
 import React, { useState } from 'react';
+import {CardHeading} from '../../../../design/CardHeading';
 import { commonStyles } from '../../../../styles/commonStyle';
 import { appColors } from '@src/themes';
 import { external } from '../../../../styles/externalStyle';
@@ -18,14 +20,7 @@ export function DescriptionText({ onTextChange }: { onTextChange: any }) {
 
   return (
     <View style={[external.mt_10]}>
-      <Text
-        style={[
-          commonStyles.extraBold,
-          { color: textColorStyle },
-          { textAlign: textRTLStyle },
-        ]}>
-        {description}
-      </Text>
+      <CardHeading icon="file-text" title={description}/>
       <View style={[styles.container, { backgroundColor: bgContainer, borderColor: isDark ? appColors.darkBorder : appColors.border }]}>
         <TextInput
           multiline={true}

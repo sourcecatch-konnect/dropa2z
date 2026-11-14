@@ -1,10 +1,6 @@
-import {
-  View,
-  ScrollView,
-  BackHandler,
-  TouchableOpacity,
-  Text,
-} from 'react-native'
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import {View, ScrollView, BackHandler, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useState } from 'react'
 import styles from '../../auth/registration/bankDetails/styles'
 import appColors from '../../../theme/appColors'
@@ -197,11 +193,11 @@ export function BankDetails() {
   }, [navigation])
 
   return (
-    <ScrollView
-      style={[
+    <ReferenceScreen><ScrollView
+      style={[[
         styles.main,
         { backgroundColor: colors.background, marginBottom: windowWidth(5) },
-      ]}
+      ], {backgroundColor:'transparent'}]}
     >
       <Header title={translateData.bankDetails} />
 
@@ -226,7 +222,8 @@ export function BankDetails() {
           <Text
             style={{
               color:
-                activeTab == 'bank' ? appColors.white : appColors.secondaryFont,
+                activeTab == 'bank' ? '#17191C' : colors.text,
+              fontWeight:'700',
             }}
           >
             {translateData.bankDetails}
@@ -252,8 +249,9 @@ export function BankDetails() {
             style={{
               color:
                 activeTab == 'paypal'
-                  ? appColors.white
-                  : appColors.secondaryFont,
+                  ? '#17191C'
+                  : colors.text,
+              fontWeight:'700',
             }}
           >
             {translateData?.payPal}
@@ -389,6 +387,6 @@ export function BankDetails() {
           />
         </View>
       </View>
-    </ScrollView>
+    </ScrollView></ReferenceScreen>
   )
 }

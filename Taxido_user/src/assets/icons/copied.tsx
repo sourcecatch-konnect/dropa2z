@@ -5,7 +5,7 @@ export function Copied() {
   return (
     <Svg width={20} height={20} fill="none">
       <G
-        stroke="#199675"
+        stroke="#FC9F03"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.2}

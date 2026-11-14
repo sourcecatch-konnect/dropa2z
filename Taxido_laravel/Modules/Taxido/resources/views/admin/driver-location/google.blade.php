@@ -27,7 +27,7 @@
             function initialize() {
                 const mapOptions = {
                     zoom: 13,
-                    center: new google.maps.LatLng(21.20764938296402, 72.77381805168456),
+                    center: new google.maps.LatLng(21.0077, 75.5626),
                     mapTypeId: google.maps.MapTypeId.ROADMAP,
                     overviewMapControl: true
                 };

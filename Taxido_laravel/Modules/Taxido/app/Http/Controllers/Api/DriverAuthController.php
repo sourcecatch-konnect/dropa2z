@@ -11,12 +11,13 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Kreait\Firebase\Factory;
-use Modules\Taxido\Emails\VerifyEmail;
+use Modules\Taxido\Emails\DriverLoginOtp;
 use Modules\Taxido\Enums\RoleEnum;
 use Modules\Taxido\Enums\ServicesEnum;
 use Modules\Taxido\Http\Resources\Drivers\DriverSelfResource;
@@ -221,19 +222,145 @@ class DriverAuthController extends Controller
         }
     }
 
+    public function socialLogin(Request $request)
+    {
+        try {
+            $request->validate([
+                'id_token' => 'required|string',
+                'fcm_token' => 'nullable|string',
+            ]);
+
+            $identity = $this->verifyGoogleIdToken($request->id_token);
+            $email = strtolower(trim($identity['email']));
+            $account = $this->resolveDriverLoginIdentity($email);
+
+            if (! $account) {
+                return response()->json([
+                    'success' => true,
+                    'is_registered' => false,
+                    'email' => $email,
+                    'name' => $identity['name'] ?? '',
+                ], 200);
+            }
+
+            if (! $account->hasRole(RoleEnum::DRIVER)) {
+                if ($account->hasRole(RoleEnum::RIDER)) {
+                    return response()->json([
+                        'success' => true,
+                        'is_registered' => false,
+                        'email' => $email,
+                        'name' => $identity['name'] ?? $account->name ?? '',
+                    ], 200);
+                }
+
+                throw new Exception(__('This Google account is not registered for Driver access.'), 403);
+            }
+
+            $driver = Driver::findOrFail($account->id);
+            if (! $driver->status) {
+                throw new Exception(__('Account is disabled'), 403);
+            }
+
+            $driver->email_verified_at = $driver->email_verified_at ?? now();
+            $driver->fcm_token = $request->fcm_token;
+            $driver->save();
+
+            $issuedToken = $driver->createToken('auth_token');
+            $token = $issuedToken->plainTextToken;
+            $driver->tokens()->whereKey($issuedToken->accessToken->getKey())->update(['role_type' => RoleEnum::DRIVER]);
+            $taxidoSettings = getTaxidoSettings();
+            $driverIsVerified = $driver->is_verified;
+            if (! ($taxidoSettings['activation']['driver_verification'] ?? true)) {
+                $driverIsVerified = 1;
+            }
+
+            return response()->json([
+                'success' => true,
+                'is_registered' => true,
+                'id' => $driver->id,
+                'access_token' => $token,
+                'is_verified' => $driverIsVerified,
+                'needs_mobile_update' => empty($driver->phone),
+                'role' => RoleEnum::DRIVER,
+            ], 200);
+        } catch (Exception $e) {
+            throw new ExceptionHandler($e->getMessage(), $e->getCode());
+        }
+    }
+
+    private function verifyGoogleIdToken(string $idToken): array
+    {
+        $expectedClientId = config('services.google.client_id');
+        if (! $expectedClientId) {
+            throw new Exception(__('Google sign-in is not configured.'), 503);
+        }
+
+        $response = Http::timeout(10)->acceptJson()->get(
+            'https://oauth2.googleapis.com/tokeninfo',
+            ['id_token' => $idToken]
+        );
+        $identity = $response->json();
+
+        if (! $response->successful()
+            || ! is_array($identity)
+            || ($identity['aud'] ?? null) !== $expectedClientId
+            || ! in_array($identity['iss'] ?? null, ['accounts.google.com', 'https://accounts.google.com'], true)
+            || (int) ($identity['exp'] ?? 0) <= time()
+            || ($identity['email_verified'] ?? null) !== 'true'
+            || empty($identity['email'])
+        ) {
+            throw new Exception(__('Google sign-in could not be verified.'), 401);
+        }
+
+        return $identity;
+    }
+
+    /** Resolve the app identity before offering login or Driver registration. */
+    private function resolveDriverLoginIdentity(string $identity, ?string $countryCode = null): ?User
+    {
+        $identity = trim($identity);
+        $query = User::query()->whereNull('deleted_at');
+        if (filter_var($identity, FILTER_VALIDATE_EMAIL)) {
+            $query->whereRaw('LOWER(email) = ?', [strtolower($identity)]);
+        } else {
+            $code = ltrim((string) $countryCode, '+');
+            $query->where('phone', $identity)->whereIn('country_code', [$code, '+' . $code]);
+        }
+
+        // Historical staff/fleet records may share a contact. Prefer the app's
+        // existing Driver, then an eligible Rider, instead of the first row.
+        $account = (clone $query)->whereHas('roles', fn ($roles) => $roles->where('name', RoleEnum::DRIVER))->first()
+            ?? (clone $query)->whereHas('roles', fn ($roles) => $roles->where('name', RoleEnum::RIDER))->first()
+            ?? $query->first();
+        if (! $account) {
+            return null;
+        }
+        if ($account->hasRole('admin') || ! $account->hasAnyRole([RoleEnum::DRIVER, RoleEnum::RIDER])) {
+            if ($account->hasRole(RoleEnum::FLEET_MANAGER) && ! $account->hasRole('admin')) {
+                throw new Exception('This email or phone is registered for Fleet access. Please choose Fleet to sign in.', 403);
+            }
+            throw new Exception('This email or phone belongs to a staff account. Please use another email for Driver registration.', 403);
+        }
+        if (! $account->status) {
+            throw new Exception('Account is disabled. Please contact support.', 403);
+        }
+        return $account;
+    }
+
     private function sendEmailToken($email)
     {
+        $email = strtolower(trim($email));
+        $this->resolveDriverLoginIdentity($email);
         $isScopedTestLogin = isDropa2zScopedTestLogin($email);
         $token = $this->generateToken(null, null, $email, $isScopedTestLogin);
 
         if (! $isScopedTestLogin && !isDemoMode()) {
             try {
-
-                Mail::to($email)->send(new VerifyEmail($token));
-
+                Mail::to($email)->send(new DriverLoginOtp((string) $token));
             } catch (Exception $e) {
-
-                Log::error($e->getMessage());
+                DB::table('auth_tokens')->where('token', $token)->where('email', $email)->delete();
+                Log::error('Driver login OTP email could not be delivered.', ['exception' => $e->getMessage()]);
+                throw new Exception('We could not send the sign-in code. Please check your email address and try again.', 503);
             }
         }
 
@@ -251,6 +378,14 @@ class DriverAuthController extends Controller
 
     private function sendPhoneToken($country_code, $phone)
     {
+        $country_code = ltrim((string) $country_code, '+');
+        $phone = trim((string) $phone);
+        $validPhone = $country_code === '91'
+            ? preg_match('/^[6-9][0-9]{9}$/', $phone)
+            : preg_match('/^[0-9]{6,15}$/', $phone);
+        if (!preg_match('/^[1-9][0-9]{0,3}$/', $country_code) || !$validPhone) {
+            throw new Exception('Enter a valid mobile number and country code.', 422);
+        }
         if (!$country_code) {
             throw new Exception('Country code is required for login as a phone.', 422);
         }
@@ -258,7 +393,12 @@ class DriverAuthController extends Controller
         $token = $this->generateToken($country_code, $phone);
 
         if (!isDemoMode()) {
-            sendSMS('+' . $country_code . $phone, $token);
+            try {
+                sendSMS('+' . $country_code . $phone, $token);
+            } catch (Exception $e) {
+                DB::table('auth_tokens')->where('phone', '+' . $country_code . $phone)->where('token', $token)->delete();
+                throw $e;
+            }
         }
 
         return response()->json(['message' => __('OTP sent successfully to your phone!'), 'success' => true], 200);
@@ -271,14 +411,12 @@ class DriverAuthController extends Controller
         if (! $isScopedTestLogin && isDemoMode()) {
             $token = 123456;
         }
-
         DB::table('auth_tokens')->insert([
             'token' => $token,
             'phone' => '+' . $country_code . $phone,
             'email' => $email,
-            'created_at' => Carbon::now(),
+            'created_at' => Carbon::now()
         ]);
-
         return $token;
     }
 
@@ -304,7 +442,7 @@ class DriverAuthController extends Controller
 
             $authTokenQuery = DB::table('auth_tokens')
                 ->where('token', $request->token)
-                ->where('created_at', '>', Carbon::now()->subHours(1));
+                ->where('created_at', '>', Carbon::now()->subMinutes(10));
 
             if ($isEmail) {
                 $verify_otp = $authTokenQuery->where('email', $request->email_or_phone)->first();
@@ -317,21 +455,12 @@ class DriverAuthController extends Controller
                 throw new Exception(__('Invalid token'), 400);
             }
 
-            $driverQuery = Driver::whereNull('deleted_at');
-            if ($isEmail) {
-                $driver = $driverQuery->where('email', $request->email_or_phone)->first();
-            } else {
-                $driver = $driverQuery->where('phone', $request->email_or_phone)->first();
-                if ($driver) {
-                    $driverCountryCode = ltrim($driver->country_code, '+');
-                    if ($driverCountryCode != $country_code) {
-                        $driver = null; // Country code mismatch, invalidate
-                    }
-                }
-            }
+            $account = $this->resolveDriverLoginIdentity($request->email_or_phone, $request->country_code);
+            $driver = $account && $account->hasRole(RoleEnum::DRIVER)
+                ? Driver::findOrFail($account->id) : null;
 
             if ($driver) {
-                if ($driver->role?->name !== RoleEnum::DRIVER) {
+                if (!$driver->hasRole(RoleEnum::DRIVER)) {
                     throw new Exception(__('Only drivers can login'), 403);
                 }
 
@@ -339,14 +468,17 @@ class DriverAuthController extends Controller
                     throw new Exception(__('Account is disabled'), 403);
                 }
 
-                $token = $driver->createToken('auth_token')->plainTextToken;
-                $driver->tokens()->update([
-                    'role_type' => $driver->getRoleNames()->first(),
+                $issuedToken = $driver->createToken('auth_token');
+            $token = $issuedToken->plainTextToken;
+                $driver->tokens()->whereKey($issuedToken->accessToken->getKey())->update([
+                    'role_type' => RoleEnum::DRIVER,
                 ]);
 
-                $driver->update([
-                    'fcm_token' => $request->fcm_token,
-                ]);
+                $driver->fcm_token = $request->fcm_token;
+                if ($isEmail && ! $driver->email_verified_at) {
+                    $driver->email_verified_at = now();
+                }
+                $driver->save();
 
                 $driver = $driver->fresh();
                 $taxidoSettings = getTaxidoSettings();
@@ -361,6 +493,7 @@ class DriverAuthController extends Controller
                     'access_token' => $token,
                     'is_registered' => true,
                     'is_verified' => $driverIsVerified,
+                    'needs_mobile_update' => empty($driver->phone),
                     'success' => true,
                     'role' => RoleEnum::DRIVER,
                 ], 200);
@@ -371,6 +504,12 @@ class DriverAuthController extends Controller
                 'is_registered' => false,
                 'success' => true,
                 'role' => RoleEnum::DRIVER,
+                'registration_proof' => [
+                    'type' => $isEmail ? 'email' : 'phone',
+                    'contact' => $request->email_or_phone,
+                    'country_code' => $isEmail ? null : $country_code,
+                    'token' => (string) $request->token,
+                ],
             ], 200);
 
         } catch (Exception $e) {
@@ -413,19 +552,36 @@ class DriverAuthController extends Controller
         try {
 
             $referrerId = null;
+            $verificationType = $request->input('verification_type');
+            $requiresOtpProof = in_array($verificationType, ['email', 'phone'], true);
+            if ($request->filled('email')) {
+                $request->merge(['email' => strtolower(trim($request->email))]);
+            }
+            $existingDriverAccount = in_array($verificationType, ['email', 'google'], true) && $request->filled('email')
+                ? $this->resolveDriverLoginIdentity($request->email) : null;
+            if ($existingDriverAccount && $existingDriverAccount->hasRole(RoleEnum::DRIVER)) {
+                throw new Exception('This account is already registered as a driver. Please sign in instead.', 409);
+            }
+
             $validator = Validator::make($request->all(), [
-                'name' => 'required',
-                'email' => 'required|string|email|max:255',
-                'password' => 'required|string|min:8|confirmed',
-                'password_confirmation' => 'required',
-                'country_code' => 'required',
-                'phone' => 'required|min:6|max:15',
+                'name' => ['required', 'string', 'min:2', 'max:80', "regex:/^(?=(?:.*\\p{L}){2})[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]*$/u"],
+                'verification_type' => 'required|in:email,phone,google',
+                'verification_token' => ['nullable', 'string', Rule::requiredIf($requiresOtpProof)],
+                'google_id_token' => ['nullable', 'string', Rule::requiredIf($verificationType === 'google')],
+                'email' => array_merge(['nullable', 'string', 'email', 'max:255'], $existingDriverAccount ? [] : [Rule::unique('users', 'email')->whereNull('deleted_at')]),
+                'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+                'country_code' => ['nullable', Rule::requiredIf($verificationType === 'phone')],
+                'phone' => ['nullable', 'string', 'min:6', 'max:15', Rule::requiredIf($verificationType === 'phone'), Rule::unique('users', 'phone')->whereNull('deleted_at')->ignore($existingDriverAccount?->id)],
                 'referral_code' => 'nullable|string',
-                'documents.*.slug' => 'exists:documents,slug,deleted_at,NULL',
-                'documents.*.file' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'documents' => 'required|array|min:1|max:30',
+                'documents.*.slug' => ['required', 'string', 'distinct', Rule::exists('documents', 'slug')->whereNull('deleted_at')->where('status', 1)->whereIn('type', ['driver', 'vehicle'])],
+                'documents.*.file' => 'required|file|mimes:jpeg,png,jpg,pdf|max:10240',
+                'documents.*.expired_at' => 'nullable|date|after_or_equal:today',
                 'service_id' => 'required|exists:services,id,deleted_at,NULL',
                 'service_category_id' => 'nullable|exists:service_categories,id,deleted_at,NULL',
                 'preferences.*' => 'nullable|exists:preferences,id,deleted_at,NULL',
+                'vehicle' => 'nullable|array',
+                'vehicle.plate_number' => ['nullable', 'required_with:vehicle', 'string', 'max:20', 'regex:/^(?:[A-Z]{2}[ -]?[0-9]{1,2}[ -]?[A-Z]{0,3}[ -]?[0-9]{4}|[0-9]{2}[ -]?BH[ -]?[0-9]{4}[ -]?[A-Z]{1,2})$/i'],
                 'per_day_charge' => 'nullable|numeric|min:0',
                 'per_km_charge' => 'nullable|numeric|min:0',
                 'per_hour_charge' => 'nullable|numeric|min:0',
@@ -438,6 +594,56 @@ class DriverAuthController extends Controller
 
             if ($validator->fails()) {
                 throw new Exception($validator->messages()->first(), 422);
+            }
+
+            \Modules\Taxido\Services\DriverRegistrationDocuments::validate(
+                Document::where('status', 1)->whereIn('type', ['driver', 'vehicle'])->get(),
+                $request->documents ?? []
+            );
+
+            $verifiedEmail = false;
+            $verifiedAuthToken = null;
+            if (in_array($verificationType, ['email', 'google'], true)) {
+                if (! $request->email) {
+                    throw new Exception(__('A verified email address is required.'), 422);
+                }
+
+                if ($verificationType === 'google') {
+                    $identity = $this->verifyGoogleIdToken($request->google_id_token);
+                    if (strtolower(trim($identity['email'])) !== strtolower(trim($request->email))) {
+                        throw new Exception(__('The Google account does not match the registration email.'), 422);
+                    }
+
+                    if ($existingDriverAccount && $existingDriverAccount->hasRole(RoleEnum::DRIVER)) {
+                        throw new Exception(__('This account is already registered as a driver.'), 409);
+                    }
+                    if ($existingDriverAccount && ! $existingDriverAccount->hasRole(RoleEnum::RIDER)) {
+                        throw new Exception(__('This account cannot be linked to a driver profile.'), 403);
+                    }
+                } else {
+                    $verifiedAuthToken = DB::table('auth_tokens')
+                        ->where('token', $request->verification_token)
+                        ->where('email', strtolower(trim($request->email)))
+                        ->where('created_at', '>', Carbon::now()->subHours(1))
+                        ->first();
+
+                    if (! $verifiedAuthToken) {
+                        throw new Exception(__('Please verify your email before registering.'), 422);
+                    }
+                }
+
+                $verifiedEmail = true;
+            } else {
+                $countryCode = ltrim((string) $request->country_code, '+');
+                $verifiedAuthToken = DB::table('auth_tokens')
+                    ->where('token', $request->verification_token)
+                    ->where('phone', '+' . $countryCode . $request->phone)
+                    ->where('created_at', '>', Carbon::now()->subMinutes(10))
+                    ->first();
+
+                if (! $verifiedAuthToken) {
+                    throw new Exception(__('Please verify your mobile number before registering.'), 422);
+                }
             }
 
             if ($request->referral_code) {
@@ -459,20 +665,20 @@ class DriverAuthController extends Controller
                 $driverIsVerified = 1;
             }
 
-            $driver = Driver::create([
+            $driverAttributes = [
                 'name' => $request->name,
-                'email' => $request->email,
-                'country_code' => $request->country_code,
-                'phone' => (string) $request->phone,
+                'email' => $request->email ?: null,
+                'country_code' => $request->phone ? $request->country_code : ($existingDriverAccount?->country_code),
+                'phone' => $request->phone ? (string) $request->phone : ($existingDriverAccount?->phone),
                 'experience' => $request->experience,
                 'can_accept_ride' => $request->can_accept_ride,
                 'can_accept_parcel' => $request->can_accept_parcel,
                 'service_id' => $request->service_id,
                 'fcm_token' => $request?->fcm_token,
                 'service_category_id' => $request->service_category_id,
-                'password' => Hash::make($request->password),
+                'password' => $request->password ? Hash::make($request->password) : null,
                 'is_verified' => $driverIsVerified,
-                'referral_code' => getReferralCodeByName($request->name ?? 'Driver'),
+                'referral_code' => $existingDriverAccount?->referral_code ?: getReferralCodeByName($request->name ?? 'Driver'),
                 'per_day_charge' => $request->per_day_charge,
                 'per_km_charge' => $request->per_km_charge,
                 'per_hour_charge' => $request->per_hour_charge,
@@ -480,10 +686,32 @@ class DriverAuthController extends Controller
                 'gear_type' => $request->gear_type,
                 'vehicle_type_id' => $request->vehicle_type_id,
                 'referred_by_id' => $referrerId,
-            ]);
+            ];
+
+            $driver = $existingDriverAccount
+                ? Driver::withoutGlobalScope('roles')->whereKey($existingDriverAccount->id)->lockForUpdate()->firstOrFail()
+                : new Driver();
+            if ($existingDriverAccount) {
+                if ($driver->hasRole(RoleEnum::DRIVER)) {
+                    throw new Exception('This account is already registered as a driver. Please sign in instead.', 409);
+                }
+                if (! $driver->status || ! $driver->hasRole(RoleEnum::RIDER) || $driver->hasRole('admin')) {
+                    throw new Exception('This account cannot be linked to a driver profile.', 403);
+                }
+                // Add Driver access only after the email proof above. Never
+                // replace the Rider password or identity while linking roles.
+                unset($driverAttributes['password'], $driverAttributes['email']);
+            }
+            $driver->fill($driverAttributes);
+            $driver->save();
+
+            if ($verifiedEmail) {
+                $driver->email_verified_at = now();
+                $driver->save();
+            }
 
             $driver->assignRole(RoleEnum::DRIVER);
-            $driver->wallet()->create();
+            $driver->wallet()->firstOrCreate([]);
             $driver->wallet;
 
             if (!empty($request->vehicle)) {
@@ -525,16 +753,21 @@ class DriverAuthController extends Controller
                 }
             }
             DB::commit();
+            if ($verifiedAuthToken) {
+                DB::table('auth_tokens')->where('token', $verifiedAuthToken->token)->where('email', $verifiedAuthToken->email)->where('phone', $verifiedAuthToken->phone)->where('created_at', $verifiedAuthToken->created_at)->delete();
+            }
             if ($request->referral_code) {
                 $this->applyReferralCode($request->referral_code, $driver, 'driver');
             }
 
-            $token = $driver->createToken('auth_token')->plainTextToken;
-            $driver->tokens()->update([
-                'role_type' => $driver->getRoleNames()->first(),
+            $issuedToken = $driver->createToken('auth_token');
+            $token = $issuedToken->plainTextToken;
+            $driver->tokens()->whereKey($issuedToken->accessToken->getKey())->update([
+                'role_type' => RoleEnum::DRIVER,
             ]);
 
 
+            $needsMobileUpdate = empty($driver->phone);
             $driver = [
                 'id' => $driver?->id,
                 'name' => $driver?->name,
@@ -547,6 +780,7 @@ class DriverAuthController extends Controller
                 'access_token' => $token,
                 'success' => true,
                 'is_verified' => $driverIsVerified,
+                'needs_mobile_update' => $needsMobileUpdate,
                 'role' => RoleEnum::DRIVER,
                 'is_on_ride' => '0',
                 'experience' => $driver?->experience,
@@ -673,7 +907,7 @@ class DriverAuthController extends Controller
                 'vehicle_type_id' => 'nullable|exists:vehicle_types,id,deleted_at,NULL',
                 'vehicle_name' => 'nullable|max:255',
                 'model' => 'nullable|max:255',
-                'plate_number' => 'nullable|max:20',
+                'plate_number' => ['nullable', 'string', 'max:20', 'regex:/^(?:[A-Z]{2}[ -]?[0-9]{1,2}[ -]?[A-Z]{0,3}[ -]?[0-9]{4}|[0-9]{2}[ -]?BH[ -]?[0-9]{4}[ -]?[A-Z]{1,2})$/i'],
                 'seat' => 'nullable|min:1',
                 'color' => 'nullable|max:50',
             ]);
@@ -720,65 +954,82 @@ class DriverAuthController extends Controller
     public function updateDocument(Request $request)
     {
         DB::beginTransaction();
+        $newMedia = [];
         try {
-
+            $role = getCurrentRoleName();
+            if (! auth()->id() || ! in_array($role, [RoleEnum::DRIVER, RoleEnum::FLEET_MANAGER], true)) {
+                throw new Exception('Only signed-in drivers or fleet managers can update these documents.', 403);
+            }
+            $types = $role === RoleEnum::FLEET_MANAGER ? ['fleet_manager'] : ['driver', 'vehicle'];
             $validator = Validator::make($request->all(), [
-                'documents' => 'required|array|min:1',
-                'documents.*.slug' => 'required|exists:documents,slug,deleted_at,NULL',
-                'documents.*.file' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'documents' => 'required|array|min:1|max:30',
+                'documents.*.slug' => ['required', 'string', 'distinct', Rule::exists('documents', 'slug')->whereNull('deleted_at')->where('status', 1)->whereIn('type', $types)],
+                'documents.*.file' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
+                'documents.*.expired_at' => 'nullable|date|after_or_equal:today',
             ]);
-
             if ($validator->fails()) {
                 throw new Exception($validator->messages()->first(), 422);
             }
 
             $driverId = auth()->id();
+            $documentClass = $role === RoleEnum::FLEET_MANAGER ? \Modules\Taxido\Models\FleetDocument::class : DriverDocument::class;
+            $ownerColumn = $role === RoleEnum::FLEET_MANAGER ? 'fleet_manager_id' : 'driver_id';
+            $planned = [];
+            // Validate every entry before writing any media. Updates are always
+            // scoped to this token's owner, never a driver_id from the request.
             foreach ($request->documents as $doc) {
-                $document = Document::where('slug', $doc['slug'])->first();
-                $attachmentId = null;
-                if (!empty($doc['file'])) {
-                    $attachmentId = addMedia(createAttachment(), $doc['file'])?->id;
+                $definition = Document::where('slug', $doc['slug'])->where('status', 1)->whereIn('type', $types)->firstOrFail();
+                $existing = $documentClass::where($ownerColumn, $driverId)->where('document_id', $definition->id)->lockForUpdate()->first();
+                $file = $doc['file'] ?? null;
+                if (! $file && ! $existing?->document_image_id) {
+                    throw new Exception('Please upload a file for ' . $definition->name . '.', 422);
                 }
-
-                $driverDocument = DriverDocument::where('driver_id', $driverId)->where('document_id', $document?->id)?->whereNull('deleted_at')->first();
-                $expired_at = $doc['expired_at'] ?? null;
-                if ($document->need_expired_date) {
-                    if (!$expired_at) {
-                        throw new Exception(__('taxido::auth.expired_date_required', ['name' => $document?->name]), 422);
-                    }
+                $expiry = $doc['expired_at'] ?? $existing?->expired_at;
+                if ($definition->need_expired_date && ! $expiry) {
+                    throw new Exception(__('taxido::auth.expired_date_required', ['name' => $definition->name]), 422);
                 }
-                if ($driverDocument) {
-                    $driverDocument->update([
-                        'driver_id' => $driverId,
-                        'document_id' => $document?->id,
-                        'type' => $document?->type,
-                        'expired_at' => $doc['expired_at'] ?? $driverDocument?->expired_at,
-                        'document_image_id' => $attachmentId,
-                        'status' => 'pending',
-                    ]);
-                } else {
-                    DriverDocument::create(
-                        [
-                            'driver_id' => $driverId,
-                            'document_id' => $document?->id,
-                            'type' => $document?->type,
-                            'expired_at' => $doc['expired_at'] ?? $driverDocument?->expired_at,
-                            'document_image_id' => $attachmentId,
-                            'status' => 'pending',
-                        ]
-                    )?->without(['document', 'document_image']);
+                if ($expiry && Carbon::parse($expiry)->startOfDay()->lt(Carbon::today())) {
+                    throw new Exception('Choose a current or future expiry date for ' . $definition->name . '.', 422);
+                }
+                $oldDate = $existing?->expired_at ? Carbon::parse($existing->expired_at)->toDateString() : null;
+                $newDate = $expiry ? Carbon::parse($expiry)->toDateString() : null;
+                if ($file || ! $existing || $oldDate !== $newDate) {
+                    $planned[] = compact('definition', 'existing', 'file', 'newDate');
                 }
             }
 
+            foreach ($planned as $change) {
+                $attachmentId = $change['existing']?->document_image_id;
+                if ($change['file']) {
+                    $media = addMedia(createAttachment(), $change['file']);
+                    if (! $media?->id) {
+                        throw new Exception('The document file could not be stored. Please try again.', 500);
+                    }
+                    $newMedia[] = $media;
+                    $attachmentId = $media->id;
+                }
+                $values = [
+                    $ownerColumn => $driverId,
+                    'document_id' => $change['definition']->id,
+                    'expired_at' => $change['newDate'],
+                    'document_image_id' => $attachmentId,
+                    'status' => 'pending',
+                ];
+                if ($change['existing']) {
+                    $change['existing']->update($values);
+                } else {
+                    $documentClass::create($values);
+                }
+            }
             DB::commit();
-
-            return [
-                'success' => true,
-            ];
-
+            return ['success' => true, 'updated' => count($planned)];
         } catch (Exception $e) {
-
-            DB::rollback();
+            foreach ($newMedia as $media) {
+                try { $media->delete(); } catch (Exception $cleanupError) {
+                    Log::warning('Failed document-upload cleanup.', ['media_id' => $media->id]);
+                }
+            }
+            DB::rollBack();
             throw new ExceptionHandler($e->getMessage(), $e->getCode());
         }
     }
@@ -800,6 +1051,18 @@ class DriverAuthController extends Controller
             $firebaseToken = $request->firebase_token;
             $firebaseAuth = (new Factory)->withServiceAccount(config('services.firebase.credentials'))?->createAuth();
             $verifiedToken = $firebaseAuth->verifyIdToken($firebaseToken);
+
+            // SECURITY: verifyIdToken() only proves the token is valid for this Firebase
+            // project - it does NOT prove the token belongs to the phone number being
+            // claimed. Without this check, any valid token could be replayed with another
+            // user's phone number to obtain their access token.
+            $tokenPhone   = preg_replace('/\D/', '', (string) $verifiedToken->claims()->get('phone_number'));
+            $claimedPhone = preg_replace('/\D/', '', $request->country_code . $request->phone);
+
+            if ($tokenPhone === '' || $tokenPhone !== $claimedPhone) {
+                throw new Exception("Token does not match the phone number", 403);
+            }
+
             $driver = Driver::where('phone', $request->phone)?->where('country_code', $request->country_code)?->whereNull('deleted_at')?->first();
             if ($verifiedToken) {
                 if (!$driver) {

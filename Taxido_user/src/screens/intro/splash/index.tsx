@@ -1,5 +1,7 @@
+import {BrandLogo} from '../../../design/BrandLogo';
 import React, { useEffect, useState, useCallback } from "react";
-import { Image, View, Linking, Platform } from "react-native";
+import {Image, View, Linking, Platform} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { external } from "../../../styles/externalStyle";
 import { appColors } from "@src/themes";
 import Images from "@utils/images";
@@ -137,6 +139,10 @@ export function Splash() {
   const proceedToNextScreen = useCallback(async () => {
     try {
       const token = await getValue("token");
+      const onboarding = taxidoSettingData?.cabbooking_values?.onboarding;
+
+
+
       const versionCode = await DeviceInfo.getVersion();
       const requiredVersion = !Array.isArray(taxidoSettingData)
         ? taxidoSettingData?.cabbooking_values?.setting?.app_version
@@ -209,11 +215,8 @@ export function Splash() {
   return (
     <View style={[external.fx_1, { backgroundColor: appColors.whiteColor }]}>
       <View style={[external.ai_center, external.js_center, external.fx_1]}>
-        <Image
-          source={splashImage ? { uri: splashImage } : Images.splashUser}
-          style={styles.img}
-          onError={() => deleteValue("splashImage")}
-        />
+        <BrandLogo size={64}/>
+        <Text style={styles.brandSubtitle}>Associated with SK Translines</Text>
       </View>
 
       <UpdateRequiredModal

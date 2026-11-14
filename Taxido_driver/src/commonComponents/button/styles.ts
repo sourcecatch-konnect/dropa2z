@@ -6,12 +6,15 @@ const styles = StyleSheet.create({
   button: {
     height: windowHeight(6),
     width: '100%',
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: windowHeight(1),
+    borderRadius: 14,
   },
   buttonText: {
-    fontFamily: appFonts.semiBold,
+    fontFamily: appFonts.medium,
+    fontSize: 16,
+    letterSpacing: 0.2,
   },
 })
 

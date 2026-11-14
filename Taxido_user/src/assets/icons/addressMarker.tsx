@@ -10,9 +10,9 @@ export function AddressMarker() {
       <Path
         d="M9 10.074a2.341 2.341 0 0 0 0-4.682 2.34 2.34 0 0 0 0 4.682Zm0 0"
         fillRule="nonzero"
-        fill="#199675"
+        fill="#FC9F03"
         fillOpacity={1}
-        stroke="#199675"
+        stroke="#FC9F03"
         strokeWidth={1.5}
         strokeLinecap="butt"
         strokeLinejoin="miter"

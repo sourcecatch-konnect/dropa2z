@@ -130,13 +130,12 @@ export function BankDetail() {
         method: 'POST',
         body: formData,
         headers: {
-          'Content-Type': 'multipart/form-data',
           Accept: 'application/json',
         },
       });
       const data = await response.json();
 
-      if (data?.ok == true) {
+      if (response.ok && data?.success === true) {
 
         await setValue('token', data.access_token);
         setToken(data.access_token);
@@ -150,9 +149,11 @@ export function BankDetail() {
           navigation.navigate('Verification');
         }
       } else {
-        notificationHelper('', data?.message, 'error');
+        notificationHelper('', data?.message || translateData.somethingwentwrong, 'error');
       }
     } catch (error) {
+      console.error('[Driver registration] failed:', error);
+      notificationHelper('', translateData.somethingwentwrong, 'error');
     } finally {
       setLoading(false);
     }

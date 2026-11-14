@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from 'react'
 import Icons from '../../../../utils/icons/icons'
 import styles from './styles'
@@ -7,6 +8,7 @@ import { useValues } from '../../../../utils/context'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../../navigation/main/types'
 import { useSelector } from 'react-redux'
+import {ReferenceLogo} from '../../../../design/ReferenceChrome'
 
 type navigation = NativeStackNavigationProp<RootStackParamList>
 
@@ -17,6 +19,8 @@ export function Header() {
   const { translateData } = useSelector((state: any) => state.setting)
 
   return (
+    <View style={{backgroundColor:colors.card,paddingTop:12,paddingBottom:6}}>
+      <View style={{alignItems:'center'}}><ReferenceLogo driver width={130}/></View>
     <View
       style={[
         styles.main,
@@ -28,7 +32,6 @@ export function Header() {
         },
       ]}
     >
-      <View />
       <Text style={[styles.title, { color: colors.text }]}>
         {translateData.titleMyRide}
       </Text>
@@ -39,6 +42,7 @@ export function Header() {
       >
         <Icons.Notification color={colors.text} />
       </TouchableOpacity>
+    </View>
     </View>
   )
 }

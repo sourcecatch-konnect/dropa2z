@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Modal, Pressable } from 'react-native';
+import {View, TouchableOpacity, Image, Modal, Pressable} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import styles from './styles';
 import { useTheme } from '@react-navigation/native';
 import appColors from '../../../../../theme/appColors';

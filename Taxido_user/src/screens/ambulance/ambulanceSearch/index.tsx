@@ -1,4 +1,6 @@
-import { View, Text, TextInput, TouchableOpacity, FlatList, Keyboard, ActivityIndicator } from "react-native";
+import {BrandLoader} from '../../../design/BrandLogo';
+import {View, TouchableOpacity, FlatList, Keyboard, ActivityIndicator} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import { WebView } from 'react-native-webview';
 import { Button, Header } from "@src/commonComponent";
@@ -342,7 +344,7 @@ export function AmbulanceSearch() {
             <View style={styles.mapContainer}>
                 {isLoadingCoords || !pickupCoords ? (
                     <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? bgContainer : appColors.lightGray }]}>
-                        <ActivityIndicator
+                        <BrandLoader
                             size="large"
                             color={appColors.primary}
                             style={{ marginBottom: 10 }}

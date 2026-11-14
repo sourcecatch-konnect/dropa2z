@@ -1,11 +1,5 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import {View, TouchableOpacity, KeyboardAvoidingView, Platform} from 'react-native';
+import {Text, TextInput} from '../../../../../design/Typography';
 import React, { useState, useRef, useCallback } from "react";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { styles } from "../style";
@@ -58,7 +52,7 @@ export function EditDetails() {
 
   const getPrimaryCallingCode = useCallback(
     (country: ICountry | null): string => {
-      if (!country) return "+1";
+      if (!country) return "+91";
       const root = country.idd?.root || "+";
       const suffix = country.idd?.suffixes?.[0] || "";
       return root + suffix;
@@ -79,7 +73,7 @@ export function EditDetails() {
     const payload: UpdateProfileInterface = isMobile
       ? {
           phone: phoneNumber,
-          country_code: (selectedCountry?.idd?.root || "1").replace("+", ""),
+          country_code: (selectedCountry?.idd?.root || "+91").replace("+", ""),
         }
       : {
           email: email,
@@ -111,7 +105,7 @@ export function EditDetails() {
       token: otp,
       email_or_phone: isMobile ? phoneNumber : email,
       ...(isMobile && {
-        country_code: (selectedCountry?.idd?.root || "1").replace("+", ""),
+        country_code: (selectedCountry?.idd?.root || "+91").replace("+", ""),
       }),
     };
 
@@ -340,11 +334,11 @@ export function EditDetails() {
             backgroundStyle={{
               backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor,
             }}
-          >
+           android_keyboardInputMode="adjustResize" >
             <KeyboardAvoidingView
               style={{ flex: 1 }}
               behavior={Platform.OS === "ios" ? "padding" : undefined}
-            >
+             enabled={false} >
               <BottomSheetView
                 style={{
                   padding: windowWidth(20),

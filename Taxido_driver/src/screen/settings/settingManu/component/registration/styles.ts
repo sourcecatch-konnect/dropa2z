@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appFonts from '../../../../../theme/appFonts'
 import { windowHeight, windowWidth } from '../../../../../theme/appConstant'
@@ -6,6 +7,8 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: appFonts.medium,
     marginTop: windowHeight(1.5),
+  
+    ...referenceSurfaces.section,
   },
   loaderTitle: {
     marginTop: windowHeight(0.5),
@@ -18,6 +21,8 @@ const styles = StyleSheet.create({
     marginVertical: windowHeight(1.5),
     borderRadius: windowHeight(1),
     borderWidth: windowHeight(0.1),
+  
+    ...referenceSurfaces.card,
   },
   border: {
     borderBottomWidth: windowHeight(0.1),

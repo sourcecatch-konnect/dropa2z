@@ -1,11 +1,8 @@
-import {
-  View,
-  Text,
-  TextInput,
-  FlatList,
-  Image,
-  TouchableOpacity,
-} from 'react-native'
+import {CardHeading} from '../../../design/CardHeading';
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import {View, FlatList, Image, TouchableOpacity} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useState } from 'react'
 import {
   Button,
@@ -28,6 +25,7 @@ import { useAppNavigation } from '../../../utils/navigation'
 import Images from '../../../utils/images/images'
 
 export function TopUp() {
+  const insets = useSafeAreaInsets()
   const { translateData, settingData } = useSelector(
     (state: any) => state.setting,
   )
@@ -172,9 +170,10 @@ export function TopUp() {
   }
 
   return (
-    <View style={styles.main}>
+    <ReferenceScreen><View style={[[styles.main, { paddingBottom: Math.max(insets.bottom, 12) }], {backgroundColor:'transparent'}]}>
       <Header title={translateData.topupWallettttt} />
       <View style={styles.listView}>
+        <CardHeading icon="wallet" title="Add Money"/>
         <Text style={[styles.amount, { textAlign: textRtlStyle }]}>
           {translateData.amount}
         </Text>
@@ -221,17 +220,7 @@ export function TopUp() {
             {translateData.selectMethod}
           </Text>
 
-          <View style={styles.button}>
-            <Button
-              backgroundColor={appColors.primary}
-              color={appColors.white}
-              margin={0}
-              loading={topupLoading}
-              title={translateData.addBalance}
-              onPress={addBalance}
-            />
-          </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <View
               style={[
                 styles.container,
@@ -264,7 +253,7 @@ export function TopUp() {
                     (item: any) => item?.name.toLowerCase() !== 'cash',
                   ) || []}
                   renderItem={renderItem}
-                  keyExtractor={item => item.id}
+                  keyExtractor={item => String(item.id)}
                   scrollEnabled={true}
                   showsVerticalScrollIndicator={false}
                 />
@@ -273,6 +262,16 @@ export function TopUp() {
           </View>
         </View>
       </View>
-    </View>
+          <View style={styles.button}>
+            <Button
+              backgroundColor={appColors.primary}
+              color={appColors.white}
+              margin={0}
+              loading={topupLoading}
+              title={translateData.addBalance}
+              onPress={addBalance}
+            />
+          </View>
+    </View></ReferenceScreen>
   )
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import {View, TouchableOpacity, Image} from 'react-native';
+import {Text} from '../../design/Typography';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Calendar, DateData } from 'react-native-calendars';
 import { RightArrows, LeftArrow, Close } from '@utils/icons';

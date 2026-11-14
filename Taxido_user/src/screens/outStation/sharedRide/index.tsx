@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import {View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React from 'react';
 import {OutStationDetails} from '../../../components/outStationDetails/index';
 import { external } from '../../../styles/externalStyle';

@@ -46,6 +46,7 @@ class TaxidoSettingSeeder extends Seeder
                                 'allow_negative_balance' => '1',
                                 'driver_subscription' => '1',
                                 'driver_verification' => '1',
+                                'fleet_registration' => '1',
                                 'fleet_verification' => '1',
                                 'fleet_vehicle_verification' => '1',
                                 'online_payments' => '1',

@@ -1,15 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Text,
-  TouchableOpacity,
-  View,
-  ScrollView,
-  KeyboardAvoidingView,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Platform,
-  TextInput,
-} from "react-native";
+import {TouchableOpacity, View, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import {
   AddressMarker,
   History,
@@ -291,27 +282,66 @@ export function FindLocationScreen() {
       }
 
       try {
-        const origin = defultCoords
-          ? `&origin=${defultCoords.lat},${defultCoords.lng}`
-          : "";
-        const res = await fetch(
-          `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-            query,
-          )}${origin}&key=${Google_Map_Key}`,
-        );
+        const latitude = defultCoords?.lat || defultCoords?.latitude || currentLatitude;
+        const longitude = defultCoords?.lng || defultCoords?.longitude || currentLongitude;
+        const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": Google_Map_Key,
+            "X-Goog-FieldMask": "suggestions.placePrediction.placeId,suggestions.placePrediction.text.text,suggestions.placePrediction.structuredFormat.mainText.text,suggestions.placePrediction.structuredFormat.secondaryText.text",
+          },
+          body: JSON.stringify({
+            input: query,
+            regionCode: "IN",
+            locationBias:
+              latitude && longitude
+                ? {
+                    circle: {
+                      center: { latitude, longitude },
+                      radius: 50000,
+                    },
+                  }
+                : undefined,
+          }),
+        });
         const json = await res.json();
-        if (json?.status === "OK") {
+        if (res.ok && json?.suggestions) {
           setSuggestions(
-            json.predictions.map((item: any) => ({
-              shortAddress: item.structured_formatting.main_text,
-              detailAddress: item.structured_formatting.secondary_text,
-              distance: item.distance_meters
-                ? (item.distance_meters / 1000).toFixed(1) + " km"
-                : null,
+            json.suggestions.map((item: any) => ({
+              shortAddress:
+                item?.placePrediction?.structuredFormat?.mainText?.text ||
+                item?.placePrediction?.text?.text,
+              detailAddress:
+                item?.placePrediction?.structuredFormat?.secondaryText?.text ||
+                item?.placePrediction?.text?.text,
+              distance: null,
             })),
           );
         } else {
-          setSuggestions([]);
+          // Use Geocoding as a graceful fallback if Places is unavailable.
+          const geocodeRes = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${Google_Map_Key}`,
+          );
+          const geocodeJson = await geocodeRes.json();
+          const fallbackSuggestions = (geocodeJson?.results || []).map(
+            (item: any) => {
+              const components = item?.address_components || [];
+              const route = components.find((part: any) =>
+                part?.types?.includes("route"),
+              )?.long_name;
+              const locality = components.find((part: any) =>
+                part?.types?.includes("locality"),
+              )?.long_name;
+
+              return {
+                shortAddress: route || locality || item?.formatted_address,
+                detailAddress: item?.formatted_address,
+                distance: null,
+              };
+            },
+          );
+          setSuggestions(fallbackSuggestions);
         }
       } catch {
         setSuggestions([]);
@@ -494,7 +524,7 @@ export function FindLocationScreen() {
         replace("SignIn");
       } else if (settingData?.values?.activation?.login_number === 0) {
         setValue("CountinueScreen", screenName);
-        replace("SignInWithMail");
+        replace("SignIn");
       } else {
         replace("SignIn");
       }
@@ -579,10 +609,10 @@ export function FindLocationScreen() {
     <>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        
           <View
             style={{
               flex: 1,
@@ -1188,7 +1218,7 @@ export function FindLocationScreen() {
               />
             </View>
           </View>
-        </TouchableWithoutFeedback>
+        
       </KeyboardAvoidingView>
       {dateModalVisible && (
         <CommonModal

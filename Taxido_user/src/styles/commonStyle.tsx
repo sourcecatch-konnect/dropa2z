@@ -50,9 +50,9 @@ const commonStyles = StyleSheet.create({
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.0,
-    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   heightHeader: {
     height: windowHeight(47),

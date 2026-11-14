@@ -7,10 +7,10 @@
 
     function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 5,
+            zoom: 12,
             center: {
-                lat: 37.0902,
-                lng: -95.7129
+                lat: 21.0077,
+                lng: 75.5626
             },
             mapTypeId: 'roadmap'
         });

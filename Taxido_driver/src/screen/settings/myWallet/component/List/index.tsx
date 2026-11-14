@@ -1,4 +1,6 @@
-import { View, Text, ScrollView } from 'react-native'
+import {View, ScrollView} from 'react-native';
+import {Text} from '../../../../../design/Typography';
+import {DesignIcon} from '../../../../../design/DesignIcon';
 import React from 'react'
 import styles from './styles'
 import Icons from '../../../../../utils/icons/icons'
@@ -9,7 +11,7 @@ import { useSelector } from 'react-redux'
 
 export function List({ walletTypedata }: any) {
   const { colors } = useTheme()
-  const { viewRtlStyle, textRtlStyle } = useValues()
+  const { viewRtlStyle, textRtlStyle, isDark } = useValues()
   const { zoneValue } = useSelector((state: any) => state.zoneUpdate)
 
   return (
@@ -23,14 +25,14 @@ export function List({ walletTypedata }: any) {
         {walletTypedata?.map((data: any, index: number) => (
           <View key={index}>
             <View style={[styles.list, { flexDirection: viewRtlStyle }]}>
-              <View style={{ flexDirection: viewRtlStyle }}>
+              <View style={{ flexDirection: viewRtlStyle, flex:1, minWidth:0, alignItems:"center" }}>
                 <View
                   style={[
                     styles.receiptView,
-                    { backgroundColor: colors.background },
+                    { backgroundColor: isDark?"#3B2B19":"#FFF2DF" },
                   ]}
                 >
-                  <Icons.Receipt color={colors.text} />
+                  <DesignIcon name="file-text" color={isDark?"#FFBE60":"#A64B00"} width={22} height={22}/>
                 </View>
                 <View style={styles.detailView}>
                   <Text

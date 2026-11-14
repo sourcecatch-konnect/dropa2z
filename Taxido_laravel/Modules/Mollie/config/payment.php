@@ -9,9 +9,9 @@ return array (
   'subscription' => 0,
   'configs' => 
   array (
-    'mollie_key' => 'te*********************************',
-    'mollie_webhook_url' => '',
-    'mollie_mode' => 'sandbox',
+    'mollie_key' => env('MOLLIE_KEY', ''),
+    'mollie_webhook_url' => env('MOLLIE_WEBHOOK_URL', ''),
+    'mollie_mode' => env('MOLLIE_MODE', 'sandbox'),
   ),
   'fields' => 
   array (

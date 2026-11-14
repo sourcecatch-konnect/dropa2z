@@ -24,6 +24,21 @@ export const rideDataPut = createAsyncThunk(
   },
 )
 
+export const rideParcelStopUpdate = createAsyncThunk(
+  'ride/parcelStopUpdate',
+  async (payload: {
+    ride_id: number
+    action: 'arrived' | 'delivered'
+    stop_index: number
+  }) => {
+    const response = await rideServices.updateParcelStop(payload)
+    if (!response || response.status >= 400) {
+      throw new Error(response?.data?.message || 'Could not update this delivery stop. Please try again.')
+    }
+    return response.data
+  },
+)
+
 export const rideStartData = createAsyncThunk(
   RIDESTART,
   async (data: RidePostInterface) => {

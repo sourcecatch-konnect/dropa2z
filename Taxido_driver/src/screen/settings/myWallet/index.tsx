@@ -1,5 +1,8 @@
+import {DriverEmptyState} from '../../../design/DriverEmptyState';
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
 import React, { useState, useCallback, useEffect, useRef } from 'react'
-import { View, Text, Image, FlatList, BackHandler, ScrollView, RefreshControl } from 'react-native'
+import {View, Image, FlatList, BackHandler, ScrollView, RefreshControl} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { useDispatch, useSelector } from 'react-redux'
 import { BalanceTopup, List, Selection } from './component/'
 import { Header } from '../../../commonComponents'
@@ -146,17 +149,11 @@ export function MyWallet() {
 
   /* 🔥 EMPTY STATE */
   const renderEmptyState = () => (
-    <View style={styles.noDataContainer}>
-      <Image source={Images.noDataWallet} style={styles.noDataImg} />
-
-      <View style={[styles.walletContainer, { flexDirection: viewRtlStyle }]}>
-        <Text style={styles.msg}>{translateData.walletBalanceEmpty}</Text>
-      </View>
-    </View>
+    <DriverEmptyState icon="wallet" title={translateData.walletBalanceEmpty || "No wallet activity yet"}/>
   )
 
   return (
-    <View style={[styles.main, { backgroundColor: colors.background }]}>
+    <ReferenceScreen><View style={[[styles.main, { backgroundColor: colors.background }], {backgroundColor:'transparent'}]}>
       <Header title={translateData.myWallet} />
 
       <ScrollView
@@ -202,7 +199,7 @@ export function MyWallet() {
           renderEmptyState()
         )}
       </ScrollView>
-    </View>
+    </View></ReferenceScreen>
   )
 }
 

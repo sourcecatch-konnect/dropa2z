@@ -2,7 +2,8 @@ import { Header } from "@src/commonComponent";
 import Checkbox from "@src/commonComponent/checkBox";
 import { appColors, windowHeight } from "@src/themes";
 import React, { useState } from "react";
-import { ScrollView, Text, View, TouchableOpacity } from "react-native";
+import {ScrollView, View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import styles from "./styles";
 
 export function RideListFilter() {

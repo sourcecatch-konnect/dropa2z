@@ -1,5 +1,7 @@
+import {useKeyboardState} from '../../../utils/useKeyboardState';
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { View, Text, TouchableOpacity, TextInput, Keyboard } from 'react-native'
+import {View, TouchableOpacity, Keyboard} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet'
 import appColors from '../../../theme/appColors'
 import Icons from '../../../utils/icons/icons'
@@ -21,23 +23,9 @@ export function RateCustomer({ bottomSheetRef }: any) {
   const dispatch = useDispatch<AppDispatch>()
   const { rideGet } = useSelector((state: any) => state.ride)
   const { translateData } = useSelector((state: any) => state.setting)
-  const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false)
+  const {visible:isKeyboardVisible}=useKeyboardState();
 
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-      setKeyboardVisible(true)
-      bottomSheetRef?.current?.expand()
-    })
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardVisible(false)
-      bottomSheetRef?.current?.close()
-    })
-
-    return () => {
-      keyboardDidShowListener.remove()
-      keyboardDidHideListener.remove()
-    }
-  }, [])
+  
 
   const snapPoints = useMemo(() => ['37%', '70%'], [])
 
@@ -85,7 +73,7 @@ export function RateCustomer({ bottomSheetRef }: any) {
       handleIndicatorStyle={{ backgroundColor: appColors.primary, width: '13%' }}
       onClose={handleClose}
       backgroundStyle={{ backgroundColor: isDark ? appColors.bgDark : appColors.white }}
-    >
+     android_keyboardInputMode="adjustResize" >
       <BottomSheetView style={{ padding: windowHeight(2) }}>
 
         <Text style={[styles.title, { color: isDark ? appColors.white : appColors.primaryFont }]}>

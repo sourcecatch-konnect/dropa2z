@@ -18,5 +18,7 @@ module.exports = mergeConfig(defaultConfig, {
   resolver: {
     assetExts: defaultConfig.resolver.assetExts.filter(ext => ext !== 'svg'),
     sourceExts: [...defaultConfig.resolver.sourceExts, 'svg'],
+    // Gradle creates and removes CMake folders during Android builds. Metro must not watch them.
+    blockList: /[\\/]android[\\/](?:app[\\/])?(?:\.cxx|build)[\\/]/,
   },
 });

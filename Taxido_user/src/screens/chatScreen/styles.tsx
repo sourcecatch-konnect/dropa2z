@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../design/ReferenceChrome';
 import { StyleSheet } from "react-native";
 import { appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { appColors } from "@src/themes";
@@ -11,16 +12,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(12),
   },
   messageContainer: {
-    padding: windowHeight(7),
+    padding: 14,
     marginBottom: windowHeight(9),
     maxWidth: "80%",
   },
   senderMessage: {
     alignSelf: "flex-end",
-    backgroundColor: appColors.primary,
+    backgroundColor: '#17191C',
     borderTopLeftRadius: windowHeight(8),
     borderBottomLeftRadius: windowHeight(8),
     borderTopRightRadius: windowHeight(8),
+  
+    ...referenceSurfaces.control,
   },
   senderMessageText: {
     color: appColors.regularText,
@@ -45,6 +48,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: windowHeight(12),
     borderTopRightRadius: windowHeight(12),
     marginHorizontal: windowWidth(10),
+  
+    ...referenceSurfaces.control,
   },
   receiverMessage1: {
     alignSelf: "flex-start",
@@ -66,16 +71,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingBottom: windowHeight(20),
     paddingHorizontal: windowHeight(14),
+  
+    ...referenceSurfaces.card,
   },
   input: {
+    minHeight:44,
+    maxHeight:112,
+    paddingVertical:10,
     ...commonStyles.mediumTextBlack12,
-    width: windowWidth(300),
+    flex:1,
+    minWidth:0,
   },
   sendButton: {
-    width: windowWidth(42),
-    height: windowHeight(28),
-    backgroundColor: appColors.primary,
-    borderRadius: windowHeight(6),
+    width: 44,
+    height: 44,
+    backgroundColor: '#A65B00',
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -85,7 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.lightGray,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: windowHeight(6),
+    borderRadius: 16,
     borderWidth: windowHeight(1),
   },
   view_Main: {
@@ -94,10 +105,12 @@ const styles = StyleSheet.create({
     height: windowHeight(60),
   },
   textInputView: {
+    padding:6,
+    gap:6,
     minHeight: windowHeight(40),
     elevation: 1,
     width: "100%",
-    borderRadius: windowHeight(6),
+    borderRadius: 16,
     alignItems: "center",
   },
   templetionStyle: {
@@ -114,13 +127,13 @@ const styles = StyleSheet.create({
   modalSub: {
     width: windowWidth(150),
     backgroundColor: appColors.whiteColor,
-    borderRadius: windowHeight(9),
+    borderRadius: 16,
     shadowColor: appColors.primaryText,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 5,
-    paddingVetical: windowHeight(5),
+    paddingVertical: windowHeight(5),
     paddingHorizontal: windowWidth(10),
     justifyContent: "center",
     alignItems: "center",
@@ -148,21 +161,28 @@ const styles = StyleSheet.create({
     marginVertical: windowHeight(1),
     marginHorizontal: windowWidth(20),
   },
+  timeStyle: {fontSize:11,marginTop:5},
   listStyle: {
+    flex:1,
     marginTop: windowHeight(10),
   },
   emojiView: {
+    alignItems:"center",
+    justifyContent:"center",
     marginHorizontal: windowWidth(6),
-    height: windowHeight(20),
+    height: 44,
     width: windowWidth(30),
   },
   sendBtnView: {
+    flexShrink:0,
     alignItems: "flex-end",
     justifyContent: "flex-end",
     flexDirection: "row",
-    width: windowWidth(78),
+    width: 48,
   },
   inputView: {
+    flex:1,
+    minWidth:0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

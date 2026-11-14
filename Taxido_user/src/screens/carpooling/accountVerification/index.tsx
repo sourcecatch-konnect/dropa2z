@@ -1,4 +1,5 @@
-import { View, Text, Alert, TouchableOpacity, Image } from 'react-native'
+import {View, Alert, TouchableOpacity, Image} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useCallback, useState } from 'react'
 import { Button, Header } from '@src/commonComponent'
 import { useValues } from '@src/utils/context/index';

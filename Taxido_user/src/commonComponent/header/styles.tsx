@@ -3,7 +3,8 @@ import { windowHeight } from '@src/themes';
 
 const styles = StyleSheet.create({
   headerView: {
-    height: windowHeight(60),
+    minHeight: 104,
+    paddingVertical: 10,
     justifyContent: 'center',
   },
 });

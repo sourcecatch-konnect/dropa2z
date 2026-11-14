@@ -11,7 +11,7 @@ export function Report(props: SvgComponentProps) {
             {...props}
         >
             <G
-                stroke="#199675"
+                stroke="#FC9F03"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 clipPath="url(#a)"

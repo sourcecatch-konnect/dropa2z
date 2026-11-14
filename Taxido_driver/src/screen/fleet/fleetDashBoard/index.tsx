@@ -1,5 +1,6 @@
 import React from 'react'
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import {Image, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { fontSizes, windowHeight, windowWidth } from '../../../theme/appConstant'
 import appColors from '../../../theme/appColors'
 import appFonts from '../../../theme/appFonts'

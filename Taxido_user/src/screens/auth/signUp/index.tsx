@@ -1,14 +1,6 @@
 import React, { useEffect, useState } from "react";
-import {
-  BackHandler,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import {BackHandler, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, View} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import { AuthContainer } from "../../../components/authComponents/authContainer/index";
 import { InputText, Button, notificationHelper } from "@src/commonComponent";
 import { AuthText } from "../../../components/authComponents/authText/index";
@@ -46,7 +38,7 @@ export function SignUp() {
   const cleanCode = rawCode.replace("+", "");
   const [countryCode, setCountryCode] = useState<CountryCodeType>({
     callingCode: [cleanCode],
-    cca2: route?.params?.cca2 ?? "US",
+    cca2: route?.params?.cca2 ?? "IN",
   });
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -66,6 +58,7 @@ export function SignUp() {
   const [fcmToken, setFcmToken] = useState<string>("");
   const dispatch = useDispatch<AppDispatch>();
   const [success, setSuccess] = useState<boolean>(false);
+  const [registrationError, setRegistrationError] = useState('');
   const { replace } = useAppNavigation();
   const { translateData, taxidoSettingData } = useSelector(
     (state: any) => state.setting,
@@ -83,7 +76,7 @@ export function SignUp() {
   }, []);
 
   useEffect(() => {
-    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
     const isEmail = emailRegex.test(usercredential.trim());
     setIsEmailUser(isEmail);
     if (isEmail) {
@@ -136,7 +129,7 @@ export function SignUp() {
       if (errorMsg) {
         isValid = false;
       }
-    } else {
+    } else if (!isEmailUser) {
       setNumberError(translateData?.validNo);
       isValid = false;
     }
@@ -165,13 +158,15 @@ export function SignUp() {
       return;
     }
 
+    setRegistrationError('');
     setLoading(true);
     const payload: UserRegistrationPayload = {
       username: userName,
       name: userName,
       email: email,
-      country_code: countryCode.callingCode[0],
-      phone: phoneNumber,
+      country_code: phoneNumber ? countryCode.callingCode[0] : null,
+      phone: phoneNumber || null,
+      verification_token: route.params?.verificationToken,
       fcm_token: fcmToken,
       password: password,
       password_confirmation: confirmPassword,
@@ -181,7 +176,7 @@ export function SignUp() {
     dispatch(userRegistration(payload))
       .unwrap()
       .then(res => {
-        if (res?.success) {
+        if (res?.success && res?.access_token) {
           if (res?.access_token) {
             setValue("token", res?.access_token);
             dispatch(selfData());
@@ -191,15 +186,22 @@ export function SignUp() {
             replace("MyTabs");
           }
 
-          setValue("token", res.access_token);
           setToken(res.access_token);
           setSuccess(false);
           setLoading(false);
         } else {
           setSuccess(false);
-          notificationHelper("", res.message, "error");
+          const message = res?.message || 'Registration could not finish. Please try again.';
+          setRegistrationError(message);
+          notificationHelper("", message, "error");
           setLoading(false);
         }
+      })
+      .catch((error: any) => {
+        const message = error?.message || 'Could not register. Please check your details.';
+        setRegistrationError(message);
+        if (/email/i.test(message)) setEmailError(true);
+        notificationHelper('', message, 'error');
       })
       .finally(() => setLoading(false));
   };
@@ -240,7 +242,7 @@ export function SignUp() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1 }}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
@@ -282,6 +284,7 @@ export function SignUp() {
                     }
                   />
 
+                  <View style={{ display: isEmailUser ? "none" : "flex" }}>
                   <Text
                     style={[
                       styles.numberTitle,
@@ -404,6 +407,7 @@ export function SignUp() {
                         </Text>
                       )}
                     </View>
+                  </View>
                   </View>
 
                   <Text
@@ -656,6 +660,7 @@ export function SignUp() {
                     )}
                 </View>
                 <View style={styles.btn}>
+                  {!!registrationError && <Text accessibilityRole="alert" style={{ color: '#b42318', marginBottom: 12 }}>{registrationError}</Text>}
                   <Button
                     title={translateData?.register}
                     onPress={handleRegister}

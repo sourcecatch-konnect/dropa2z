@@ -1,4 +1,7 @@
-import { Image, Text, View } from "react-native";
+import {VehicleChoiceArtwork} from '../../../design/VehicleChoiceArtwork';
+import {vehicleChoiceKind} from '../../../utils/vehicleChoiceKind';
+import {Image, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React from "react";
 import { styles } from "../styles";
 import { external } from "../../../styles/externalStyle";
@@ -80,10 +83,9 @@ export function ModalContainers({
               },
             ]}
           >
-            <Image
-              style={styles.carTwo}
-              source={{ uri: selectedItemData?.vehicle_image_url }}
-            />
+            <VehicleChoiceArtwork style={styles.carTwo} source={{
+  uri: selectedItemData?.vehicle_image_url
+}} vehicle={selectedItemData} />
           </View>
           <View>
             <View
@@ -123,7 +125,7 @@ export function ModalContainers({
                 marginTop: windowHeight(2),
               }}
             >
-              <UserFillSmall />
+              {!selectedItemData?.charges?.is_goods_delivery && <UserFillSmall />}
               <Text
                 style={{
                   color: isDark ? appColors.darkText : appColors.primaryText,
@@ -131,7 +133,7 @@ export function ModalContainers({
                   marginHorizontal: windowWidth(5),
                 }}
               >
-                {`${selectedItemData?.seat} ${
+                {selectedItemData?.charges?.is_goods_delivery ? 'Goods delivery' : `${selectedItemData?.seat} ${
                   selectedItemData?.seat > 1
                     ? translateData?.passengers
                     : translateData?.passenger
@@ -141,10 +143,26 @@ export function ModalContainers({
           </View>
         </View>
 
+        {vehicleChoiceKind(selectedItemData) && (
+          <View style={{marginTop: 12, borderRadius: 12, overflow: 'hidden', backgroundColor: '#FFFFFF'}}>
+            <VehicleChoiceArtwork vehicle={selectedItemData}
+              style={{width: '100%', height: undefined, aspectRatio: 1040 / 720}} />
+            <Text style={{color: '#545454', padding: 10, fontFamily: appFonts.regular, fontSize: 12}}>
+              Parcel placement shown for illustration. Dimensions are examples, not vehicle load limits.
+            </Text>
+          </View>
+        )}
         {taxidoSettingData?.cabbooking_values?.activation?.bidding === 1 && (
           <Text style={[commonStyles.regularText, { textAlign: textRTLStyle }]}>
             {translateData.minimumFare} {selectedItemData?.currency_symbol}
             {originalFare} {translateData.ownPrice}
+          </Text>
+        )}
+        {selectedItemData?.charges?.is_goods_delivery && (
+          <Text style={{ color: textColorStyle, marginTop: 12 }}>
+            Base fare includes {selectedItemData.charges.base_distance ?? 0} {selectedItemData.charges.distance_unit ?? 'km'}
+            {Number(selectedItemData.charges.goods_included_minutes) > 0 ? ` and ${selectedItemData.charges.goods_included_minutes} minutes` : ''}.
+            {' '}Extra distance, time, and applicable charges are shown below.
           </Text>
         )}
         <View>

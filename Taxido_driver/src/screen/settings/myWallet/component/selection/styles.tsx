@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appFonts from '../../../../../theme/appFonts'
 import { windowHeight, windowWidth } from '../../../../../theme/appConstant'
@@ -12,9 +13,13 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignSelf: 'center',
+  
+    borderWidth:1,borderColor:'#E5E7EB',borderRadius:16,overflow:'hidden',
   },
   tab: {
-   height:windowHeight(6),
+   minHeight:48,
+    paddingHorizontal:8,
+    paddingVertical:12,
     alignItems: 'center',
     justifyContent: 'center',
     width:'50%',
@@ -32,14 +37,14 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: windowHeight(1),
   },
   activeTab: {
-    backgroundColor: appColors.primary,
+    backgroundColor: '#FC9F03',
   },
   inactiveTab: {
     backgroundColor: appColors.white,
 
   },
   activeText: {
-    color: appColors.white,
+    color: "#17191C",
     fontFamily: appFonts.medium,
 
   },

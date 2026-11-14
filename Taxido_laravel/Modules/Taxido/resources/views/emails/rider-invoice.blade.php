@@ -223,6 +223,13 @@
                         <td>{{ __('taxido::static.invoice.base_fare') }}</td>
                         <td>{{ $ride?->currency_symbol ?? $symbol }}{{ number_format($ride->ride_fare, 2) }}</td>
                     </tr>
+                    @if (!empty($ride->delivery_details['gstin']))
+                        <tr><td>Customer GSTIN</td><td>{{ $ride->delivery_details['gstin'] }}</td></tr>
+                        <tr><td>Business name</td><td>{{ $ride->delivery_details['business_name'] ?? '' }}</td></tr>
+                    @endif
+                    @if (!empty($ride->delivery_details['goods_type']))
+                        <tr><td>Goods type</td><td>{{ ucwords(str_replace('-', ' ', $ride->delivery_details['goods_type'])) }}</td></tr>
+                    @endif
                     @if ($ride->additional_distance_charge > 0)
                         <tr>
                             <td>{{ __('taxido::static.invoice.additional_distance_charge') }}</td>

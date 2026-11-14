@@ -1,3 +1,4 @@
+import {riderFieldFinish,riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 
@@ -40,21 +41,25 @@ const styles = StyleSheet.create({
   phoneNumberInput: {
     width: windowWidth(330),
     backgroundColor: appColors.lightGray,
-    borderRadius: windowHeight(4),
+    borderRadius: 14,
     marginHorizontal: windowHeight(9),
     paddingHorizontal: windowHeight(9),
     borderWidth: windowHeight(1),
     height: windowHeight(42),
+  
+    ...riderFieldFinish,
   },
   countryCodeContainer1: {
     width: windowWidth(100),
     height: windowHeight(42),
     backgroundColor: appColors.lightGray,
-    borderRadius: windowHeight(4),
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   inputText: {
     marginHorizontal: windowWidth(5),

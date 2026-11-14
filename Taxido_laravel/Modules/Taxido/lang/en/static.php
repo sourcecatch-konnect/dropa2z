@@ -1258,6 +1258,8 @@ return [
         'enter_high_bidding' => 'Enter maximum bidding value',
         'bidding_range' => 'Amount Range from Recommended Price',
         'fleet_verification' => 'Fleet Verification',
+        'fleet_registration' => 'Fleet Registration',
+        'fleet_registration_span' => 'When enabled, new users can choose to register as a Fleet Manager in the Driver app.',
         'fleet_verifications_span' => 'Fleet Verification Span',
         'fleet_vehicle_verification' => 'Fleet Vehicle Verification',
         'fleet_vehicle_verifications_span' => 'Fleet Vehicle Verification',

@@ -16,14 +16,52 @@
 @extends('admin.layouts.master')
 @section('title', __('taxido::static.rides.rides'))
 @section('content')
+    <div class="card mb-3" id="delivery-progress-card">
+        <div class="card-header"><h5 class="m-0">Delivery progress</h5></div>
+        <div class="card-body" id="delivery-progress-content" aria-live="polite"></div>
+    </div>
     <div class="row ride-dashboard">
         <div class="default-sorting mt-0">
             <div class="welcome-box">
-                <div class="d-flex">
+                <div class="d-flex align-items-center justify-content-between">
                     <h2>{{ __('taxido::static.rides.ride_details') }}</h2>
+                    @if (!in_array($ride?->ride_status?->slug, [RideStatusEnum::CANCELLED, RideStatusEnum::STARTED, RideStatusEnum::COMPLETED]))
+                        @can('ride.edit')
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#adminCancelRideModal">
+                                Cancel ride
+                            </button>
+                        @endcan
+                    @endif
                 </div>
             </div>
         </div>
+
+        @if (!in_array($ride?->ride_status?->slug, [RideStatusEnum::CANCELLED, RideStatusEnum::STARTED, RideStatusEnum::COMPLETED]))
+            @can('ride.edit')
+                <div class="modal fade" id="adminCancelRideModal" tabindex="-1" aria-labelledby="adminCancelRideModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ route('admin.ride.cancel', ['ride' => $ride->id]) }}">
+                                @csrf
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="adminCancelRideModalLabel">Cancel ride #{{ $ride->ride_number }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <label for="admin-cancellation-reason" class="form-label">Cancellation reason</label>
+                                    <textarea id="admin-cancellation-reason" name="cancellation_reason" class="form-control" rows="3" maxlength="500" required></textarea>
+                                    <small class="text-muted">Admin cancellations do not charge the rider or driver.</small>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Keep ride</button>
+                                    <button type="submit" class="btn btn-danger">Confirm cancellation</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endcan
+        @endif
 
         <div class="col-xxl-6">
             <div class="card">
@@ -492,7 +530,7 @@
                                             <li>
                                                 <h4>{{ __('taxido::static.rides.cancellation_reason') }}</h4>
                                                 <span id="cancellation-reason">
-                                                    {{ $ride->cancellation_reason->title ?? __('taxido::static.rides.default_cancel_reason') }}
+                                                    {{ is_string($ride->cancellation_reason) ? $ride->cancellation_reason : (data_get($ride->cancellation_reason, 'title') ?? __('taxido::static.rides.default_cancel_reason')) }}
                                                 </span>
                                             </li>
                                         @endif
@@ -1045,6 +1083,22 @@
     <!-- Echo scripts handled by master layout -->
 
     <script>
+        function renderDeliveryProgress(progress) {
+            const container = document.getElementById('delivery-progress-content');
+            if (!container) return;
+            container.replaceChildren();
+            const confirmation = document.createElement('p');
+            confirmation.textContent = progress?.pickup_vehicle_confirmed_at ? 'Pickup vehicle confirmed by customer' : 'Pickup vehicle not yet confirmed by customer';
+            container.appendChild(confirmation);
+            const stops = Array.isArray(progress?.stops) ? progress.stops : [];
+            stops.forEach((stop, index) => {
+                const row = document.createElement('p');
+                const name = index === stops.length - 1 ? 'Final drop' : 'Drop ' + (index + 1);
+                row.textContent = name + ': ' + (stop.status === 'delivered' ? 'Parcel delivered' : stop.arrived_at ? 'Driver arrived — awaiting handoff' : 'Pending');
+                container.appendChild(row);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', () => renderDeliveryProgress(@json($ride->parcel_delivery_progress)));
 
         // Safe element updater
         function safeUpdateElement(id, value, attribute = 'textContent') {
@@ -1138,6 +1192,7 @@
                 try {
                     console.log("<====== RIDE data ======> ", rideData);
                     if (!rideData) return;
+                    renderDeliveryProgress(rideData.parcel_delivery_progress);
 
 
                     // Update general details

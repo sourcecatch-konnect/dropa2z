@@ -39,7 +39,7 @@ class AssignNextDriverJob implements ShouldQueue
         }
 
         // Bail if ride is no longer in an assignable state
-        $activeStatuses = [RideStatusEnum::REQUESTED, RideStatusEnum::PENDING];
+        $activeStatuses = [RideStatusEnum::REQUESTED, RideStatusEnum::PENDING, RideStatusEnum::REJECTED];
         $currentStatus = $rideRequest->ride_status_activities()
             ->latest('changed_at')
             ->value('status');
@@ -129,6 +129,13 @@ class AssignNextDriverJob implements ShouldQueue
             'current_driver_id' => $nextDriverId,
             'driver_acceptance_expires_at' => now()->addSeconds($acceptanceSeconds),
         ]);
+
+        if ($currentStatus === RideStatusEnum::REJECTED) {
+            $rideRequest->ride_status_activities()->create([
+                'status' => RideStatusEnum::REQUESTED,
+                'changed_at' => now(),
+            ]);
+        }
 
         $rideRequest = $rideRequest->fresh();
         Log::info("AssignNextDriverJob: Assigned driver #{$nextDriverId} to ride #{$rideRequest->ride_number} (expires in {$acceptanceSeconds}s).");

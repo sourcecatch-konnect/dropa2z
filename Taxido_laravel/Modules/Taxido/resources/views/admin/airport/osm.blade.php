@@ -25,7 +25,7 @@
         }
 
         function setupMap() {
-          const startLocation = [21.20764938296402, 72.77381805168456];
+          const startLocation = [21.0077, 75.5626];
           mapInstance = L.map('map-container').setView(startLocation, 13);
 
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

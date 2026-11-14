@@ -1,5 +1,6 @@
+import {DesignIcon} from '../../design/DesignIcon';
 import React from "react";
-import { AppPages, Chat, HelpSupport, HistoryEmpty, Location, PrivacyPolicIcon, ProfileSetting, PromoCode, Share } from "@utils/icons";
+import { AppPages, HelpSupport, Location, PrivacyPolicIcon, ProfileSetting, PromoCode, Share } from "@utils/icons";
 import { useSelector } from "react-redux";
 import { View } from "react-native";
 import ReferralId from "@src/assets/icons/referralID";
@@ -39,11 +40,6 @@ export const useProfileData = (staffUnread = 0) => {
           title: translateData?.savedLocation,
           screenName: "SavedLocation",
         },
-        {
-          icon: <HistoryEmpty />,
-          title: "Driver Request",
-          screenName: "DriverRequestScreen",
-        },
         ...(taxidoSettingData?.cabbooking_values?.activation?.coupon_enable == 1
           ? [
             {
@@ -67,6 +63,8 @@ export const useProfileData = (staffUnread = 0) => {
     {
       title: translateData?.appDetails,
       data: [
+        { icon: <DesignIcon name="file-text" color="#FC9F03"/>, title: "Terms of Service", screenName: "TermsOfService" },
+        { icon: <PrivacyPolicIcon />, title: "Privacy Policy", screenName: "PrivacyPolicy" },
         {
           icon: <AppPages />,
           title: translateData?.appPages,
@@ -78,19 +76,9 @@ export const useProfileData = (staffUnread = 0) => {
           screenName: "Share",
         },
         {
-          icon: <Chat />,
-          title: translateData?.chatSupport,
-          screenName: "SupportTicket",
-        },
-        {
           icon: ChatWithStaffIcon,
           title: translateData?.chatwithstaff,
           screenName: "ChatScreen",
-        },
-        {
-          icon: <PrivacyPolicIcon />,
-          title: translateData?.privacyPolicy,
-          screenName: "PrivacyPolicy",
         },
       ],
     },
@@ -104,6 +92,8 @@ export const useGuestData = () => {
     {
       title: translateData?.appDetails,
       data: [
+        { icon: <DesignIcon name="file-text" color="#FC9F03"/>, title: "Terms of Service", screenName: "TermsOfService" },
+        { icon: <PrivacyPolicIcon />, title: "Privacy Policy", screenName: "PrivacyPolicy" },
         {
           icon: <AppPages />,
           title: translateData?.appPages,

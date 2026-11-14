@@ -1,4 +1,7 @@
-import { View, Text, Image, TouchableOpacity, Platform } from 'react-native'
+import {View, Image, TouchableOpacity, Platform} from 'react-native';
+import {Text} from '../../../../../design/Typography';
+import {BrandSymbol} from '../../../../../design/BrandLogo';
+import {DesignIcon} from '../../../../../design/DesignIcon';
 import React, { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import styles from './styles'
@@ -35,7 +38,7 @@ export function BalanceTopup({
     (state: any) => state.setting,
   )
   const { zoneValue } = useSelector((state: any) => state.zoneUpdate)
-  const { viewRtlStyle } = useValues()
+  const { viewRtlStyle, isDark } = useValues()
   const [isVisible, setIsVisible] = useState(true)
   const rawAmount = `${zoneValue?.currency_symbol}${(
     walletTypedata ?? 0
@@ -79,8 +82,8 @@ export function BalanceTopup({
   })
 
   return (
-    <View style={styles.mainBalance}>
-      <Image source={Images.cardBackground} style={styles.walletImage} />
+    <View style={[styles.mainBalance,{backgroundColor:"#17191C",borderColor:isDark?"#41464E":"#E5E7EB",padding:18}]}>
+      <View pointerEvents="none" style={{position:"absolute",right:-40,top:-50,width:220,height:220,borderRadius:110,borderWidth:30,borderColor:"#FC9F0324"}}/><View pointerEvents="none" style={{position:"absolute",right:18,top:18,opacity:.25}}><BrandSymbol size={60} color="#FC9F03"/></View>
       <View style={[styles.subBalance]}>
         <View style={{ marginHorizontal: windowWidth(4) }}>
           <View style={styles.balanceView}>
@@ -130,7 +133,8 @@ export function BalanceTopup({
                   marginHorizontal: windowWidth(2),
                   alignItems: 'center',
                   justifyContent: 'center',
-                  height: windowHeight(3),
+                  minHeight: 44,
+                  minWidth: 44,
                 }}
               >
                 {isVisible ? <Icons.Eye /> : <Icons.EyeClose />}
@@ -147,8 +151,8 @@ export function BalanceTopup({
                 activeOpacity={0.9}
                 onPress={gotoTopUp}
                 style={{
-                  backgroundColor: appColors.white,
-                  height: windowHeight(4.4),
+                  backgroundColor: isDark ? "#3B2B19" : "#FFF2DF",
+                  minHeight: 46,
                   width: '47.5%',
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -156,10 +160,10 @@ export function BalanceTopup({
                   borderRadius: windowHeight(0.8),
                 }}
               >
-                <Icons.TopUp />
+                <DesignIcon name="plus" color={isDark?"#FFBE60":"#A64B00"}/>
                 <Text
                   style={{
-                    color: appColors.primary,
+                    color: isDark ? "#FFBE60" : "#A64B00",
                     marginHorizontal: windowWidth(1.5),
                     fontFamily: appFonts.medium,
                   }}
@@ -173,8 +177,8 @@ export function BalanceTopup({
               onPress={gotoTopWithDraw}
               disabled={walletTypedata <= 0}
               style={{
-                backgroundColor: appColors.white,
-                height: windowHeight(4.4),
+                backgroundColor: isDark ? "#3B2B19" : "#FFF2DF",
+                minHeight: 46,
                 width: '47.5%',
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -183,10 +187,10 @@ export function BalanceTopup({
                 opacity: walletTypedata <= 0 ? 0.5 : 1,
               }}
             >
-              <Icons.DollorLarge />
+              <DesignIcon name="wallet" color={isDark?"#FFBE60":"#A64B00"}/>
               <Text
                 style={{
-                  color: appColors.primary,
+                  color: isDark ? "#FFBE60" : "#A64B00",
                   marginHorizontal: windowWidth(1.5),
                   fontFamily: appFonts.medium,
                 }}
@@ -199,7 +203,7 @@ export function BalanceTopup({
       </View>
       <Text
         style={{
-          color: appColors.toup,
+          color: "#BBC1CA",
           fontFamily: appFonts.regular,
           fontSize: fontSizes.FONT4,
           textAlign: 'center',

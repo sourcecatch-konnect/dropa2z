@@ -1,5 +1,6 @@
 import React from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import {Image, TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import styles from "./styles";
 import { appColors, appFonts, fontSizes } from "@src/themes";
 import { Back, CalenderSmall, ClockSmall, Filter, Message, RatingEmptyStart, RatingStar, RightArrow, SafetyCall, Seat1 } from "@src/utils/icons";

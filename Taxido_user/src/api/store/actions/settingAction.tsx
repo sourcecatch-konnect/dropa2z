@@ -1,6 +1,10 @@
 import { CURRENCY, LANGUAGE, SETTING, TRANSLATE, TAXIDOSETTING } from "../types/index";
 import { settingServices } from "../../services/index";
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
+import {URL} from '../../config';
+import {getValue} from '@src/utils/localstorage';
+import {appLanguages, localizedDeliveryCopy} from '@src/utils/appLanguages';
 
 // Fetching currency data
 export const currencyDataGet = createAsyncThunk(CURRENCY, async () => {
@@ -37,12 +41,19 @@ export const taxidosettingDataGet = createAsyncThunk(TAXIDOSETTING, async () => 
 // Fetching Language data
 export const languageDataGet = createAsyncThunk(LANGUAGE, async () => {
   const response = await settingServices.languageDataGet();
-  return response?.data;
+  return appLanguages(response?.data);
 });
 
 
 //translate data get
 export const translateDataGet = createAsyncThunk(TRANSLATE, async () => {
   const response = await settingServices.translateDataGet();
-  return response?.data;
+  const locale = await getValue('selectedLanguage');
+  let translations = response?.data;
+  const empty = !translations || translations === '[]' || (Array.isArray(translations) && !translations.length);
+  if (empty && (locale === 'hi' || locale === 'mr')) {
+    const english = await axios.get(`${URL}/api/translate/rider-app`, {headers: {Accept: 'application/json', 'Accept-Lang': 'en'}});
+    translations = english.data;
+  }
+  return localizedDeliveryCopy(translations, locale);
 });

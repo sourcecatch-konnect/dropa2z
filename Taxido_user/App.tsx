@@ -15,6 +15,7 @@ import { appColors } from "@src/themes";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import GPSStatusMonitor from "@src/components/common/GPSStatusMonitor";
+import {LiveBookingProvider} from './src/utils/LiveBookingProvider';
 import {
   requestUserPermission,
   NotificationServices,
@@ -38,7 +39,7 @@ const AppContent = () => {
           barStyle={isDark ? "light-content" : "dark-content"}
           backgroundColor={isDark ? appColors.darkHeader : appColors.whiteColor}
         />
-        <MyStack />
+        <LiveBookingProvider><MyStack /></LiveBookingProvider>
         <GPSStatusMonitor checkInterval={3000} />
       </SafeAreaView>
     </SafeAreaProvider>

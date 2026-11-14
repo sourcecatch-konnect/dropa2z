@@ -71,7 +71,6 @@ class AcceptBidResource  extends BaseResource
       ],
       'currency_symbol' => $this->currency_symbol,
       'is_otp_verified' => $this->is_otp_verified,
-      'parcel_delivered_otp' => $this->parcel_delivered_otp,
       'ride_fare' => $this->ride_fare,
       'driver_tips' => $this->driver_tips,
       'tax' => $this->tax,

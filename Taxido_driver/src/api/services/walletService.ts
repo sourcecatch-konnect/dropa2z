@@ -1,3 +1,4 @@
+import {requireApiSuccess} from '../responseError';
 import {
   riderWallet, payment, plan_purchase, verify_payment, withdraw, withdrawRequest, topUpWallet, paymentRide,
   fleetWallet, fleetWithdraw, fleetWithdrawRequest
@@ -76,12 +77,12 @@ export const walletTopUpData = async (data: WalletTopUpDatainterface) => {
 }
 
 export const allpayment = async (data: PaymentRideInterface) => {
-  return POST_API(data, paymentRide)
+  return POST_API(data, paymentRide, {timeout:25000})
     .then(res => {
-      return res
+      return requireApiSuccess(res, 'Payment was not confirmed. Check the delivery status before retrying.')
     })
     .catch(e => {
-      return e?.response
+      throw e
     })
 }
 

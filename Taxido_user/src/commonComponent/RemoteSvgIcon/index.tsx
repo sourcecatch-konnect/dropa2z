@@ -1,3 +1,4 @@
+import {BrandLoader} from '../../design/BrandLogo';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { SvgXml } from 'react-native-svg';
@@ -15,7 +16,7 @@ const RemoteSvgIcon = ({ uri }: { uri: string }) => {
             });
     }, [uri]);
 
-    if (!svgXmlData) return <ActivityIndicator size="small" color="#999" />;
+    if (!svgXmlData) return <BrandLoader size="small" color="#999" />;
 
     return <SvgXml xml={svgXmlData} width="40" height="40" />;
 };

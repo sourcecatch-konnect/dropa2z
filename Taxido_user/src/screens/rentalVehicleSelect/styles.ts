@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appColors, appFonts, windowHeight, windowWidth, fontSizes } from "@src/themes";
 
@@ -24,6 +25,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowHeight(19.5),
     height: windowHeight(90),
     justifyContent: 'center',
+  
+    ...riderCardFinish,
   },
   vehicleImage: {
     width: windowHeight(50),
@@ -45,6 +48,8 @@ const styles = StyleSheet.create({
     marginTop: windowHeight(3),
     paddingTop: windowHeight(10),
     paddingHorizontal: windowWidth(15)
+  ,
+    ...riderCardFinish,
   },
   titleContainer: {
     justifyContent: "space-between",

@@ -1,17 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import {
-    View,
-    Text,
-    Modal,
-    TouchableOpacity,
-    StyleSheet,
-    Platform,
-    Animated,
-    Dimensions,
-    Image,
-    BackHandler,
-    AppState,
-} from 'react-native';
+import {View, Modal, TouchableOpacity, StyleSheet, Platform, Animated, Dimensions, Image, BackHandler, AppState} from 'react-native';
+import {Text} from '../../design/Typography';
 import { isLocationEnabled } from 'react-native-android-location-enabler';
 import { Linking } from 'react-native';
 import appColors from '../../theme/appColors';

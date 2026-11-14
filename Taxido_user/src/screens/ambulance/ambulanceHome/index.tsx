@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FlatList, Keyboard, SafeAreaView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {FlatList, Keyboard, SafeAreaView, TouchableOpacity, View} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import styles from "./styles";
 import { Button } from "@src/commonComponent";
 import MapView, { Marker } from "react-native-maps";

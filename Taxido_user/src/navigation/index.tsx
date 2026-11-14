@@ -1,3 +1,5 @@
+import {PolicyScreen} from '../screens/documents/PolicyScreen';
+import {Documents} from '../screens/documents';
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { navigationRef } from "../api/methods";
@@ -104,6 +106,7 @@ const MyStack: React.FC = () => {
         initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
+          contentStyle:{backgroundColor:'#FAFAF9'},
         }}
       >
         {!isConnected ? (
@@ -121,6 +124,9 @@ const MyStack: React.FC = () => {
             <Stack.Screen name="EditProfile" component={EditProfile} />
             <Stack.Screen name="Notifications" component={Notifications} />
             <Stack.Screen name="AppPageScreen" component={AppPageScreen} />
+            <Stack.Screen name="Documents" component={Documents} />
+            <Stack.Screen name="TermsOfService" component={PolicyScreen} />
+            <Stack.Screen name="PrivacyPolicy" component={PolicyScreen} />
             <Stack.Screen name="CompleteRide" component={CompleteRide} />
             <Stack.Screen name="LocationSelect" component={LocationSelect} />
             <Stack.Screen
@@ -149,7 +155,7 @@ const MyStack: React.FC = () => {
             <Stack.Screen name="DriverDetails" component={DriverDetails} />
             <Stack.Screen name="FindingDriver" component={FindingDriver} />
             <Stack.Screen name="Outstation" component={Outstation} />
-            <Stack.Screen name="Ride" component={LocationDrop} />
+            <Stack.Screen name="Delivery" component={LocationDrop} />
             <Stack.Screen name="AddNewRider" component={AddNewRider} />
             <Stack.Screen name="BookRide" component={BookRide} />
             <Stack.Screen name="OnTheWayDetails" component={OnTheWayDetails} />

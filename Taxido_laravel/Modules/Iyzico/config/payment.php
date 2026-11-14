@@ -9,9 +9,9 @@ return array (
   'subscription' => 0,
   'configs' =>
   array (
-    'iyzico_api_key' => 'iyzico_api_key',
-    'iyzico_secret_key' => 'iyzico_secret_key',
-    'iyzico_sandbox_mode' => 'true',
+    'iyzico_api_key' => env('IYZICO_API_KEY', ''),
+    'iyzico_secret_key' => env('IYZICO_SECRET_KEY', ''),
+    'iyzico_sandbox_mode' => env('IYZICO_SANDBOX_MODE', ''),
   ),
   'fields' =>
   array (

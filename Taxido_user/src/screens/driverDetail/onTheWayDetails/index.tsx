@@ -1,4 +1,5 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {FlatList, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useState } from 'react';
 import MapView from 'react-native-maps';
 import { external } from '../../../styles/externalStyle';

@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { windowHeight, appColors, appFonts, windowWidth } from "@src/themes";
 
@@ -58,7 +59,9 @@ const styless = StyleSheet.create({
         padding: windowHeight(8),
         borderRadius: windowWidth(10),
         marginTop: windowHeight(4),
-    },
+    
+    ...riderCardFinish,
+  },
     cancelledView: { marginHorizontal: windowWidth(20) },
     timeText: {
         color: appColors.regularText,
@@ -91,7 +94,9 @@ const styless = StyleSheet.create({
         overflow: "hidden",
         borderWidth: 1,
         borderColor: appColors.border,
-    },
+    
+    ...riderCardFinish,
+  },
     rentalView: {
         justifyContent: "space-between",
         width: '100%',
@@ -130,7 +135,9 @@ const styless = StyleSheet.create({
         borderWidth: windowHeight(1),
         borderRadius: windowHeight(5),
         borderColor: appColors.border,
-    },
+    
+    ...riderCardFinish,
+  },
     contentContainer: {
         marginHorizontal: windowWidth(5),
     },

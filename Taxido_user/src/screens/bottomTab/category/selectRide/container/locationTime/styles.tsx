@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { commonStyles } from '../../../../../../styles/commonStyle';
 import { external } from '../../../../../../styles/externalStyle';
@@ -12,6 +13,8 @@ const styles = StyleSheet.create({
     ...external.ai_center,
     paddingHorizontal: windowWidth(6),
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
   textContainer: {
     ...commonStyles.mediumTextBlack12,
@@ -26,6 +29,8 @@ const styles = StyleSheet.create({
     ...external.ai_center,
     paddingHorizontal: windowHeight(9),
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
   line: {
     marginHorizontal: windowHeight(4),

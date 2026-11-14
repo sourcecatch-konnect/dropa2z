@@ -1,12 +1,9 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Linking,
-  StyleSheet,
-  Image,
-  Platform,
-} from "react-native";
+import {DeliveryProgressCard} from '../../components/deliveryProgress';
+import {mapVehicleMarker} from '../../design/mapVehicleMarkers';
+import {reportBookingRouteEta} from '../../utils/bookingSignals';
+import {BrandLoader} from '../../design/BrandLogo';
+import {AppState, View, TouchableOpacity, Linking, StyleSheet, Image, Platform, ActivityIndicator} from 'react-native';
+import {Text} from '../../design/Typography';
 import React, {
   useState,
   useEffect,
@@ -42,6 +39,8 @@ import { allRides, sosData, allRide } from "@src/api/store/actions";
 import getEchoInstance from "@src/utils/echo";
 import { Edit, Shield } from "@src/utils/icons";
 import NativeAdComponent from "@src/commonComponent/ads/google/NativeAdCard";
+import RideReviewPrompt from "@src/components/rideReviewPrompt";
+import { getValue, setValue } from "@src/utils/localstorage";
 
 
 export function Payment() {
@@ -50,24 +49,15 @@ export function Payment() {
   const route = useRoute();
   const { rideId } = route.params as { rideId: string };
   const [rideDatas, setRideData] = useState<any>(null);
+  const [reviewPromptVisible, setReviewPromptVisible] = useState(false);
+  const reviewPromptRequestedRef = useRef(false);
+  const reviewPromptOpenRef = useRef(false);
+  const paymentCompleteRef = useRef(false);
   const [duration, setDuration] = useState(null);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const sosSheetRef = useRef<BottomSheetModal>(null);
   const [driverLocation, setDriverLocation] = useState(null);
   const { taxidoSettingData } = useSelector((state: any) => state.setting);
-  const [mapKey, setMapKey] = useState(0);
-
-  useEffect(() => {
-    let interval: any;
-    if (!driverLocation) {
-      interval = setInterval(() => {
-        setMapKey(prev => prev + 1);
-      }, 3000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [driverLocation]);
 
   const waypoints = useMemo(() => {
     if (
@@ -107,68 +97,133 @@ export function Payment() {
   const { isDark, viewRTLStyle } = useValues();
   const { translateData } = useSelector((state: any) => state.setting);
 
+  const maybePromptForRideReview = useCallback(async (ride: any) => {
+    const currentRide = ride?.data?.data ?? ride?.data ?? ride;
+    if (
+      reviewPromptRequestedRef.current ||
+      currentRide?.ride_status?.slug !== "completed" ||
+      currentRide?.riderReview != null
+    ) {
+      return;
+    }
+
+    const dismissed = await getValue(`dropa2z_review_prompt_dismissed_${rideId}`);
+    if (dismissed === "true" || reviewPromptRequestedRef.current) return;
+
+    reviewPromptRequestedRef.current = true;
+    reviewPromptOpenRef.current = true;
+    setReviewPromptVisible(true);
+  }, [rideId]);
+
+  const closeRideReviewPrompt = useCallback(() => {
+    reviewPromptOpenRef.current = false;
+    setReviewPromptVisible(false);
+    void setValue(`dropa2z_review_prompt_dismissed_${rideId}`, "true");
+    if (paymentCompleteRef.current) {
+      reset({ index: 0, routes: [{ name: "MyTabs" }] });
+    }
+  }, [reset, rideId]);
+
+  const finishPaymentFlow = useCallback(() => {
+    if (paymentCompleteRef.current) return;
+    paymentCompleteRef.current = true;
+    if (!reviewPromptOpenRef.current) {
+      notificationHelper("", "Payment Complete", "success");
+      reset({ index: 0, routes: [{ name: "MyTabs" }] });
+    }
+  }, [reset]);
+
   useEffect(() => {
     if (!rideId) return;
 
     let echoInstance: any = null;
-    let pollingInterval: any = null;
+    let pollingInterval: ReturnType<typeof setInterval> | null = null;
+    let screenActive = true;
+    let requestInFlight = false;
 
-    const setupStatusListener = async () => {
+    const checkRideStatus = async () => {
+      if (!screenActive || requestInFlight) return;
+      requestInFlight = true;
+      try {
+        const response = await dispatch(
+          allRide({ ride_id: Number(rideId) }) as any,
+        ).unwrap();
+        if (!screenActive) return;
+        if (response?.status >= 400) {
+          throw new Error(response?.data?.message || "Could not refresh this trip.");
+        }
+
+        const currentRide = response?.data?.data ?? response?.data ?? response;
+        if (!currentRide || String(currentRide.id) !== String(rideId)) return;
+
+        setRideData((previous: any) => {
+          if (
+            previous &&
+            previous?.ride_status?.slug === currentRide?.ride_status?.slug &&
+            previous?.payment_status === currentRide?.payment_status &&
+            previous?.riderReview?.id === currentRide?.riderReview?.id &&
+            previous?.total === currentRide?.total &&
+            previous?.total_extra_charge === currentRide?.total_extra_charge &&
+            JSON.stringify(previous?.parcel_delivery_progress) === JSON.stringify(currentRide?.parcel_delivery_progress)
+          ) {
+            return previous;
+          }
+          return currentRide;
+        });
+
+        await maybePromptForRideReview(currentRide);
+        if (
+          currentRide?.ride_status?.slug === "completed" &&
+          currentRide?.payment_status === "COMPLETED"
+        ) {
+          finishPaymentFlow();
+        }
+      } catch (err: any) {
+        console.error("Failed to poll ride state:", err);
+      } finally {
+        requestInFlight = false;
+      }
+    };
+
+    void checkRideStatus();
+    pollingInterval = setInterval(() => void checkRideStatus(), 5000);
+    const appStateSubscription = AppState.addEventListener("change", state => {
+      if (state === "active") void checkRideStatus();
+    });
+
+    const setupEchoListener = async () => {
       try {
         echoInstance = await getEchoInstance();
-        const statusChannel = `ride-status.${rideId}`;
-
-        const checkRideStatus = () => {
-          dispatch(allRide({ ride_id: rideId }) as any)
-            .unwrap()
-            .then((res: any) => {
-              const rideData = res?.data || res;
-              setRideData(rideData);
-
-              if (rideData?.payment_status === "COMPLETED") {
-                notificationHelper("", "Payment Complete", "success");
-                reset({
-                  index: 0,
-                  routes: [{ name: "MyTabs" }],
-                });
-              }
-            })
-            .catch((err: any) => {
-              console.error("Failed to poll ride state:", err);
-            });
-        };
-
-        checkRideStatus();
-        pollingInterval = setInterval(checkRideStatus, 5000);
-
+        if (!screenActive || !echoInstance) return;
         echoInstance
-          .private(statusChannel)
+          .private(`ride-status.${rideId}`)
           .listen(".ride.status", (e: any) => {
             const data = e.data || e;
-            setRideData(data);
-
-            if (data?.payment_status === "COMPLETED") {
-              notificationHelper("", "Payment Complete", "success");
-              reset({
-                index: 0,
-                routes: [{ name: "MyTabs" }],
-              });
-            }
+            const currentRide = data?.data?.data ?? data?.data ?? data?.ride ?? data;
+            if (!currentRide || String(currentRide.id) !== String(rideId)) return;
+            setRideData(currentRide);
+            void maybePromptForRideReview(currentRide).then(() => {
+              if (
+                currentRide?.ride_status?.slug === "completed" &&
+                currentRide?.payment_status === "COMPLETED"
+              ) finishPaymentFlow();
+            });
           });
       } catch (error) {
         console.error("Error setting up Echo listener:", error);
       }
     };
-
-    setupStatusListener();
+    void setupEchoListener();
 
     return () => {
+      screenActive = false;
       if (pollingInterval) clearInterval(pollingInterval);
+      appStateSubscription?.remove();
       if (echoInstance && rideId) {
         echoInstance.leave(`ride-status.${rideId}`);
       }
     };
-  }, [rideId, reset, dispatch]);
+  }, [rideId, dispatch, maybePromptForRideReview, finishPaymentFlow]);
 
   useEffect(() => {
     bottomSheetRef.current?.present();
@@ -185,6 +240,7 @@ export function Payment() {
 
   const handleDurationChange = (newDuration: any) => {
     setDuration(newDuration);
+    reportBookingRouteEta(rideId,'trip',newDuration);
   };
 
   const handleSOSPress = () => {
@@ -262,6 +318,15 @@ export function Payment() {
     [],
   );
 
+  const destinationCoordinates = rideDatas?.location_coordinates?.length
+    ? rideDatas.location_coordinates[rideDatas.location_coordinates.length - 1]
+    : null;
+  const hasValidMapDestination = Boolean(
+    destinationCoordinates &&
+    Number.isFinite(parseFloat(destinationCoordinates.lat)) &&
+    Number.isFinite(parseFloat(destinationCoordinates.lng)),
+  );
+
   return (
     <BottomSheetModalProvider>
       <View style={external.main}>
@@ -300,20 +365,28 @@ export function Payment() {
             </Text>
           </TouchableOpacity>
 
-          <Map
-            key={mapKey}
-            markerImage={rideDatas?.vehicle_type?.vehicle_map_icon_url}
-            userLocation={
-              rideDatas?.location_coordinates?.[
-              rideDatas?.location_coordinates?.length - 1
-              ] || {}
-            }
-            waypoints={waypoints}
-            onDurationChange={handleDurationChange}
-            driverId={rideDatas?.driver?.id || ""}
-            driverLocation={driverLocation}
-            setDriverLocation={setDriverLocation}
-          />
+          {hasValidMapDestination ? (
+            <Map
+              markerImage={mapVehicleMarker(rideDatas?.vehicle_type,rideDatas?.vehicle_type?.vehicle_map_icon_url)}
+              userLocation={destinationCoordinates}
+              waypoints={waypoints}
+              onDurationChange={handleDurationChange}
+              driverId={rideDatas?.driver?.id || ""}
+              driverLocation={driverLocation}
+              setDriverLocation={setDriverLocation}
+            />
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: isDark ? appColors.bgDark : appColors.lightGray,
+              }}
+            >
+              <BrandLoader size="large" color={appColors.primary} />
+            </View>
+          )}
         </View>
 
         <BottomSheetModal
@@ -334,10 +407,10 @@ export function Payment() {
               ? appColors.darkHeader
               : appColors.whiteColor,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={{ paddingHorizontal: 16 }}>
             <View style={styles.mainView}>
-              <DriverData driverDetails={rideDatas} duration={duration} />
+              <DeliveryProgressCard ride={rideDatas}/><DriverData driverDetails={rideDatas} duration={duration} />
               <View style={{ marginTop: windowHeight(4) }}>
                 {rideDatas?.locations?.length > 2 &&
                   rideDatas.locations
@@ -546,7 +619,7 @@ export function Payment() {
             borderTopRightRadius: 16,
             backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={componentStyles.contentContainer}>
             <Text
               style={[
@@ -564,6 +637,12 @@ export function Payment() {
             style={{ marginTop: windowHeight(20) }}
           />
         </BottomSheetModal>
+        <RideReviewPrompt
+          visible={reviewPromptVisible}
+          ride={rideDatas}
+          onDismiss={closeRideReviewPrompt}
+          onSubmitted={() => dispatch(allRides() as any)}
+        />
       </View>
     </BottomSheetModalProvider>
   );

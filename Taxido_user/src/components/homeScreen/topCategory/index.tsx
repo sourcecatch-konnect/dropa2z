@@ -1,30 +1,21 @@
-import {
-  FlatList,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-  Vibration,
-  ActivityIndicator,
-} from "react-native";
-import React, { useEffect, useState, useRef } from "react";
+import {BrandLoader} from '../../../design/BrandLogo';
+import {Image, TouchableOpacity, View, ActivityIndicator} from 'react-native';
+import {Text} from '../../../design/Typography';
+import React, { useEffect, useState } from "react";
 import { styles } from "./styles";
-import { TitleRenderItem } from "./titleRenderItem/index";
 import { appColors, windowHeight } from "@src/themes";
-import { BackArrow, History, Search } from "@src/utils/icons";
+import { Gps, History, Search } from "@src/utils/icons";
 import { useValues } from "@src/utils/context/index";
 import { useAppNavigation } from "@src/utils/navigation";
 import Images from "@src/utils/images";
 import { useDispatch, useSelector } from "react-redux";
 import { getValue } from "@src/utils/localstorage";
 import { useIsFocused } from "@react-navigation/native";
-import { notificationHelper } from "@src/commonComponent";
 import { vehicleTypeDataGet } from "@src/api/store/actions";
-import { AppDispatch, RootState } from "@src/api/store";
+import { AppDispatch } from "@src/api/store";
 import useStoredLocation from "@src/components/helper/useStoredLocation";
 
 export function TopCategory({ categoryData }: any) {
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [selectedSubcategory, setSelectedSubcategory] = useState<
     null | string | any
   >(null);
@@ -37,14 +28,9 @@ export function TopCategory({ categoryData }: any) {
     isRTL,
   } = useValues();
   const { navigate }: any = useAppNavigation();
-  const isScrollable = categoryData?.length > 4;
   const { translateData } = useSelector((state: any) => state.setting);
   const [recentDatas, setRecentDatas] = useState<string[]>([]);
-  const flatListRef = useRef<any>(null);
   const isFocused = useIsFocused();
-  const { walletTypedata }: any = useSelector(
-    (state: RootState) => state.wallet,
-  );
   const dispatch = useDispatch<AppDispatch>();
   const [isLoadingOverlay, setIsLoadingOverlay] = useState<boolean>(false);
   const { latitude, longitude } = useStoredLocation();
@@ -54,10 +40,6 @@ export function TopCategory({ categoryData }: any) {
     lat: null,
     lng: null,
   });
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(
-    categoryData?.length > 4,
-  );
 
   useEffect(() => {
     const getAddress = async () => {
@@ -95,7 +77,10 @@ export function TopCategory({ categoryData }: any) {
 
   useEffect(() => {
     if (categoryData?.length > 0) {
-      setSelectedSubcategory(categoryData[0]);
+      const defaultRide = categoryData.find(
+        (item: any) => item?.slug === "ride",
+      );
+      setSelectedSubcategory(defaultRide || categoryData[0]);
     }
   }, [categoryData]);
 
@@ -122,74 +107,60 @@ export function TopCategory({ categoryData }: any) {
   }, [isFocused]);
 
   const handlePress = () => {
-    if (walletTypedata?.balance < 0) {
-      notificationHelper("", translateData?.walletLow, "error");
-    } else {
-      const item: any = selectedSubcategory;
+    const item: any = selectedSubcategory;
 
-      if (!item) return;
-      if (
-        item?.slug == "intercity" ||
-        item?.slug == "ride" ||
-        item?.slug == "ride-freight" ||
-        item?.slug == "intercity-freight" ||
-        item?.slug == "intercity-parcel" ||
-        item?.slug == "ride-parcel" ||
-        item?.slug == "schedule-freight" ||
-        item?.slug == "schedule-parcel"
-      ) {
-        navigate("Ride", {
-          service_ID: item?.service_id,
-          service_name: item?.service_type,
-          service_category_ID: item?.id,
-          service_category_slug: item?.slug,
-          defultAddress: fullAddress,
-          defultCoords: addressCoords,
-        });
-      } else if (item?.slug == "package") {
-        navigate("RentalLocation", {
-          service_ID: item?.service_id,
-          service_name: item?.service_type,
-          service_category_ID: item?.id,
-          service_category_slug: item?.slug,
-        });
-      } else if (item?.slug == "schedule") {
-        navigate("Ride", {
-          service_ID: item?.service_id,
-          service_name: item?.service_type,
-          service_category_ID: item?.id,
-          service_category_slug: item?.slug,
-          defultAddress: fullAddress,
-          defultCoords: addressCoords,
-        });
-      } else if (item?.slug == "rental") {
-        navigate("RentalBooking", {
-          service_ID: item?.service_id,
-          service_name: item?.service_type,
-          service_category_ID: item?.id,
-          service_category_slug: item?.slug,
-        });
-      } else if (item?.service_type == 'finddriver') {
-        navigate('FindLocationScreen', {
-          service_ID: item?.service_id,
-          service_name: item?.service_type,
-          service_category_ID: item?.id,
-          service_category_slug: item?.slug,
-          defultAddress: fullAddress,
-          defultCoords: addressCoords,
-        });
-      }
+    if (!item) return;
+    if (
+      item?.slug == "intercity" ||
+      item?.slug == "ride" ||
+      item?.slug == "ride-freight" ||
+      item?.slug == "intercity-freight" ||
+      item?.slug == "intercity-parcel" ||
+      item?.slug == "ride-parcel" ||
+      item?.slug == "schedule-freight" ||
+      item?.slug == "schedule-parcel"
+    ) {
+      navigate("Delivery", {
+        service_ID: item?.service_id,
+        service_name: item?.service_type,
+        service_category_ID: item?.id,
+        service_category_slug: item?.slug,
+        defultAddress: fullAddress,
+        defultCoords: addressCoords,
+      });
+    } else if (item?.slug == "package") {
+      navigate("RentalLocation", {
+        service_ID: item?.service_id,
+        service_name: item?.service_type,
+        service_category_ID: item?.id,
+        service_category_slug: item?.slug,
+      });
+    } else if (item?.slug == "schedule") {
+      navigate("Delivery", {
+        service_ID: item?.service_id,
+        service_name: item?.service_type,
+        service_category_ID: item?.id,
+        service_category_slug: item?.slug,
+        defultAddress: fullAddress,
+        defultCoords: addressCoords,
+      });
+    } else if (item?.slug == "rental") {
+      navigate("RentalBooking", {
+        service_ID: item?.service_id,
+        service_name: item?.service_type,
+        service_category_ID: item?.id,
+        service_category_slug: item?.slug,
+      });
+    } else if (item?.service_type == 'finddriver') {
+      navigate('FindLocationScreen', {
+        service_ID: item?.service_id,
+        service_name: item?.service_type,
+        service_category_ID: item?.id,
+        service_category_slug: item?.slug,
+        defultAddress: fullAddress,
+        defultCoords: addressCoords,
+      });
     }
-  };
-
-  const handleScroll = (event: any) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const scrollX = contentOffset.x;
-    const totalWidth = contentSize.width;
-    const visibleWidth = layoutMeasurement.width;
-
-    setShowLeftArrow(scrollX > 0);
-    setShowRightArrow(scrollX + visibleWidth < totalWidth);
   };
 
   const convertToCoords = async (address: string) => {
@@ -294,25 +265,20 @@ export function TopCategory({ categoryData }: any) {
       };
 
       dispatch(vehicleTypeDataGet(payload)).then((res: any) => {
-        if (walletTypedata?.balance < 0) {
-          notificationHelper("", translateData?.walletLow, "error");
-          setIsLoadingOverlay(false);
-        } else {
-          navigate("BookRide", {
-            destination: item?.destinationFullAddress?.shortAddress,
-            stops: item?.stops,
-            pickupLocation: item?.pickupLocation,
-            service_ID: item?.service_ID,
-            zoneValue: item?.zoneValue,
-            scheduleDate: item?.scheduleDate,
-            service_category_ID: item?.service_category_ID,
-            service_name: item?.service_name,
-            filteredLocations: filteredLocations,
-            destinationCoords: item?.destinationCoords,
-            pickupCoords: item?.pickupCoords,
-          });
-          setIsLoadingOverlay(false);
-        }
+        navigate("BookRide", {
+          destination: item?.destinationFullAddress?.shortAddress,
+          stops: item?.stops,
+          pickupLocation: item?.pickupLocation,
+          service_ID: item?.service_ID,
+          zoneValue: item?.zoneValue,
+          scheduleDate: item?.scheduleDate,
+          service_category_ID: item?.service_category_ID,
+          service_name: item?.service_name,
+          filteredLocations: filteredLocations,
+          destinationCoords: item?.destinationCoords,
+          pickupCoords: item?.pickupCoords,
+        });
+        setIsLoadingOverlay(false);
       });
     } catch (error) {
       console.error("Error in gotoBook:", error);
@@ -322,98 +288,6 @@ export function TopCategory({ categoryData }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.listContainer}>
-        <View
-          style={[
-            styles.mainLine,
-            { backgroundColor: isDark ? appColors.go : appColors.sliderLine },
-          ]}
-        />
-        {showLeftArrow && (
-          <TouchableOpacity
-            style={[
-              styles.backBtnStyle1,
-              {
-                left: 18,
-                backgroundColor: isDark
-                  ? appColors.darkBorder
-                  : appColors.lightGray,
-                borderColor: isDark ? appColors.darkBorder : appColors.border,
-              },
-            ]}
-            onPress={() =>
-              flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
-            }
-          >
-            <View
-              style={{ transform: [{ rotate: isRTL ? "0deg" : "180deg" }] }}
-            >
-              <BackArrow colors={appColors.primary} />
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {showRightArrow && (
-          <TouchableOpacity
-            style={[
-              styles.backBtnStyle,
-              {
-                right: 18,
-                backgroundColor: isDark
-                  ? appColors.darkBorder
-                  : appColors.lightGray,
-                borderColor: isDark ? appColors.darkBorder : appColors.border,
-              },
-            ]}
-            onPress={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          >
-            <View
-              style={{ transform: [{ rotate: isRTL ? "180deg" : "0deg" }] }}
-            >
-              <BackArrow colors={appColors.primary} />
-            </View>
-          </TouchableOpacity>
-        )}
-        <FlatList
-          ref={flatListRef}
-          data={categoryData}
-          renderItem={({ item, index }) => (
-            <TitleRenderItem
-              item={item}
-              index={index}
-              selectedIndex={selectedIndex}
-              onPress={async () => {
-                setSelectedIndex(index);
-                setSelectedSubcategory(item);
-                Vibration.vibrate(42);
-                if (item?.slug == "package") {
-                  navigate("RentalLocation", {
-                    service_ID: item?.service_id,
-                    service_name: item?.service_type,
-                    service_category_ID: item?.id,
-                    service_category_slug: item?.slug,
-                  });
-                } else if (item?.slug == "rental") {
-                  navigate("RentalBooking", {
-                    service_ID: item?.service_id,
-                    service_name: item?.service_type,
-                    service_category_ID: item?.id,
-                    service_category_slug: item?.slug,
-                  });
-                }
-              }}
-              isScrollable={isScrollable}
-              totalItems={categoryData?.length}
-            />
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          inverted={isRTL}
-          keyExtractor={item => item.name.toString()}
-          onScroll={handleScroll}
-        />
-      </View>
-
       {categoryData?.length > 0 && (
         <>
           {selectedSubcategory?.slug != "rental" &&
@@ -430,31 +304,91 @@ export function TopCategory({ categoryData }: any) {
                       : appColors.border,
                   },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={translateData?.whereNext}
               >
                 <View
-                  style={[
-                    styles.searchView,
-                    {
-                      backgroundColor: isDark
-                        ? appColors.darkPrimary
-                        : appColors.lightGray,
-                      flexDirection: viewRTLStyle,
-                    },
-                  ]}
+                  style={styles.bookingCardBody}
                 >
-                  <Search />
-                  <Text
+                  <View
                     style={[
-                      styles.whereNext,
+                      styles.bookingFieldRow,
                       {
-                        color: isDark
-                          ? appColors.whiteColor
-                          : appColors.primaryText,
+                        flexDirection: viewRTLStyle,
+                        backgroundColor: isDark
+                          ? appColors.darkPrimary
+                          : appColors.lightGray,
                       },
                     ]}
                   >
-                    {translateData?.whereNext}
-                  </Text>
+                    <View style={styles.bookingFieldIcon}>
+                      <Gps width={21} height={21} />
+                    </View>
+                    <View style={styles.bookingFieldCopy}>
+                      <Text
+                        style={[
+                          styles.bookingFieldLabel,
+                          { color: isDark ? appColors.gray : appColors.regularText },
+                        ]}
+                      >
+                        {translateData?.pickupLocationTittle || "Pickup location"}
+                      </Text>
+                      <Text
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                        style={[
+                          styles.bookingFieldValue,
+                          { color: isDark ? appColors.whiteColor : appColors.primaryText },
+                        ]}
+                      >
+                        {fullAddress || translateData?.currentLocation || "Current location"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={[
+                      styles.bookingFieldRow,
+                      styles.bookingDestinationRow,
+                      {
+                        flexDirection: viewRTLStyle,
+                        backgroundColor: isDark
+                          ? appColors.darkPrimary
+                          : appColors.lightGray,
+                      },
+                    ]}
+                  >
+                    <View style={styles.bookingFieldIcon}>
+                      <Search />
+                    </View>
+                    <View style={styles.bookingFieldCopy}>
+                      <Text
+                        style={[
+                          styles.bookingFieldLabel,
+                          { color: isDark ? appColors.gray : appColors.regularText },
+                        ]}
+                      >
+                        {translateData?.to || "To"}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.bookingFieldValue,
+                          { color: isDark ? appColors.gray : appColors.regularText },
+                        ]}
+                      >
+                        {translateData?.enterDestinationPlaceholderText || "Enter destination"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={[
+                      styles.bookingProceed,
+                      { backgroundColor: appColors.primary },
+                    ]}
+                  >
+                    <Text style={styles.bookingProceedText}>
+                      {translateData?.proceed || "Proceed"}
+                    </Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             )}
@@ -497,7 +431,7 @@ export function TopCategory({ categoryData }: any) {
                           >
                             <History />
                           </View>
-                          <View>
+                          <View style={styles.recentTextContainer}>
                             <Text
                               style={[
                                 styles.adajanText,
@@ -551,7 +485,7 @@ export function TopCategory({ categoryData }: any) {
               ))}
           {isLoadingOverlay && (
             <View style={styles.loaderAddress}>
-              <ActivityIndicator size="large" color={appColors.primary} />
+              <BrandLoader size="large" color={appColors.primary} />
             </View>
           )}
           {selectedSubcategory?.slug == "rental" && (

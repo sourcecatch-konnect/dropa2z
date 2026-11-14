@@ -33,6 +33,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   profile: {
+    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: windowHeight(1.3),
@@ -44,6 +47,8 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   userName: {
+    flexShrink: 1,
+    minWidth: 0,
     marginHorizontal: windowWidth(1.5),
     fontFamily: appFonts.medium,
     color: appColors.primary,
@@ -106,6 +111,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   pickup: {
+    flexShrink: 1,
     fontSize: fontSizes.FONT3HALF,
     fontFamily: appFonts.regular,
     top: windowHeight(0.8),
@@ -113,7 +119,8 @@ const styles = StyleSheet.create({
   },
   drop: {
     fontSize: fontSizes.FONT3HALF,
-    width: windowWidth(70),
+    flexShrink: 1,
+    minWidth: 0,
     fontFamily: appFonts.regular,
     top: windowHeight(0.5),
     marginBottom: windowHeight(0.9),
@@ -176,6 +183,9 @@ const styles = StyleSheet.create({
   borderContainer: { top: windowHeight(0.5) },
   gps: { bottom: windowHeight(0.2) },
   rideContainer: {
+    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     marginHorizontal: windowWidth(2),
     height: windowHeight(5),
     justifyContent: 'space-between',

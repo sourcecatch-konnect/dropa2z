@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useState } from "react";
 import { Button, Header, RadioButton } from "@src/commonComponent";
 import { TextInput } from "react-native-gesture-handler";

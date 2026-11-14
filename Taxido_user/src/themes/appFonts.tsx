@@ -7,11 +7,11 @@ export type Fonts = {
   ProBold: string;
 };
 export const appFonts: Fonts = {
-  semiBold: 'GTWalsheimPro-Medium',
-  medium: 'GTWalsheimPro-Medium',
-  regular: 'GTWalsheimPro-Regular',
-  bold: 'GTWalsheimPro-Bold',
-  extraBold: 'Lexend-ExtraBold',
-  ProBold: 'GTWalsheimPro-Bold',
+  semiBold: 'GlacialIndifference-Bold',
+  medium: 'GlacialIndifference-Regular',
+  regular: 'GlacialIndifference-Regular',
+  bold: 'GlacialIndifference-Bold',
+  extraBold: 'GlacialIndifference-Bold',
+  ProBold: 'GlacialIndifference-Bold',
 };
 export default appFonts;

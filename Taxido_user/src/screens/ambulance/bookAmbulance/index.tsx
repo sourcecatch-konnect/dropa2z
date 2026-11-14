@@ -1,4 +1,5 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, AppState, Alert } from "react-native";
+import {View, TouchableOpacity, ScrollView, AppState, Alert} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Header, notificationHelper } from "@src/commonComponent";
 import { appColors, windowHeight } from "@src/themes";
@@ -329,7 +330,7 @@ export function BookAmbulance() {
                     snapPoints={snapPoints}
                     backdropComponent={(props) => <BottomSheetBackdrop {...props} pressBehavior="close" />}
                     backgroundStyle={{ backgroundColor: bgFullStyle }}
-                >
+                 android_keyboardInputMode="adjustResize" >
                     <BottomSheetView style={{ padding: windowHeight(15) }}>
                         <View style={styles.modelView}>
                             <AnimatedCircularProgress

@@ -10,7 +10,8 @@ const styles = StyleSheet.create({
         overflow: 'hidden'
     },
     text: {
-        fontSize: fontSizes.FONT17
+        fontSize: 12,
+        fontWeight: "600"
     },
     flex: {
         flex: 1

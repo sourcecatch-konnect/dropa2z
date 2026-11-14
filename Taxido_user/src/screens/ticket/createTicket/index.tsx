@@ -1,13 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  Alert,
-  ScrollView,
-} from "react-native";
+import {CardHeading} from "../../../design/CardHeading";
+import {View, TouchableOpacity, Image, Alert, ScrollView} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import { useSelector, useDispatch } from "react-redux";
 import { Header, InputText, notificationHelper } from "@src/commonComponent";
 import { appColors, appFonts, fontSizes, windowHeight } from "@src/themes";
@@ -229,7 +223,8 @@ export function CreateTicket() {
   return (
     <View style={{ backgroundColor: linearColorStyle, height: "100%" }}>
       <Header value={translateData.createTicket} />
-      <ScrollView style={styles.mainInput} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.mainInput} contentContainerStyle={{paddingBottom:32}} showsVerticalScrollIndicator={false}>
+        <View style={{marginTop:20}}><CardHeading icon="message-circle" title={translateData.createTicket || "New Support Ticket"}/></View>
         <View>
           <InputText
             title={translateData.subject}

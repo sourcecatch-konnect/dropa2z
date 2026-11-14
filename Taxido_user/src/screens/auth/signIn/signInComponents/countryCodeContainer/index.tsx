@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { TextInput, View, Text, TouchableOpacity } from "react-native";
+import {View, TouchableOpacity} from 'react-native';
+import {TextInput, Text} from '../../../../../design/Typography';
 import { commonStyles } from "../../../../../styles/commonStyle";
 import { external } from "../../../../../styles/externalStyle";
 import { appColors, windowWidth } from "@src/themes";

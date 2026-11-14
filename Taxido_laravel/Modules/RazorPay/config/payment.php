@@ -9,10 +9,10 @@ return array (
   'subscription' => 0,
   'configs' => 
   array (
-    'razorpay_key' => 'rzp_test_iV7SM01Wb7wvhv',
-    'razorpay_secret' => 'gjdchqP3v7shiW7SRKo2xecV',
-    'razorpay_webhook_secret_key' => '',
-    'razorpay_mode' => 'sandbox',
+    'razorpay_key' => env('RAZORPAY_KEY', ''),
+    'razorpay_secret' => env('RAZORPAY_SECRET', ''),
+    'razorpay_webhook_secret_key' => env('RAZORPAY_WEBHOOK_SECRET_KEY', ''),
+    'razorpay_mode' => env('RAZORPAY_MODE', 'sandbox'),
   ),
   'fields' => 
   array (

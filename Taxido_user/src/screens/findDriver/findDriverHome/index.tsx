@@ -1,14 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import styles from "./styles";
-import {
-  Dimensions,
-  FlatList,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import {Dimensions, FlatList, Image, ScrollView, TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { Location, Search } from "@src/utils/icons";
 import { HomeSlider } from "@src/components";
 import { useIsFocused, useNavigation } from "@react-navigation/native";

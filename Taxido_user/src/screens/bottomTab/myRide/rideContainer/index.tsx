@@ -1,4 +1,9 @@
-import { FlatList, Image, Linking, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from "react-native";
+import {BrandLoader} from '../../../../design/BrandLogo';
+import {VehicleGraphic} from '../../../../design/VehicleGraphic';
+import {FlatList, Image, Linking, TouchableOpacity, View, ActivityIndicator, RefreshControl} from 'react-native';
+import {DesignIcon} from '../../../../design/DesignIcon';
+import {RiderEmptyState} from '../../../../design/RiderEmptyState';
+import {Text} from '../../../../design/Typography';
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import Images from "@utils/images";
 import { styles } from "./style";
@@ -6,7 +11,8 @@ import { commonStyles } from "../../../../styles/commonStyle";
 import { useValues } from '@src/utils/context/index';
 import { Call, Info, Message, PickLocation, RatingEmptyStart, RatingHalfStar, RatingStar, Rebook, SafetyCall } from "@utils/icons";
 import { useDispatch, useSelector } from "react-redux";
-import { useTheme } from "@react-navigation/native";
+import {useTheme,useFocusEffect} from "@react-navigation/native";
+import {useLiveBookings} from "../../../../utils/LiveBookingProvider";
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { useAppNavigation } from "@src/utils/navigation";
 import { RideLoader } from "./rideLoader";
@@ -19,6 +25,7 @@ import { useCallback } from "react";
 
 export default function RideContainer({ status }: { status: string }) {
   const { navigate } = useAppNavigation();
+  const {bookings,refresh:refreshBookings,openBooking,opening}=useLiveBookings();
   const { bgFullStyle, textColorStyle, viewRTLStyle, textRTLStyle, isDark, iconColorStyle, Google_Map_Key } = useValues();
   const { colors } = useTheme();
   const { rideDatas } = useSelector(state => state.allRide);
@@ -36,8 +43,11 @@ export default function RideContainer({ status }: { status: string }) {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    dispatch(allRides()).finally(() => setRefreshing(false));
-  }, [dispatch]);
+    Promise.all([dispatch(allRides()),refreshBookings()]).finally(()=>setRefreshing(false));
+  }, [dispatch,refreshBookings]);
+  useFocusEffect(useCallback(()=>{
+    if(status==='active_combined')void refreshBookings();
+  },[status,refreshBookings]));
 
   useEffect(() => {
     if (prevStatusRef.current !== status) {
@@ -48,21 +58,14 @@ export default function RideContainer({ status }: { status: string }) {
   }, [status]);
 
   const acceptedRides = useMemo(() => {
+    if(status==='active_combined')return bookings.map(booking=>({...booking.raw,
+      ride_status:{slug:booking.status},_liveBooking:booking}));
     return rideDatas?.data?.filter(ride => {
       const rideStatus = ride?.ride_status?.slug?.toLowerCase();
       const categorySlug = ride?.service_category?.name?.toLowerCase();
       const currentStatus = status?.toLowerCase()?.trim();
 
       if (!rideStatus) return false;
-
-      if (currentStatus === "active_combined") {
-        return (
-          categorySlug !== "schedule" &&
-          rideStatus !== "completed" &&
-          rideStatus !== "cancelled" &&
-          (rideStatus === "accepted" || rideStatus === "started" || rideStatus === "arrived")
-        );
-      }
 
       if (currentStatus === "past_combined") {
         return rideStatus === "completed" || rideStatus === "cancelled";
@@ -80,7 +83,7 @@ export default function RideContainer({ status }: { status: string }) {
       }
       return rideStatus === currentStatus;
     });
-  }, [rideDatas?.data, status]);
+  }, [rideDatas?.data, status,bookings]);
 
   const statusMapping = {
     accepted: {
@@ -162,6 +165,7 @@ export default function RideContainer({ status }: { status: string }) {
   };
 
   const handlePress = (selectedItem, vehicleData) => {
+    if(selectedItem._liveBooking){void openBooking(selectedItem._liveBooking);return;}
     let rideStatus =
       status === "Schedule"
         ? statusMapping[selectedItem?.service_category?.service_category_type]
@@ -224,18 +228,31 @@ export default function RideContainer({ status }: { status: string }) {
     const stops = locations?.length > 2 ? locations.slice(1, locations?.length - 1) : [];
 
     try {
-      const pickupCoords = await convertToCoords(pickupLocation);
-      const destinationCoords = await convertToCoords(destination);
-      const stopCoords = await convertStopsToCoords(stops || []);
+      // A past ride already contains precise coordinates.  Re-use them so a
+      // rebooking never depends on a separate geocoding request being allowed.
+      const savedCoordinates = Array.isArray(item?.location_coordinates)
+        ? item.location_coordinates
+            .map((coordinate: any) => {
+              const latitude = Number(coordinate?.latitude ?? coordinate?.lat);
+              const longitude = Number(coordinate?.longitude ?? coordinate?.lng);
+              return Number.isFinite(latitude) && Number.isFinite(longitude)
+                ? { latitude, longitude }
+                : null;
+            })
+            .filter(Boolean)
+        : [];
+      const pickupCoords = savedCoordinates[0] ?? await convertToCoords(pickupLocation);
+      const destinationCoords = savedCoordinates[savedCoordinates.length - 1] ?? await convertToCoords(destination);
+      const stopCoords = savedCoordinates.length > 2
+        ? savedCoordinates.slice(1, -1)
+        : await convertStopsToCoords(stops || []);
       const ride_number = item?.id;
       const res = await dispatch(userRideLocation({ ride_number })).unwrap();
       const zoneValue = res?.data?.[0];
 
       const rawLocations = [
         pickupCoords,
-        stopCoords[0],
-        stopCoords[1],
-        stopCoords[2],
+        ...stopCoords,
         destinationCoords,
       ];
 
@@ -246,6 +263,21 @@ export default function RideContainer({ status }: { status: string }) {
           lng: coord.longitude,
         }));
 
+      const serviceType = item?.service?.service_type;
+      if (serviceType === 'parcel' || serviceType === 'freight') {
+        navigate("BookRide", {
+          destination, stops, pickupLocation,
+          service_ID: item.service_id,
+          service_category_ID: item.service_category_id,
+          service_name: serviceType, zoneValue, scheduleDate: null,
+          filteredLocations,
+          pickupCoords: filteredLocations[0],
+          destinationCoords: filteredLocations[filteredLocations.length - 1],
+          stopsCoords: filteredLocations.slice(1, -1),
+        });
+        setRebookingRideId(null);
+        return;
+      }
       const payload = {
         locations: filteredLocations,
         service_id: item?.service_id,
@@ -281,7 +313,7 @@ export default function RideContainer({ status }: { status: string }) {
             zoneValue,
           });
         } else if (service_name === 'parcel' || service_name === 'freight') {
-          navigate("Outstation", {
+          navigate("BookRide", {
             destination,
             stops,
             pickupLocation,
@@ -315,7 +347,9 @@ export default function RideContainer({ status }: { status: string }) {
     return (
       <View>
         <TouchableOpacity
+          accessibilityRole="button" accessibilityLabel={`View delivery ${item?.ride_number || item?.id}`}
           style={[styles.container, { backgroundColor: bgFullStyle }]}
+          disabled={!!item._liveBooking&&opening}
           onPress={() => handlePress(item, vehicleData)}
           activeOpacity={0.7}>
           <View
@@ -327,10 +361,9 @@ export default function RideContainer({ status }: { status: string }) {
               ]}>
               <View style={{ height: windowHeight(45), width: windowHeight(50), backgroundColor: isDark ? appColors.bgDark : appColors.lightGray, alignItems: 'center', justifyContent: 'center', borderRadius: windowHeight(5) }}>
                 {item?.service?.slug != 'ambulance' ? (
-                  <Image
-                    style={styles.profileImage}
-                    source={{ uri: item?.vehicle_type?.vehicle_image_url }}
-                  />
+                  <VehicleGraphic style={styles.profileImage} source={{
+  uri: item?.vehicle_type?.vehicle_image_url
+}} vehicle={item?.vehicle_type} />
                 ) : (
                   <Image
                     style={styles.profileImage}
@@ -345,7 +378,7 @@ export default function RideContainer({ status }: { status: string }) {
                     { color: textColorStyle },
                     { textAlign: textRTLStyle },
                   ]}>
-                  {item?.driver?.name}
+                  {item?.driver?.name || (item?._liveBooking?.status==='searching'?'Finding your delivery partner':'Delivery in progress')}
                 </Text>
                 <View
                   style={[
@@ -383,7 +416,7 @@ export default function RideContainer({ status }: { status: string }) {
                               : appColors.primaryText,
                           },
                         ]}>
-                        {Number(item?.driver?.rating_count).toFixed(1)}
+                        {(Number(item?.driver?.rating_count)||0).toFixed(1)}
                       </Text>
                       <Text style={[styles.carInfoText]}>
                         ({item?.driver?.review_count})
@@ -450,8 +483,8 @@ export default function RideContainer({ status }: { status: string }) {
                   : item?.locations}
               </Text>
             </View>
-            <View style={{ flexDirection: viewRTLStyle, marginTop: windowHeight(4), marginHorizontal: windowWidth(22) }}>
-              <Text style={{ fontSize: fontSizes.FONT16, color: appColors.regularText, fontFamily: appFonts.medium }}>{formattedDate.date}</Text>
+            <View style={{ flexDirection: viewRTLStyle, alignItems:"center",gap:6, marginTop:12, marginBottom:12,flexWrap:"wrap" }}><DesignIcon name="history" width={16} height={16} color={appColors.regularText}/>
+              <Text style={{ fontSize: fontSizes.FONT16, color: isDark?"#BBC1CA":appColors.regularText, fontFamily: appFonts.medium }}>{formattedDate.date}</Text>
               <View style={{ borderLeftWidth: 1, borderColor: appColors.border, marginHorizontal: windowWidth(5) }} />
               <Text style={{ fontSize: fontSizes.FONT16, color: appColors.regularText, fontFamily: appFonts.medium }}>{formattedDate.time}</Text>
             </View>
@@ -543,11 +576,11 @@ export default function RideContainer({ status }: { status: string }) {
                 <TouchableOpacity
                   onPress={() => gotoBook(item)}
                   activeOpacity={0.7}
-                  style={{ backgroundColor: appColors.primary, flexDirection: viewRTLStyle, justifyContent: 'center', alignItems: 'center', height: windowHeight(35), borderRadius: windowHeight(5), marginBottom: windowHeight(12) }}
+                  style={{ backgroundColor: appColors.primary, flexDirection: viewRTLStyle, justifyContent: 'center', alignItems: 'center', minHeight: 48, borderRadius: 14, marginBottom: windowHeight(12) }}
                   disabled={rebookingRideId === item.id}
                 >
                   {rebookingRideId === item.id ? (
-                    <ActivityIndicator size="small" color={appColors.whiteColor} />
+                    <BrandLoader size="small" color={appColors.whiteColor} />
                   ) : (
                     <>
                       <Rebook />
@@ -564,7 +597,7 @@ export default function RideContainer({ status }: { status: string }) {
                   disabled={rebookingRideId === item.id}
                 >
                   {rebookingRideId === item.id ? (
-                    <ActivityIndicator size="small" color={appColors.whiteColor} />
+                    <BrandLoader size="small" color={appColors.whiteColor} />
                   ) : (
                     <>
                       <Rebook />
@@ -588,7 +621,7 @@ export default function RideContainer({ status }: { status: string }) {
         <View style={[styles.flatlistView, { flex: 1 }]}>
           <FlatList
             data={paginatedData}
-            keyExtractor={item => item.id.toString()}
+            keyExtractor={item => item._liveBooking?.key || item.id.toString()}
             renderItem={renderItem}
             onEndReached={loadMoreData}
             onEndReachedThreshold={0.5}
@@ -598,38 +631,7 @@ export default function RideContainer({ status }: { status: string }) {
             windowSize={3}
             removeClippedSubviews={true}
             ListEmptyComponent={
-              <View style={[styles.noDataView, { flex: 1, justifyContent: 'center' }]}>
-                <Image
-                  source={isDark ? Images.noRideDark : Images.noRide}
-                  style={styles.noRideImage}
-                  resizeMode="contain"
-                />
-                <View style={[styles.noRIdeView, { flexDirection: viewRTLStyle }]}>
-                  <Text
-                    style={[
-                      styles.noRIde,
-                      {
-                        color: isDark ? appColors.whiteColor : appColors.primaryText,
-                        fontFamily: appFonts.bold,
-                      },
-                    ]}>
-                    {translateData.noRIde}
-                  </Text>
-                  <View style={styles.Info}>
-                    <Info />
-                  </View>
-                </View>
-                <Text
-                  style={[
-                    styles.noRideDes,
-                    {
-                      color: isDark ? appColors.whiteColor : appColors.regularText,
-                      fontFamily: appFonts.regular,
-                    },
-                  ]}>
-                  {translateData.noRideDes}
-                </Text>
-              </View>
+              <RiderEmptyState icon="package" title={translateData.noRIde || 'No deliveries available'} description={translateData.noRideDes}/>
             }
             ListFooterComponent={() => {
               if (
@@ -638,7 +640,7 @@ export default function RideContainer({ status }: { status: string }) {
                 acceptedRides?.length > paginatedData.length
               ) {
                 return (
-                  <ActivityIndicator
+                  <BrandLoader
                     size="large"
                     color={appColors.primary}
                     style={{ marginTop: windowHeight(10) }}

@@ -15,6 +15,7 @@ const Images: any = {
   bgDarkOnboard: require("@assets/images/onBoarding/bgDarkOnboard.png"),
   authBgDark: require("@assets/images/authImage/authBgDark.png"),
   splash: require("@assets/images/splash/splash.png"),
+  dropa2zLogo: require("@assets/images/splash/dropa2z-backend-logo.jpeg"),
   splashDark: require("@assets/images/splash/splashDark.png"),
   cash: require("@assets/images/payment/cash.png"),
   lineBottom: require("@assets/images/line.png"),
@@ -67,5 +68,8 @@ const Images: any = {
   gpsDisable: require("@assets/images/map/gpsDisable.png"),
   lowBalance: require("@assets/images/wallet/lowBalance.png"),
   paymentno: require("@assets/images/paymentno.png"),
+  autoRickshaw: require("@assets/images/vehicles/auto-rickshaw.png"),
+  bike: require("@assets/images/vehicles/bike.png"),
+  truck: require("@assets/images/vehicles/truck.png"),
 };
 export default Images;

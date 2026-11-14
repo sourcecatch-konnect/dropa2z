@@ -1,3 +1,4 @@
+import {riderCardFinish,riderFieldFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
 import { appColors } from '@src/themes';
@@ -61,6 +62,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: windowHeight(1),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   inputText: {
     marginHorizontal: windowWidth(5),
@@ -73,6 +76,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowHeight(9),
     borderWidth: windowHeight(1),
     height: windowHeight(42),
+  
+    ...riderFieldFinish,
   },
   iconContainer: {
     height: windowHeight(39),

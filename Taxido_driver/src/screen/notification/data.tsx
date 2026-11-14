@@ -16,7 +16,7 @@ export const notificationData: Array<{
   },
   {
     id: 1,
-    title: 'Receive 20% discount for first ride',
+    title: 'Receive 20% discount for first delivery',
     subtitle: 'You have booked plumber service today at 6:30pm.',
     time: '2 min ago',
     icon: '',

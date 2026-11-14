@@ -1,4 +1,5 @@
-import { FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {FlatList, ScrollView, TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { ridesStatusData } from '../../../../data/rideStatus/index';
 import { appColors, windowHeight, windowWidth } from '@src/themes';
@@ -59,26 +60,28 @@ export function RideStatus() {
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={() => handleTabPress(item.id)}
+      accessibilityRole="tab"
+      accessibilityState={{selected:item.id===selected}}
       style={[
         styles.container,
         {
           backgroundColor:
             item.id === selected
-              ? appColors.primary
+              ? '#FC9F03'
               : isDark
                 ? appColors.darkPrimary
                 : appColors.whiteColor,
 
         },
-        { borderColor: isDark ? appColors.darkBorder : appColors.border },
-        item.id === selected ? { borderColor: appColors.primary } : null,
+        
+        
       ]}>
       <Text
         style={[
-          commonStyles.mediumTextBlack12,
+          styles.label,
           item.id === selected
-            ? { color: appColors.whiteColor }
-            : { color: appColors.primary },
+            ? { color: '#17191C' }
+            : { color: isDark ? appColors.whiteColor : '#111111' },
         ]}>
         {item.title}
       </Text>
@@ -98,21 +101,11 @@ export function RideStatus() {
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.mainView}>
-        <FlatList
-          showsHorizontalScrollIndicator={false}
-          horizontal
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          data={rideStatusData}
-          inverted={isRTL}
-          initialNumToRender={3}
-          maxToRenderPerBatch={3}
-          contentContainerStyle={{
-            justifyContent: 'space-between', width: '100%', backgroundColor: bgContainer, borderRadius: windowHeight(5),
-          }}
-        />
+        <View accessibilityRole="tablist" style={[styles.tabBar,{flexDirection:isRTL?'row-reverse':'row',backgroundColor:isDark?'#25282D':'#F0F1F3',borderColor:isDark?'#41464E':'#E5E7EB'}]}>
+          {rideStatusData.map(item=><React.Fragment key={item.id}>{renderItem({item})}</React.Fragment>)}
+        </View>
       </View>
-      <View style={{ flex: 1, paddingTop: windowWidth(20) }}>
+      <View style={{ flex: 1 }}>
         {renderRideContent}
       </View>
     </View>

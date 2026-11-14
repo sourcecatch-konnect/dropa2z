@@ -1,11 +1,11 @@
 import { VEHICLE_TYPE, ALL_VEHICLE } from "../types/index";
 import { vehicleTypeService, } from "../../services/index";
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { VehicleTypeInterface } from '../../interface/vehicleTypeInterface';
+import { VehicleQuoteRequest } from '../../interface/vehicleTypeInterface';
 
 export const vehicleTypeDataGet = createAsyncThunk(
   VEHICLE_TYPE,
-  async (data: VehicleTypeInterface) => {
+  async (data: VehicleQuoteRequest) => {
     const response = await vehicleTypeService.vehicleTypes(data);
     return response?.data;
   }

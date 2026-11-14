@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity } from 'react-native'
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import Icons from '../../../../../utils/icons/icons'
 import styles from './styles'
 import { useTheme } from '@react-navigation/native'
@@ -12,7 +13,7 @@ export function LanguageModal({ openSheet, tempSelectedLanguage }: any) {
   const { colors } = useTheme()
   const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
   const { viewRtlStyle, setRtl, rtl, isDark } = useValues()
-  const { translateData } = useSelector((state: any) => state.setting)
+  const { translateData, languageData } = useSelector((state: any) => state.setting)
 
   useEffect(() => {
     ; (async () => {
@@ -61,15 +62,7 @@ export function LanguageModal({ openSheet, tempSelectedLanguage }: any) {
               ]}
             >
               {' '}
-              {tempSelectedLanguage === 'en'
-                ? 'English'
-                : tempSelectedLanguage === 'ar'
-                  ? 'Arabic'
-                  : tempSelectedLanguage === 'fr'
-                    ? 'French'
-                    : tempSelectedLanguage === 'es'
-                      ? 'Spanish'
-                      : 'English'}
+              {languageData?.data?.find((item:any)=>item.locale===tempSelectedLanguage)?.name || (tempSelectedLanguage==='en'?'English':tempSelectedLanguage)}
             </Text>
           </View>
         </View>

@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../../design/ReferenceChrome';
 import { Platform, StyleSheet } from 'react-native';
 import { appColors, windowHeight, windowWidth } from '@src/themes';
 import { commonStyles } from '../../../../../../styles/commonStyle';
@@ -13,6 +14,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginTop: windowHeight(13),
     marginBottom: windowHeight(9),
+  
+    ...referenceSurfaces.card,
   },
   viewHeder: {
     paddingHorizontal: windowWidth(18),
@@ -21,6 +24,8 @@ const styles = StyleSheet.create({
     ...commonStyles.extraBold,
     color: appColors.primaryText,
     marginTop: windowHeight(10),
+  
+    ...referenceSurfaces.section,
   },
   detailContainerText: {
     paddingHorizontal: windowWidth(18),

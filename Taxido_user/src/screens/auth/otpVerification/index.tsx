@@ -1,9 +1,10 @@
-import { Text, View, Keyboard, Alert, BackHandler, KeyboardAvoidingView, TouchableWithoutFeedback, ScrollView, Platform } from 'react-native';
+import {useKeyboardState} from '../../../utils/useKeyboardState';
+import {View, Keyboard, Alert, BackHandler, KeyboardAvoidingView, TouchableWithoutFeedback, ScrollView, Platform} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AuthText } from '../../../components/authComponents/authText/index';
 import { AuthContainer } from '../../../components/authComponents/authContainer/index';
 import OTPTextInput from 'react-native-otp-textinput';
-import OTPTextView from 'react-native-otp-textinput';
 import { style } from './style';
 import { appColors, windowHeight } from '@src/themes';
 import { Button, notificationHelper } from '@src/commonComponent';
@@ -32,18 +33,20 @@ export function OtpVerification() {
   const dispatch = useDispatch<AppDispatch>();
   const { loading } = useSelector((state: any) => state.auth);
   const { translateData, settingData } = useSelector((state: any) => state.setting);
-  const otpInputRef = useRef<any>(null);
-  const input = useRef<OTPTextView>(null);
+  const otpInputRef = useRef<OTPTextInput>(null);
   const emailOrPhone = demouser?.email_or_phone ?? phoneNumber;
   const isEmail = emailOrPhone.includes('@');
   const demoMode = settingData?.values?.activation?.demo_mode == 1
   const [otp, setOtp] = useState(demoMode === true ? '123456' : '');
+  const {visible:keyboardVisible}=useKeyboardState();
   const [fcmToken, setFcmToken] = useState<string>('')
   const [resendTimer, setResendTimer] = useState<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const messageRef = useRef<any>();
   const navigation = useAppNavigation();
+
+  
 
   useEffect(() => {
     if (otp?.length !== 6) return;
@@ -87,8 +90,8 @@ export function OtpVerification() {
       .unwrap()
       .then(async (res: any) => {
         if (!res.success) {
-          notificationHelper('', translateData?.invalidOtp, 'error');
-        } else if (res.success && res.is_registered) {
+          notificationHelper('', res?.message || translateData?.invalidOtp, 'error');
+        } else if (res.success && res.is_registered === true && res.access_token) {
           notificationHelper(
             '',
             translateData?.otpVerifySuccess,
@@ -101,7 +104,7 @@ export function OtpVerification() {
               .then(() => {
               });
           }
-          setValue('token', res.access_token);
+          await setValue('token', res.access_token);
 
 
           if (res.access_token) {
@@ -109,7 +112,7 @@ export function OtpVerification() {
           }
           navigation.navigate('MyTabs');
         } else {
-          if (!res.is_registered) {
+          if (res.success === true && res.is_registered === false) {
 
             notificationHelper(
               '',
@@ -120,6 +123,7 @@ export function OtpVerification() {
               countryCode,
               phoneNumber,
               cca2,
+              verificationToken: otp,
             });
           } else {
             notificationHelper('', translateData?.invalidOtp, 'error');
@@ -127,7 +131,7 @@ export function OtpVerification() {
         }
       })
       .catch((error: any) => {
-        notificationHelper('', translateData?.duringVerificationOTP, 'error');
+        notificationHelper('', error?.message || translateData?.duringVerificationOTP, 'error');
 
       });
   };
@@ -205,7 +209,7 @@ export function OtpVerification() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
@@ -213,6 +217,7 @@ export function OtpVerification() {
           <AuthContainer
             topSpace={windowHeight(240)}
             imageShow={true}
+            keyboardVisible={keyboardVisible}
             container={
               <View>
                 <AuthText
@@ -240,7 +245,7 @@ export function OtpVerification() {
                   style={[style.inputContainer, { flexDirection: viewRTLStyle }]}
                 >
                   <OTPTextInput
-                    ref={input}
+                    ref={otpInputRef}
                     containerStyle={[
                       style.otpContainer,
                       { flexDirection: viewRTLStyle },
@@ -249,7 +254,7 @@ export function OtpVerification() {
                     handleTextChange={(value) => {
                       setOtp(value);
                       if (value?.length === 6) {
-                        otpInputRef.current?.blur();
+                        otpInputRef.current?.inputs[5]?.blur();
                       }
                     }}
                     textInputStyle={[
@@ -258,9 +263,13 @@ export function OtpVerification() {
                         color: isDark
                           ? appColors.whiteColor
                           : appColors.blackColor,
+                        backgroundColor: isDark
+                          ? appColors.darkPrimary
+                          : appColors.whiteColor,
                       },
                     ]}
                     keyboardType="numeric"
+                    secureTextEntry={false}
                     tintColor={appColors.primary}
                     offTintColor={isDark ? appColors.darkBorder : appColors.lightGray}
                     defaultValue={otp}
@@ -290,7 +299,7 @@ export function OtpVerification() {
             }
           />
         </ScrollView>
-      </TouchableWithoutFeedback>
+      
     </KeyboardAvoidingView>
   );
 }

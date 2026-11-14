@@ -29,6 +29,22 @@ export const userLogin = createAsyncThunk(
   },
 )
 
+export const driverSocialLogin = createAsyncThunk(
+  'auth/driverSocialLogin',
+  async (data: { id_token: string; fcm_token: string | null }) => {
+    const response = await authServices.driverSocialLogin(data)
+    return response?.data
+  },
+)
+
+export const fleetSocialLogin = createAsyncThunk(
+  'auth/fleetSocialLogin',
+  async (data: { id_token: string; fcm_token: string | null }) => {
+    const response = await authServices.fleetSocialLoginRequest(data)
+    return response?.data
+  },
+)
+
 export const fleetsLogin = createAsyncThunk(
   FLEET_LOGIN,
   async (data: FleetLoginInterface) => {

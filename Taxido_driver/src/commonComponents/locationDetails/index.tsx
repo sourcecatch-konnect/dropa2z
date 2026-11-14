@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native'
+import {View} from 'react-native';
+import {Text} from '../../design/Typography';
 import React from 'react'
 import { styles } from './styles'
 import { useValues } from '../../utils/context'

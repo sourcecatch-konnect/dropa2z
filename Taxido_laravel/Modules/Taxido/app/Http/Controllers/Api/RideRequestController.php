@@ -125,7 +125,22 @@ class RideRequestController extends Controller
         if ($roleName == RoleEnum::DRIVER) {
             $rideRequests = $rideRequests->whereHas('drivers', function (Builder $query) {
                 $query->where('driver_id', getCurrentUserId());
-            });
+            })
+                // A request becomes a Ride after it is accepted, so it must
+                // not remain in the driver's incoming-request list.
+                ->whereDoesntHave('ride')
+                // Only return a request when its *latest* lifecycle entry is
+                // still waiting for a driver.  The old query returned every
+                // historical request attached to this driver, including ones
+                // later cancelled or rejected.
+                ->whereHas('ride_status_activities', function (Builder $query) {
+                    $query->whereIn('status', [
+                        \Modules\Taxido\Enums\RideStatusEnum::REQUESTED,
+                        \Modules\Taxido\Enums\RideStatusEnum::PENDING,
+                    ])->whereRaw(
+                        'ride_status_activities.id = (SELECT MAX(latest_activity.id) FROM ride_status_activities AS latest_activity WHERE latest_activity.ride_request_id = ride_requests.id)'
+                    );
+                });
         }
 
         if ($request->has('zones')) {

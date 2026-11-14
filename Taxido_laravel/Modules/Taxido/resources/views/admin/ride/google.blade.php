@@ -21,40 +21,62 @@
             center: start
         });
 
-        var directionsService = new google.maps.DirectionsService();
-        var directionsRenderer = new google.maps.DirectionsRenderer({
-            map: map,
-            polylineOptions: {
-                strokeColor: '#199675',
-                strokeWeight: 5,
-                strokeOpacity: 0.8
-            }
-        });
-
-        // Define waypoints by excluding the first and last points
-        var waypoints = locationCoordinates.slice(1, -1).map(function(coordinate) {
+        // DirectionsService is a legacy Google API that cannot be enabled for
+        // new projects.  Use Routes API instead, then draw its polyline on
+        // the existing Maps JavaScript map.
+        var routesApiKey = @json(env('GOOGLE_MAP_API_KEY'));
+        var intermediates = locationCoordinates.slice(1, -1).map(function(coordinate) {
             return {
                 location: {
-                    lat: parseFloat(coordinate.lat),
-                    lng: parseFloat(coordinate.lng)
-                },
-                stopover: true
+                    latLng: {
+                        latitude: parseFloat(coordinate.lat),
+                        longitude: parseFloat(coordinate.lng)
+                    }
+                }
             };
         });
 
-        // Request directions with waypoints
-        directionsService.route({
-            origin: start,
-            destination: end,
-            waypoints: waypoints,
-            travelMode: google.maps.TravelMode.DRIVING
-        }, function(response, status) {
-            if (status === google.maps.DirectionsStatus.OK) {
-                directionsRenderer.setDirections(response);
-            } else {
-                window.alert('Directions request failed due to ' + status);
-            }
-        });
+        fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': routesApiKey,
+                'X-Goog-FieldMask': 'routes.polyline.encodedPolyline'
+            },
+            body: JSON.stringify({
+                origin: { location: { latLng: { latitude: start.lat, longitude: start.lng } } },
+                destination: { location: { latLng: { latitude: end.lat, longitude: end.lng } } },
+                intermediates: intermediates,
+                travelMode: 'DRIVE'
+            })
+        })
+            .then(function(response) {
+                if (!response.ok) throw new Error('Routes API request failed');
+                return response.json();
+            })
+            .then(function(data) {
+                var encodedPolyline = data?.routes?.[0]?.polyline?.encodedPolyline;
+                if (!encodedPolyline) throw new Error('No route returned');
+
+                var routePath = google.maps.geometry.encoding.decodePath(encodedPolyline);
+                new google.maps.Polyline({
+                    path: routePath,
+                    map: map,
+                    strokeColor: '#199675',
+                    strokeWeight: 5,
+                    strokeOpacity: 0.8
+                });
+                new google.maps.Marker({ position: start, map: map, label: 'A' });
+                new google.maps.Marker({ position: end, map: map, label: 'B' });
+
+                var bounds = new google.maps.LatLngBounds();
+                routePath.forEach(function(point) { bounds.extend(point); });
+                map.fitBounds(bounds);
+            })
+            .catch(function(error) {
+                console.error('Routes API request failed:', error);
+                window.alert('Unable to load the route. Please try again.');
+            });
     }
 </script>
 

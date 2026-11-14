@@ -1,5 +1,6 @@
 import React, { useEffect, useContext } from 'react';
-import { TextInput, View } from 'react-native';
+import {View} from 'react-native';
+import {TextInput} from '../../design/Typography';
 import { PickLocation } from '@utils/icons';
 import { styles } from './styles';
 import { PickUpDetailProps } from './types';

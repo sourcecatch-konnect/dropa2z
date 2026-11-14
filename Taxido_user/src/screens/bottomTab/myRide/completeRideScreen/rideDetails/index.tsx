@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, View, ImageBackground } from 'react-native';
+import {View, ImageBackground} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import Images from '@utils/images';
 import { DetailContainer, SolidLine } from '@src/commonComponent';
 import { external } from '../../../../../styles/externalStyle';

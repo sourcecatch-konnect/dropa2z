@@ -1,5 +1,6 @@
 import React from "react";
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {ScrollView, TouchableOpacity, View} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import styles from "./styles";
 import { Button, Header } from "@src/commonComponent";
 import { Ambulance, IdCard, PickLocation } from "@src/utils/icons";

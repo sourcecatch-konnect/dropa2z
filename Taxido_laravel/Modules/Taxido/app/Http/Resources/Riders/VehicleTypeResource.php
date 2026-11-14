@@ -40,6 +40,7 @@ class VehicleTypeResource extends BaseResource
             $vehicleType['vehicle_type_zone']['zone_id'] = $this->vehicle_type_zone?->zone_id;
             $vehicleType['vehicle_type_zone']['base_fare_charge'] = $this->vehicle_type_zone?->base_fare_charge;
             $vehicleType['vehicle_type_zone']['base_distance'] = $this->vehicle_type_zone?->base_distance;
+            $vehicleType['vehicle_type_zone']['goods_included_minutes'] = $this->vehicle_type_zone?->goods_included_minutes ?? 0;
             $vehicleType['vehicle_type_zone']['per_distance_charge'] = $this->vehicle_type_zone?->per_distance_charge;
             $vehicleType['vehicle_type_zone']['per_minute_charge'] = $this->vehicle_type_zone?->per_minute_charge;
             $vehicleType['vehicle_type_zone']['per_weight_charge'] = $this->vehicle_type_zone?->per_weight_charge;

@@ -1,4 +1,5 @@
-import { FlatList, Image, Text, View, RefreshControl, ActivityIndicator } from 'react-native';
+import {FlatList, Image, View, RefreshControl, ActivityIndicator} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { external } from '../../../styles/externalStyle';
 import { styles } from './styles';
@@ -11,8 +12,16 @@ import { appColors, windowHeight } from '@src/themes';
 import { again_Amazing } from '@src/constant';
 import { Button, notificationHelper } from '@src/commonComponent';
 import { AppDispatch, RootState } from '@src/api/store';
+import {useLiveBookings} from '../../../utils/LiveBookingProvider';
+import {BookingActivityCard} from '../../homeScreen/BookingActivityCard';
+import {DeliveryNotification} from '../../../design/DeliveryNotification';
+import {bookingCopy} from '../../../utils/liveBooking';
+import {TouchableOpacity,AppState} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 export function TopCategory() {
+  const insets=useSafeAreaInsets();
+  const {bookings,notices,openBooking,refresh:refreshBookings}=useLiveBookings();
   const dispatch = useDispatch<AppDispatch>();
   const { notificationList }: any = useSelector((state: RootState) => state.notification);
   const { translateData }: any = useSelector((state: RootState) => state.setting);
@@ -23,10 +32,13 @@ export function TopCategory() {
 
   useEffect(() => {
     dispatch(notificationDataGet());
-  }, []);
+    const app=AppState.addEventListener('change',state=>{if(state==='active')dispatch(notificationDataGet());});
+    return()=>app.remove();
+  }, [dispatch]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    void refreshBookings();
     dispatch(notificationDataGet()).finally(() => setRefreshing(false));
   }, [dispatch]);
 
@@ -42,19 +54,20 @@ export function TopCategory() {
   }, [dispatch]);
 
   const ItemSeparatorComponent = () => {
-    return <View style={styles.viewWidth} />;
+    return <View style={{height:10}} />;
   };
 
   const renderItem = ({ item }: any) => <MessageItem item={item} />;
 
   return (
-    <View style={[external.mt_20, { flex: 1 }]}>
-      {notificationList?.data?.length > 0 ? (
+    <View style={{flex:1}}>
+      {(notificationList?.data?.length > 0||notices.length>0||bookings.length>0) ? (
         <FlatList
+          ListHeaderComponent={<View><BookingActivityCard/>{notices.map(notice=>{const {title,body}=bookingCopy(notice.booking);return <TouchableOpacity key={notice.id} accessibilityRole="button" accessibilityLabel={title} onPress={()=>void openBooking(notice.booking)} style={{marginBottom:10}}><DeliveryNotification compact title={title} description={body} time={new Date(notice.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} dark={isDark}/></TouchableOpacity>;})}</View>}
           ItemSeparatorComponent={ItemSeparatorComponent}
           data={notificationList?.data}
           renderItem={renderItem}
-          contentContainerStyle={[external.mh_15, { paddingBottom: windowHeight(50) }]}
+          contentContainerStyle={{paddingHorizontal:14,paddingTop:4,paddingBottom:Math.max(20,insets.bottom+12)}}
           removeClippedSubviews={true}
           refreshControl={
             <RefreshControl

@@ -1,7 +1,7 @@
 import React from "react";
 import Svg, { Path } from "react-native-svg"
 
-export function Call({ color = "#199675" }) {
+export function Call({ color = "#FC9F03" }) {
   return (
     <Svg width={20} height={20} fill="none">
       <Path

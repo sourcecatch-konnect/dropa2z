@@ -6,6 +6,8 @@ use Exception;
 use Modules\Taxido\Models\Ride;
 use App\Exceptions\ExceptionHandler;
 use Modules\Taxido\Models\RideRequest;
+use Modules\Taxido\Enums\RideStatusEnum;
+use Modules\Taxido\Repositories\Api\RideRepository as ApiRideRepository;
 use Prettus\Repository\Eloquent\BaseRepository;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Taxido\Exports\RidesExport; 
@@ -47,6 +49,14 @@ class RideRepository extends BaseRepository
 
             throw new ExceptionHandler($e->getMessage(), $e->getCode());
         }
+    }
+
+    public function cancel(int $rideId, string $reason): void
+    {
+        app(ApiRideRepository::class)->update([
+            'status' => RideStatusEnum::CANCELLED,
+            'cancellation_reason' => $reason,
+        ], $rideId);
     }
 
     public function export($request)

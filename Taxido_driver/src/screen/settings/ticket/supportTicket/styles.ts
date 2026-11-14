@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appColors from '../../../../theme/appColors'
 import {
@@ -32,6 +33,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(4),
     paddingBottom: windowHeight(2),
     borderRadius: windowHeight(1),
+  
+    ...referenceSurfaces.card,
   },
   ticketText: {
     color: appColors.primary,
@@ -85,6 +88,8 @@ const styles = StyleSheet.create({
     width: '99%',
     borderTopWidth: windowHeight(0.1),
     marginVertical: windowHeight(1.5),
+  
+    ...referenceSurfaces.card,
   },
   messageText: {
     color: appColors.secondaryFont,

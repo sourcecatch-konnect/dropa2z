@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import { fontSizes, windowHeight, windowWidth } from '../../theme/appConstant'
 import appColors from '../../theme/appColors'
@@ -18,6 +19,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     bottom: windowHeight(1),
     marginTop: windowHeight(2),
+  
+    ...referenceSurfaces.card,
   },
   iconContainer: {
     height: windowHeight(5),
@@ -26,6 +29,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.cardicon,
     alignItems: 'center',
     justifyContent: 'center',
+  
+    ...referenceSurfaces.icon,
   },
   textContainer: {
     marginHorizontal: windowWidth(2.9),

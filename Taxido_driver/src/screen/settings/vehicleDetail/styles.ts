@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import { windowHeight } from '../../../theme/appConstant'
 import appFonts from '../../../theme/appFonts'
@@ -10,59 +11,67 @@ const vehicleStyles = StyleSheet.create({
     marginTop: windowHeight(0.8)
   },
   viewContainer: {
-    bottom: windowHeight(1)
+    marginTop: 12
   },
   Category: {
-    bottom: windowHeight(35)
+    marginTop: 12
   },
   vehicle: {
-    bottom: windowHeight(2.5)
+    marginTop: 12
   },
   vehicleNo: {
-    bottom: windowHeight(49)
+    marginTop: 12
+  ,
+    ...referenceSurfaces.control,
   },
   datePicker: {
-    bottom: windowHeight(3.3)
+    marginTop: 12
   },
   vehicleRegistrationDate: {
     fontFamily: appFonts.medium,
     marginBottom: windowHeight(1),
   },
   vehicleColor: {
-    bottom: windowHeight(50)
+    marginTop: 12
   },
   seat: {
-    bottom: windowHeight(56)
+    marginTop: 12
   },
   selectCategory: {
-    bottom: windowHeight(5.8)
+    marginTop: 12
+  ,
+    ...referenceSurfaces.control,
   },
   selectVehicle: {
-    bottom: windowHeight(6)
+    marginTop: 12
+  ,
+    ...referenceSurfaces.control,
   },
   vehicleName: {
-    bottom: windowHeight(2)
+    marginTop: 12
+  ,
+    ...referenceSurfaces.control,
   },
   registrationDate: {
-    bottom: windowHeight(10)
+    marginTop: 12
   },
   gotoDocument: {
-    width: '108%',
+    width: '100%',
     alignSelf: 'center',
-    bottom: windowHeight(28),
-    marginBottom: windowHeight(-28)
+    marginTop: 12,
+    marginBottom: 20
   },
   datePickerView: {
-    bottom: windowHeight(32)
+    marginTop: 12
   },
   selectVehicleView: {
-    bottom: windowHeight(30.7)
+    marginTop: 12
   },
   selectCategoryView: {
-    bottom: windowHeight(31)
+    marginTop: 12
   },
   selectServiceView: {
-    height: windowHeight(50)
+    minHeight: 64
   },
   renderServiceList: {
     marginTop: windowHeight(1)

@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import { Platform, StyleSheet } from 'react-native';
 import { commonStyles } from '../../../../styles/commonStyle';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
@@ -18,6 +20,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(5.9),
     paddingHorizontal: windowWidth(24),
     paddingVertical: windowHeight(12),
+  
+    ...riderCardFinish,
   },
   message: {
     height: windowHeight(40),
@@ -25,6 +29,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(5),
     alignItems: 'center',
     justifyContent: 'center',
+  
+    ...referenceSurfaces.control,
   },
   call: {
     height: windowHeight(40),
@@ -33,6 +39,10 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(5),
     alignItems: 'center',
     justifyContent: 'center',
+  
+    ...referenceSurfaces.control,
+  
+    ...riderCardFinish,
   },
   dashedLine: {
     height: 0.1,
@@ -65,6 +75,8 @@ const styles = StyleSheet.create({
     ...external.mt_20,
     borderRadius: windowHeight(5.9),
     overflow: 'hidden',
+  
+    ...referenceSurfaces.card,
   },
   rideInfoContainer: {
     width: '100%',
@@ -137,6 +149,8 @@ const styles = StyleSheet.create({
     height: windowHeight(18),
     alignItems: "center",
     justifyContent: "center",
+  
+    ...riderCardFinish,
   },
   service_category: {
     color: appColors.darkPurpal,
@@ -150,6 +164,8 @@ const styles = StyleSheet.create({
     height: windowHeight(18),
     alignItems: "center",
     justifyContent: "center",
+  
+    ...riderCardFinish,
   },
   MessageMainView: {
     width: windowWidth(100),
@@ -162,6 +178,8 @@ const styles = StyleSheet.create({
     width: windowHeight(30),
     borderRadius: windowHeight(20),
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
   safetyCallView: {
     alignItems: "center",
@@ -170,6 +188,8 @@ const styles = StyleSheet.create({
     width: windowHeight(30),
     borderRadius: windowHeight(20),
     borderWidth: windowHeight(1),
+  
+    ...riderCardFinish,
   },
   starContainer: {
     alignItems: "flex-end",
@@ -297,6 +317,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '92%',
     alignSelf: 'center',
+  
+    ...riderCardFinish,
   },
   starIcon: {
     marginHorizontal: windowWidth(12),
@@ -398,7 +420,7 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.medium,
   },
   flatlistView: {
-    bottom: windowHeight(20),
+    flex: 1,
   },
   noRideDes: {
     left: windowWidth(10),
@@ -424,6 +446,8 @@ const styles = StyleSheet.create({
   noDataView: {
     alignSelf: 'center',
     alignItems: 'center',
+  
+    ...referenceSurfaces.card,
   },
   noRideImage: {
     height: windowHeight(220),

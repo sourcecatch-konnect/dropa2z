@@ -1,18 +1,13 @@
-import {
-  FlatList,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-  ActivityIndicator,
-  Linking,
-} from 'react-native'
-import React, { useState } from 'react'
+import {DriverEmptyState} from '../../../design/DriverEmptyState';
+import {BrandLoader} from '../../../design/BrandLogo';
+import {Alert, FlatList, Image, TouchableOpacity, View, ActivityIndicator, Linking} from 'react-native';
+import {Text} from '../../../design/Typography';
+import React, { useState, useRef } from 'react'
 import Images from '../../../utils/images/images'
 import { styles } from './style'
 import { useValues } from '../../../utils/context'
 import Icons from '../../../utils/icons/icons'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { useTheme } from '@react-navigation/native'
 import appColors from '../../../theme/appColors'
 import appFonts from '../../../theme/appFonts'
@@ -25,6 +20,9 @@ import {
 import { apiformatDates } from '../../../utils/functions'
 import { useAppNavigation } from '../../../utils/navigation'
 
+import { rideDataGets, rideDataPut } from '../../../api/store/action'
+import { AppDispatch } from '../../../api/store'
+
 export default function RideContainer({
   status,
   scrollEnabled = true,
@@ -33,6 +31,20 @@ export default function RideContainer({
   scrollEnabled?: boolean
 }) {
   const { navigate } = useAppNavigation()
+  const dispatch = useDispatch<AppDispatch>()
+  const cancellationInFlight = useRef(false)
+  const cancelDelivery = (item: any) => Alert.alert(
+    'Cancel delivery?', 'This cancels the booking for the sender too. Cancellation charges may apply.',
+    [{ text: 'Keep delivery', style: 'cancel' }, { text: 'Cancel delivery', style: 'destructive', onPress: async () => {
+      if (cancellationInFlight.current) return
+      cancellationInFlight.current = true
+      try {
+        await dispatch(rideDataPut({ ride_id: item.id, data: { status: 'cancelled', cancellation_reason: 'Driver cancelled before pickup.' } })).unwrap()
+        await dispatch(rideDataGets()).unwrap()
+      } catch (error: any) { Alert.alert('Could not cancel delivery', error?.message || 'Please try again.') }
+      finally { cancellationInFlight.current = false }
+    }}],
+  )
   const { viewRtlStyle, textRtlStyle, isDark } = useValues()
   const { colors } = useTheme()
   const { rideGets } = useSelector((state: any) => state.ride)
@@ -344,6 +356,11 @@ export default function RideContainer({
                   </TouchableOpacity>
                 </View>
               )}
+            {['pending', 'accepted', 'arrived'].includes(item?.ride_status?.slug) && (
+              <TouchableOpacity onPress={() => cancelDelivery(item)} style={{ minHeight: 44, paddingVertical: 12, alignItems: 'center' }}>
+                <Text style={{ color: appColors.red, fontFamily: appFonts.medium }}>Cancel delivery</Text>
+              </TouchableOpacity>
+            )}
             <View
               style={[
                 styles.dashedLine,
@@ -491,13 +508,7 @@ export default function RideContainer({
       {loading && acceptedRides?.length > 0 ? (
         <LoaderRide />
       ) : acceptedRides?.length === 0 ? (
-        <View style={styles.noDataContainer}>
-          <Image source={Images.noRides} style={styles.noDataImage} />
-          <Text style={styles.noDataText}>{translateData.norideTitle}</Text>
-          <Text style={styles.noDataDesc}>
-            {translateData.norideDescription}
-          </Text>
-        </View>
+        <DriverEmptyState icon="package" title={translateData.norideTitle || "No deliveries yet"} description={translateData.norideDescription}/>
       ) : (
         <>
           <FlatList
@@ -509,7 +520,7 @@ export default function RideContainer({
             onEndReachedThreshold={0.9}
             ListFooterComponent={
               loading ? (
-                <ActivityIndicator
+                <BrandLoader
                   size="large"
                   color={appColors.primary}
                   style={{ marginTop: 10 }}

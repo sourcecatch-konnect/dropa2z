@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import appColors from "../../../../theme/appColors";
 import appFonts from "../../../../theme/appFonts";
 import { fontSizes, windowHeight, windowWidth } from "../../../../theme/appConstant";
@@ -10,7 +11,9 @@ const styles = StyleSheet.create({
         padding: windowHeight(2),
         borderRadius: windowHeight(0.8),
         borderWidth: windowHeight(0.1),
-    },
+    
+    ...referenceSurfaces.card,
+  },
     userImage: {
         height: windowHeight(6),
         width: windowHeight(6),

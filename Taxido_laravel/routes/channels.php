@@ -2,19 +2,7 @@
 
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
-
-
-function isCustomChatRole($user): bool
-{
-    if (!$user) return false;
-
-    $isCustomRole = $user->roles()
-        ->whereNull('module')
-        ->where('system_reserve', false)
-        ->exists();
-
-    return $isCustomRole && $user->hasPermissionTo('chat.index');
-}
+use App\Services\ChatAccess;
 
 
 Broadcast::channel('chat.room.{roomId}', function ($user, $roomId) {
@@ -23,35 +11,11 @@ Broadcast::channel('chat.room.{roomId}', function ($user, $roomId) {
         ->first();
 
     if (!$room) {
-        $ids = explode('_', $roomId);
-        if (in_array((string) $user->id, $ids)) {
-            return true;
-        }
-        // Allow custom-role staff when admin's ID is in the generated room ID
-        $adminId = (string) getAdminId();
-        if (in_array($adminId, $ids) && isCustomChatRole($user)) {
-            return true;
-        }
-        return false;
+        return ChatAccess::canAccessRoomCandidate($user, (string) $roomId);
     }
 
     $participants = json_decode($room->participants, true);
-    if (!is_array($participants)) {
-        return false;
-    }
-
-    // Direct participant
-    if (in_array((string) $user->id, $participants)) {
-        return true;
-    }
-
-    // Custom-role staff: allowed when admin is a participant in the room
-    $adminId = (string) getAdminId();
-    if (in_array($adminId, $participants) && isCustomChatRole($user)) {
-        return true;
-    }
-
-    return false;
+    return ChatAccess::canAccessRoom($user, (string) $roomId, is_array($participants) ? $participants : []);
 }, ['guards' => ['web', 'sanctum']]);
 
 
@@ -62,9 +26,9 @@ Broadcast::channel('user.notifications.{userId}', function ($user, $userId) {
         return true;
     }
 
-    // Custom-role staff listening to admin's notification channel
-    $adminId = (string) getAdminId();
-    if ((string) $userId === $adminId && isCustomChatRole($user)) {
+    // Staff with the Admin chat permission listens on the effective Admin channel.
+    $adminId = (string) (ChatAccess::effectiveUserId($user) ?? '');
+    if ((string) $userId === $adminId && ChatAccess::hasAdminAccess($user)) {
         return true;
     }
 

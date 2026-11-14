@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import {
   appColors,
@@ -63,6 +64,8 @@ const styles = StyleSheet.create({
     position: "relative",
     height: windowHeight(76),
     justifyContent: "center",
+  
+    ...riderCardFinish,
   },
   inputContainer: {
     flexDirection: "row",
@@ -115,6 +118,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.whiteColor,
     marginTop: windowHeight(15),
     paddingVertical: windowHeight(7),
+  
+    ...riderCardFinish,
   },
   dateTimeItem: {
     flex: 1,
@@ -164,6 +169,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(15),
     width: "48%",
     backgroundColor: appColors.whiteColor,
+  
+    ...riderCardFinish,
   },
   selectedGearOption: {
     borderColor: appColors.primary,
@@ -193,6 +200,8 @@ const styles = StyleSheet.create({
     borderRadius: windowWidth(12),
     borderWidth: windowWidth(0.45),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   historyBtn: {
     flexDirection: "row",
@@ -236,6 +245,8 @@ const styles = StyleSheet.create({
     borderRadius: windowWidth(12),
     paddingVertical: windowWidth(10),
     marginBottom: windowHeight(20),
+  
+    ...riderCardFinish,
   },
   suggestionsView: {
     flexDirection: "row",
@@ -317,6 +328,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 10,
     width: "30%",
+  
+    ...riderCardFinish,
   },
   timePickerText: {
     fontSize: fontSizes.FONT20,

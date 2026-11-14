@@ -3,7 +3,7 @@ import Svg, { Path } from 'react-native-svg'
 const SvgComponent = () => (
   <Svg width={15} height={15} fill="none">
     <Path
-      stroke="#20B149"
+      stroke="#B15520"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeMiterlimit={10}

@@ -25,8 +25,12 @@
             @includeIf('admin.layouts.partials.footer')
         </div>
     </div>
+    <x-modal.confirm />
     @includeIf('inc.files')
     @include('admin.layouts.partials.script')
+    <script>
+        window.dropa2zRealtimeConfig = @json(app(\Modules\Taxido\Http\Controllers\Api\RealtimeConfigController::class)()->getData(true));
+    </script>
     @vite(['resources/js/script.js'])
     @stack('scripts')
     @includeIf('inc.alerts')

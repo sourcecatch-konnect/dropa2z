@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, LayoutChangeEvent, Image } from 'react-native'
+import {View, ScrollView, LayoutChangeEvent, Image} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useState, useEffect, useCallback } from 'react'
 import { Header } from '../../../../commonComponents'
 import styles from './styles'

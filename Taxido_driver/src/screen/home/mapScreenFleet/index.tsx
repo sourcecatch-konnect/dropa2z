@@ -1,5 +1,7 @@
+import {mapVehicleMarker} from '../../../design/mapVehicleMarkers';
 import React, { useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
-import { View, StyleSheet, Platform, PermissionsAndroid, Alert, Text } from 'react-native';
+import {View, StyleSheet, Platform, PermissionsAndroid, Alert} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { WebView } from 'react-native-webview';
 import Geolocation from '@react-native-community/geolocation';
 import { useValues } from '../../../utils/context';
@@ -37,7 +39,7 @@ export const MapScreenFleet = forwardRef((props, ref) => {
   useEffect(() => {
     if (webViewRef.current) {
       webViewRef.current.injectJavaScript(`
-      window.updateDrivers(${JSON.stringify(filteredDrivers)});
+      window.updateDrivers(${JSON.stringify(filteredDrivers.map(driver=>({...driver,vehicle_map_icon_url:mapVehicleMarker(driver,driver.vehicle_map_icon_url),vehicle:driver.vehicle?{...driver.vehicle,vehicle_type_map_icon_url:mapVehicleMarker(driver.vehicle,driver.vehicle.vehicle_type_map_icon_url)}:undefined,vehicle_info:driver.vehicle_info?{...driver.vehicle_info,vehicle_type_map_icon_url:mapVehicleMarker(driver.vehicle_info,driver.vehicle_info.vehicle_type_map_icon_url)}:undefined})))});
       true;
     `);
     }
@@ -144,16 +146,16 @@ export const MapScreenFleet = forwardRef((props, ref) => {
   const darkMapStyle = [
     { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
     { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#557468' }] },
     {
       featureType: 'administrative.locality',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#d59563' }],
+      stylers: [{ color: '#63D5A7' }],
     },
     {
       featureType: 'poi',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#d59563' }],
+      stylers: [{ color: '#63D5A7' }],
     },
     {
       featureType: 'poi.park',
@@ -163,7 +165,7 @@ export const MapScreenFleet = forwardRef((props, ref) => {
     {
       featureType: 'poi.park',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#6b9a76' }],
+      stylers: [{ color: '#9A7C6B' }],
     },
     {
       featureType: 'road',
@@ -183,7 +185,7 @@ export const MapScreenFleet = forwardRef((props, ref) => {
     {
       featureType: 'road.highway',
       elementType: 'geometry',
-      stylers: [{ color: '#746855' }],
+      stylers: [{ color: '#557468' }],
     },
     {
       featureType: 'road.highway',
@@ -193,7 +195,7 @@ export const MapScreenFleet = forwardRef((props, ref) => {
     {
       featureType: 'road.highway',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#f3d19c' }],
+      stylers: [{ color: '#9CF3D0' }],
     },
     {
       featureType: 'transit',
@@ -203,7 +205,7 @@ export const MapScreenFleet = forwardRef((props, ref) => {
     {
       featureType: 'transit.station',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#d59563' }],
+      stylers: [{ color: '#63D5A7' }],
     },
     {
       featureType: 'water',

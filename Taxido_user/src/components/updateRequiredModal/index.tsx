@@ -1,5 +1,7 @@
+import {BrandMark} from '../../design/BrandLogo';
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, Image, StatusBar } from 'react-native';
+import {Modal, View, TouchableOpacity, Image, StatusBar} from 'react-native';
+import {Text} from '../../design/Typography';
 import { styles } from './styles';
 import Images from '../../utils/images';
 import { useValues } from '../../utils/context';
@@ -24,10 +26,7 @@ export const UpdateRequiredModal: React.FC<UpdateRequiredModalProps> = ({ visibl
             <View style={styles.modalBackground}>
                 <View style={[styles.modalContainer, { backgroundColor: isDark ? appColors.darkHeader : appColors.whiteColor }]}>
                     <View style={[styles.imageContainer, { backgroundColor: isDark ? appColors.darkPrimary : appColors.lightGreen }]}>
-                        <Image
-                            source={Images.splash}
-                            style={[styles.image]}
-                        />
+                        <BrandMark size={54}/>
                     </View>
                     <Text style={[styles.title, { color: isDark ? appColors.whiteColor : appColors.primaryText }]}>
                         Update Required

@@ -1,0 +1,1811 @@
+{
+  "rider": {
+    "delivered_path": "C:\\Users\\mishr\\Downloads\\Dropa2z-Full-20261111-ServiceCards.apk",
+    "delivered_bytes": 104041994,
+    "variants": {
+      "app-arm64-v8a-release.apk": {
+        "bytes": 54765185,
+        "groups": {
+          "metadata-other": {
+            "compressed": 213335,
+            "uncompressed": 534567,
+            "count": 196
+          },
+          "assets-other": {
+            "compressed": 5328,
+            "uncompressed": 7756,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 13079146,
+            "uncompressed": 34364592,
+            "count": 5
+          },
+          "native/arm64-v8a": {
+            "compressed": 17582760,
+            "uncompressed": 17582760,
+            "count": 17
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 9409484,
+            "uncompressed": 9409484,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 1679277,
+            "uncompressed": 2004779,
+            "count": 729
+          },
+          "images": {
+            "compressed": 12243116,
+            "uncompressed": 12243116,
+            "count": 377
+          }
+        },
+        "zip_overhead": 315405
+      },
+      "app-armeabi-v7a-release.apk": {
+        "bytes": 49225531,
+        "groups": {
+          "metadata-other": {
+            "compressed": 213335,
+            "uncompressed": 534567,
+            "count": 196
+          },
+          "assets-other": {
+            "compressed": 5328,
+            "uncompressed": 7756,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 13079146,
+            "uncompressed": 34364592,
+            "count": 5
+          },
+          "native/armeabi-v7a": {
+            "compressed": 12045948,
+            "uncompressed": 12045948,
+            "count": 17
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 9409484,
+            "uncompressed": 9409484,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 1679277,
+            "uncompressed": 2004779,
+            "count": 729
+          },
+          "images": {
+            "compressed": 12243116,
+            "uncompressed": 12243116,
+            "count": 377
+          }
+        },
+        "zip_overhead": 312563
+      },
+      "app-universal-release.apk": {
+        "bytes": 103939463,
+        "groups": {
+          "metadata-other": {
+            "compressed": 213335,
+            "uncompressed": 534567,
+            "count": 196
+          },
+          "assets-other": {
+            "compressed": 5328,
+            "uncompressed": 7756,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 13079146,
+            "uncompressed": 34364592,
+            "count": 5
+          },
+          "native/arm64-v8a": {
+            "compressed": 17582760,
+            "uncompressed": 17582760,
+            "count": 17
+          },
+          "native/armeabi-v7a": {
+            "compressed": 12045948,
+            "uncompressed": 12045948,
+            "count": 17
+          },
+          "native/x86": {
+            "compressed": 18638964,
+            "uncompressed": 18638964,
+            "count": 17
+          },
+          "native/x86_64": {
+            "compressed": 18063432,
+            "uncompressed": 18063432,
+            "count": 17
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 9409484,
+            "uncompressed": 9409484,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 1679277,
+            "uncompressed": 2004779,
+            "count": 729
+          },
+          "images": {
+            "compressed": 12243116,
+            "uncompressed": 12243116,
+            "count": 377
+          }
+        },
+        "zip_overhead": 741339
+      },
+      "app-x86-release.apk": {
+        "bytes": 55838067,
+        "groups": {
+          "metadata-other": {
+            "compressed": 213335,
+            "uncompressed": 534567,
+            "count": 196
+          },
+          "assets-other": {
+            "compressed": 5328,
+            "uncompressed": 7756,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 13079146,
+            "uncompressed": 34364592,
+            "count": 5
+          },
+          "native/x86": {
+            "compressed": 18638964,
+            "uncompressed": 18638964,
+            "count": 17
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 9409484,
+            "uncompressed": 9409484,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 1679277,
+            "uncompressed": 2004779,
+            "count": 729
+          },
+          "images": {
+            "compressed": 12243116,
+            "uncompressed": 12243116,
+            "count": 377
+          }
+        },
+        "zip_overhead": 332083
+      },
+      "app-x86_64-release.apk": {
+        "bytes": 55225870,
+        "groups": {
+          "metadata-other": {
+            "compressed": 213335,
+            "uncompressed": 534567,
+            "count": 196
+          },
+          "assets-other": {
+            "compressed": 5328,
+            "uncompressed": 7756,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 13079146,
+            "uncompressed": 34364592,
+            "count": 5
+          },
+          "native/x86_64": {
+            "compressed": 18063432,
+            "uncompressed": 18063432,
+            "count": 17
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 9409484,
+            "uncompressed": 9409484,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 1679277,
+            "uncompressed": 2004779,
+            "count": 729
+          },
+          "images": {
+            "compressed": 12243116,
+            "uncompressed": 12243116,
+            "count": 377
+          }
+        },
+        "zip_overhead": 295418
+      }
+    },
+    "largest_delivered_entries": [
+      {
+        "name": "assets/index.android.bundle",
+        "compressed": 9409484,
+        "uncompressed": 9409484,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86/libreactnative.so",
+        "compressed": 6430408,
+        "uncompressed": 6430408,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86_64/libreactnative.so",
+        "compressed": 6198512,
+        "uncompressed": 6198512,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libreactnative.so",
+        "compressed": 6080912,
+        "uncompressed": 6080912,
+        "compression": 0
+      },
+      {
+        "name": "lib/armeabi-v7a/libreactnative.so",
+        "compressed": 4220332,
+        "uncompressed": 4220332,
+        "compression": 0
+      },
+      {
+        "name": "classes.dex",
+        "compressed": 3601130,
+        "uncompressed": 9467864,
+        "compression": 8
+      },
+      {
+        "name": "classes2.dex",
+        "compressed": 3345058,
+        "uncompressed": 8284492,
+        "compression": 8
+      },
+      {
+        "name": "classes4.dex",
+        "compressed": 3055312,
+        "uncompressed": 8464760,
+        "compression": 8
+      },
+      {
+        "name": "lib/x86/libappmodules.so",
+        "compressed": 2872124,
+        "uncompressed": 2872124,
+        "compression": 0
+      },
+      {
+        "name": "classes3.dex",
+        "compressed": 2831547,
+        "uncompressed": 7527564,
+        "compression": 8
+      },
+      {
+        "name": "lib/x86_64/libappmodules.so",
+        "compressed": 2828832,
+        "uncompressed": 2828832,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libappmodules.so",
+        "compressed": 2754360,
+        "uncompressed": 2754360,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86/libhermesvm.so",
+        "compressed": 2619596,
+        "uncompressed": 2619596,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86_64/libhermesvm.so",
+        "compressed": 2225696,
+        "uncompressed": 2225696,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libhermesvm.so",
+        "compressed": 2139952,
+        "uncompressed": 2139952,
+        "compression": 0
+      },
+      {
+        "name": "lib/armeabi-v7a/libappmodules.so",
+        "compressed": 2008828,
+        "uncompressed": 2008828,
+        "compression": 0
+      },
+      {
+        "name": "res/Ej.png",
+        "compressed": 1485897,
+        "uncompressed": 1485897,
+        "compression": 0
+      },
+      {
+        "name": "lib/armeabi-v7a/libhermesvm.so",
+        "compressed": 1481564,
+        "uncompressed": 1481564,
+        "compression": 0
+      },
+      {
+        "name": "resources.arsc",
+        "compressed": 1437480,
+        "uncompressed": 1437480,
+        "compression": 0
+      },
+      {
+        "name": "res/66.png",
+        "compressed": 1352125,
+        "uncompressed": 1352125,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86_64/libreanimated.so",
+        "compressed": 1330736,
+        "uncompressed": 1330736,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libreanimated.so",
+        "compressed": 1293800,
+        "uncompressed": 1293800,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libc++_shared.so",
+        "compressed": 1292904,
+        "uncompressed": 1292904,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86/libc++_shared.so",
+        "compressed": 1254988,
+        "uncompressed": 1254988,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86_64/libc++_shared.so",
+        "compressed": 1252080,
+        "uncompressed": 1252080,
+        "compression": 0
+      }
+    ],
+    "duplicate_assets": [
+      [
+        {
+          "name": "res/-6.webp",
+          "compressed": 2232,
+          "uncompressed": 2232
+        },
+        {
+          "name": "res/sK.webp",
+          "compressed": 2232,
+          "uncompressed": 2232
+        }
+      ],
+      [
+        {
+          "name": "res/2w.xml",
+          "compressed": 504,
+          "uncompressed": 1136
+        },
+        {
+          "name": "res/pw.xml",
+          "compressed": 504,
+          "uncompressed": 1136
+        }
+      ],
+      [
+        {
+          "name": "res/6C.9.png",
+          "compressed": 1253,
+          "uncompressed": 1253
+        },
+        {
+          "name": "res/Pw.9.png",
+          "compressed": 1253,
+          "uncompressed": 1253
+        }
+      ],
+      [
+        {
+          "name": "res/K_.jpg",
+          "compressed": 101645,
+          "uncompressed": 101645
+        },
+        {
+          "name": "res/SD.jpeg",
+          "compressed": 101645,
+          "uncompressed": 101645
+        }
+      ],
+      [
+        {
+          "name": "res/MO.webp",
+          "compressed": 1026,
+          "uncompressed": 1026
+        },
+        {
+          "name": "res/fq.webp",
+          "compressed": 1026,
+          "uncompressed": 1026
+        }
+      ],
+      [
+        {
+          "name": "res/Sn.webp",
+          "compressed": 1814,
+          "uncompressed": 1814
+        },
+        {
+          "name": "res/j_.webp",
+          "compressed": 1814,
+          "uncompressed": 1814
+        }
+      ],
+      [
+        {
+          "name": "res/color/mtrl_navigation_bar_ripple_color.xml",
+          "compressed": 418,
+          "uncompressed": 1672
+        },
+        {
+          "name": "res/color/mtrl_tabs_ripple_color.xml",
+          "compressed": 418,
+          "uncompressed": 1672
+        }
+      ],
+      [
+        {
+          "name": "res/gG.xml",
+          "compressed": 523,
+          "uncompressed": 1176
+        },
+        {
+          "name": "res/xa.xml",
+          "compressed": 523,
+          "uncompressed": 1176
+        }
+      ],
+      [
+        {
+          "name": "res/qs.webp",
+          "compressed": 1328,
+          "uncompressed": 1328
+        },
+        {
+          "name": "res/u5.webp",
+          "compressed": 1328,
+          "uncompressed": 1328
+        }
+      ]
+    ],
+    "duplicate_asset_saving_bytes": 110743,
+    "fonts": [
+      {
+        "name": "assets/fonts/GTWalsheimPro-Bold.ttf",
+        "compressed": 61578,
+        "uncompressed": 135280
+      },
+      {
+        "name": "assets/fonts/GTWalsheimPro-Medium.ttf",
+        "compressed": 59708,
+        "uncompressed": 133404
+      },
+      {
+        "name": "assets/fonts/GTWalsheimPro-Regular.ttf",
+        "compressed": 61016,
+        "uncompressed": 134768
+      },
+      {
+        "name": "assets/fonts/GlacialIndifference-Bold.ttf",
+        "compressed": 27540,
+        "uncompressed": 53100
+      },
+      {
+        "name": "assets/fonts/GlacialIndifference-Regular.ttf",
+        "compressed": 27492,
+        "uncompressed": 52404
+      }
+    ],
+    "arm64_native": [
+      {
+        "name": "lib/arm64-v8a/libreactnative.so",
+        "compressed": 6080912,
+        "uncompressed": 6080912
+      },
+      {
+        "name": "lib/arm64-v8a/libappmodules.so",
+        "compressed": 2754360,
+        "uncompressed": 2754360
+      },
+      {
+        "name": "lib/arm64-v8a/libhermesvm.so",
+        "compressed": 2139952,
+        "uncompressed": 2139952
+      },
+      {
+        "name": "lib/arm64-v8a/libreanimated.so",
+        "compressed": 1293800,
+        "uncompressed": 1293800
+      },
+      {
+        "name": "lib/arm64-v8a/libc++_shared.so",
+        "compressed": 1292904,
+        "uncompressed": 1292904
+      },
+      {
+        "name": "lib/arm64-v8a/libworklets.so",
+        "compressed": 906680,
+        "uncompressed": 906680
+      },
+      {
+        "name": "lib/arm64-v8a/libreact_codegen_rnscreens.so",
+        "compressed": 787616,
+        "uncompressed": 787616
+      },
+      {
+        "name": "lib/arm64-v8a/libreact_codegen_rnsvg.so",
+        "compressed": 701024,
+        "uncompressed": 701024
+      },
+      {
+        "name": "lib/arm64-v8a/libnative-imagetranscoder.so",
+        "compressed": 585376,
+        "uncompressed": 585376
+      },
+      {
+        "name": "lib/arm64-v8a/libjsi.so",
+        "compressed": 395856,
+        "uncompressed": 395856
+      },
+      {
+        "name": "lib/arm64-v8a/libfbjni.so",
+        "compressed": 177000,
+        "uncompressed": 177000
+      },
+      {
+        "name": "lib/arm64-v8a/libreact_codegen_safeareacontext.so",
+        "compressed": 157192,
+        "uncompressed": 157192
+      },
+      {
+        "name": "lib/arm64-v8a/libhermestooling.so",
+        "compressed": 138144,
+        "uncompressed": 138144
+      },
+      {
+        "name": "lib/arm64-v8a/librnscreens.so",
+        "compressed": 100856,
+        "uncompressed": 100856
+      },
+      {
+        "name": "lib/arm64-v8a/libgesturehandler.so",
+        "compressed": 38616,
+        "uncompressed": 38616
+      },
+      {
+        "name": "lib/arm64-v8a/libnative-filters.so",
+        "compressed": 23712,
+        "uncompressed": 23712
+      },
+      {
+        "name": "lib/arm64-v8a/libimagepipeline.so",
+        "compressed": 8760,
+        "uncompressed": 8760
+      }
+    ],
+    "image_lossless_probe": [
+      {
+        "name": "res/Ej.png",
+        "dimensions": [
+          916,
+          1717
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 1485897,
+        "lossless_webp_bytes": 1203670,
+        "potential_saving_bytes": 282227
+      },
+      {
+        "name": "res/66.png",
+        "dimensions": [
+          916,
+          1717
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 1352125,
+        "lossless_webp_bytes": 1097040,
+        "potential_saving_bytes": 255085
+      },
+      {
+        "name": "res/xu.png",
+        "dimensions": [
+          916,
+          1717
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 1197882,
+        "lossless_webp_bytes": 953988,
+        "potential_saving_bytes": 243894
+      },
+      {
+        "name": "res/G5.png",
+        "dimensions": [
+          1254,
+          1254
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 787610,
+        "lossless_webp_bytes": 600130,
+        "potential_saving_bytes": 187480
+      },
+      {
+        "name": "res/Xo.png",
+        "dimensions": [
+          1254,
+          1254
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 757552,
+        "lossless_webp_bytes": 574518,
+        "potential_saving_bytes": 183034
+      },
+      {
+        "name": "res/aj.png",
+        "dimensions": [
+          1254,
+          1254
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 727236,
+        "lossless_webp_bytes": 556930,
+        "potential_saving_bytes": 170306
+      },
+      {
+        "name": "res/LQ.png",
+        "dimensions": [
+          878,
+          878
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 638245,
+        "lossless_webp_bytes": 451060,
+        "potential_saving_bytes": 187185
+      },
+      {
+        "name": "res/cU.jpeg",
+        "dimensions": [
+          1320,
+          600
+        ],
+        "format": "JPEG",
+        "original_zip_bytes": 606441,
+        "lossless_webp_bytes": 581394,
+        "potential_saving_bytes": 25047
+      },
+      {
+        "name": "res/8B.png",
+        "dimensions": [
+          1251,
+          639
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 517967,
+        "lossless_webp_bytes": 325568,
+        "potential_saving_bytes": 192399
+      },
+      {
+        "name": "res/EN.jpeg",
+        "dimensions": [
+          1320,
+          600
+        ],
+        "format": "JPEG",
+        "original_zip_bytes": 505756,
+        "lossless_webp_bytes": 487296,
+        "potential_saving_bytes": 18460
+      },
+      {
+        "name": "res/e-.png",
+        "dimensions": [
+          460,
+          612
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 392479,
+        "lossless_webp_bytes": 286500,
+        "potential_saving_bytes": 105979
+      },
+      {
+        "name": "res/eK.png",
+        "dimensions": [
+          703,
+          505
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 361397,
+        "lossless_webp_bytes": 273856,
+        "potential_saving_bytes": 87541
+      },
+      {
+        "name": "res/Tb.png",
+        "dimensions": [
+          1005,
+          540
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 175177,
+        "lossless_webp_bytes": 179786,
+        "potential_saving_bytes": 0
+      },
+      {
+        "name": "res/O51.png",
+        "dimensions": [
+          1005,
+          540
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 101696,
+        "lossless_webp_bytes": 97634,
+        "potential_saving_bytes": 4062
+      },
+      {
+        "name": "res/K_.jpg",
+        "dimensions": [
+          1447,
+          1087
+        ],
+        "format": "JPEG",
+        "original_zip_bytes": 101645,
+        "lossless_webp_bytes": 327266,
+        "potential_saving_bytes": 0
+      },
+      {
+        "name": "res/SD.jpeg",
+        "dimensions": [
+          1447,
+          1087
+        ],
+        "format": "JPEG",
+        "original_zip_bytes": 101645,
+        "lossless_webp_bytes": 327266,
+        "potential_saving_bytes": 0
+      }
+    ],
+    "arm64_estimated_download_bytes": 36473827,
+    "largest_uncompiled_source_modules": [
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\src\\design\\vehicleArtwork.ts",
+        "source_bytes": 1921115
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\react-native-country-select\\lib\\constants\\countries.json",
+        "source_bytes": 1446072
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\lodash\\lodash.js",
+        "source_bytes": 545945
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\src\\assets\\images\\gif\\success.json",
+        "source_bytes": 429113
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\react-native\\Libraries\\Renderer\\implementations\\ReactNativeRenderer-prod.js",
+        "source_bytes": 365593
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\react-native\\Libraries\\Renderer\\implementations\\ReactFabric-prod.js",
+        "source_bytes": 359163
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\@turf\\jsts\\dist\\jsts.min.js",
+        "source_bytes": 270427
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\src\\assets\\icons\\carMarker.tsx",
+        "source_bytes": 208888
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\moment\\moment.js",
+        "source_bytes": 183459
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\axios\\dist\\esm\\axios.js",
+        "source_bytes": 162238
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\react-native-popup-menu\\build\\rnpm.js",
+        "source_bytes": 112303
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\src\\assets\\images\\gif\\noService.json",
+        "source_bytes": 110897
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\node_modules\\d3-geo\\dist\\d3-geo.js",
+        "source_bytes": 88574
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_user\\src\\screens\\locationDrop\\index.tsx",
+        "source_bytes": 88359
+      }
+    ]
+  },
+  "driver": {
+    "delivered_path": "C:\\Users\\mishr\\Downloads\\Dropa2z-Driver-Full-20261111-PromosKyc.apk",
+    "delivered_bytes": 144459752,
+    "variants": {
+      "app-arm64-v8a-release.apk": {
+        "bytes": 68962260,
+        "groups": {
+          "metadata-other": {
+            "compressed": 345841,
+            "uncompressed": 778941,
+            "count": 747
+          },
+          "assets-other": {
+            "compressed": 6560,
+            "uncompressed": 8988,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 16169973,
+            "uncompressed": 41048780,
+            "count": 6
+          },
+          "native/arm64-v8a": {
+            "compressed": 26904088,
+            "uncompressed": 26904088,
+            "count": 19
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 8240760,
+            "uncompressed": 8240760,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 5446948,
+            "uncompressed": 6060748,
+            "count": 982
+          },
+          "images": {
+            "compressed": 11070459,
+            "uncompressed": 11070459,
+            "count": 1299
+          }
+        },
+        "zip_overhead": 540297
+      },
+      "app-armeabi-v7a-release.apk": {
+        "bytes": 59719826,
+        "groups": {
+          "metadata-other": {
+            "compressed": 345841,
+            "uncompressed": 778941,
+            "count": 747
+          },
+          "assets-other": {
+            "compressed": 6560,
+            "uncompressed": 8988,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 16169973,
+            "uncompressed": 41048780,
+            "count": 6
+          },
+          "native/armeabi-v7a": {
+            "compressed": 17658012,
+            "uncompressed": 17658012,
+            "count": 19
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 8240760,
+            "uncompressed": 8240760,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 5446948,
+            "uncompressed": 6060748,
+            "count": 982
+          },
+          "images": {
+            "compressed": 11070459,
+            "uncompressed": 11070459,
+            "count": 1299
+          }
+        },
+        "zip_overhead": 543939
+      },
+      "app-universal-release.apk": {
+        "bytes": 144220341,
+        "groups": {
+          "metadata-other": {
+            "compressed": 345841,
+            "uncompressed": 778941,
+            "count": 747
+          },
+          "assets-other": {
+            "compressed": 6560,
+            "uncompressed": 8988,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 16169973,
+            "uncompressed": 41048780,
+            "count": 6
+          },
+          "native/arm64-v8a": {
+            "compressed": 26904088,
+            "uncompressed": 26904088,
+            "count": 19
+          },
+          "native/armeabi-v7a": {
+            "compressed": 17658012,
+            "uncompressed": 17658012,
+            "count": 19
+          },
+          "native/x86": {
+            "compressed": 29327980,
+            "uncompressed": 29327980,
+            "count": 19
+          },
+          "native/x86_64": {
+            "compressed": 27787704,
+            "uncompressed": 27787704,
+            "count": 19
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 8240760,
+            "uncompressed": 8240760,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 5446948,
+            "uncompressed": 6060748,
+            "count": 982
+          },
+          "images": {
+            "compressed": 11070459,
+            "uncompressed": 11070459,
+            "count": 1299
+          }
+        },
+        "zip_overhead": 1024682
+      },
+      "app-x86-release.apk": {
+        "bytes": 71395002,
+        "groups": {
+          "metadata-other": {
+            "compressed": 345841,
+            "uncompressed": 778941,
+            "count": 747
+          },
+          "assets-other": {
+            "compressed": 6560,
+            "uncompressed": 8988,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 16169973,
+            "uncompressed": 41048780,
+            "count": 6
+          },
+          "native/x86": {
+            "compressed": 29327980,
+            "uncompressed": 29327980,
+            "count": 19
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 8240760,
+            "uncompressed": 8240760,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 5446948,
+            "uncompressed": 6060748,
+            "count": 982
+          },
+          "images": {
+            "compressed": 11070459,
+            "uncompressed": 11070459,
+            "count": 1299
+          }
+        },
+        "zip_overhead": 549147
+      },
+      "app-x86_64-release.apk": {
+        "bytes": 69832539,
+        "groups": {
+          "metadata-other": {
+            "compressed": 345841,
+            "uncompressed": 778941,
+            "count": 747
+          },
+          "assets-other": {
+            "compressed": 6560,
+            "uncompressed": 8988,
+            "count": 4
+          },
+          "dex": {
+            "compressed": 16169973,
+            "uncompressed": 41048780,
+            "count": 6
+          },
+          "native/x86_64": {
+            "compressed": 27787704,
+            "uncompressed": 27787704,
+            "count": 19
+          },
+          "fonts": {
+            "compressed": 237334,
+            "uncompressed": 508956,
+            "count": 5
+          },
+          "js-bundle": {
+            "compressed": 8240760,
+            "uncompressed": 8240760,
+            "count": 1
+          },
+          "resources-other": {
+            "compressed": 5446948,
+            "uncompressed": 6060748,
+            "count": 982
+          },
+          "images": {
+            "compressed": 11070459,
+            "uncompressed": 11070459,
+            "count": 1299
+          }
+        },
+        "zip_overhead": 526960
+      }
+    },
+    "largest_delivered_entries": [
+      {
+        "name": "lib/x86/libgmm-jni.so",
+        "compressed": 11055952,
+        "uncompressed": 11055952,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86_64/libgmm-jni.so",
+        "compressed": 10093872,
+        "uncompressed": 10093872,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libgmm-jni.so",
+        "compressed": 9680880,
+        "uncompressed": 9680880,
+        "compression": 0
+      },
+      {
+        "name": "assets/index.android.bundle",
+        "compressed": 8240760,
+        "uncompressed": 8240760,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86/libreactnative.so",
+        "compressed": 6430408,
+        "uncompressed": 6430408,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86_64/libreactnative.so",
+        "compressed": 6198512,
+        "uncompressed": 6198512,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libreactnative.so",
+        "compressed": 6080912,
+        "uncompressed": 6080912,
+        "compression": 0
+      },
+      {
+        "name": "lib/armeabi-v7a/libgmm-jni.so",
+        "compressed": 5855156,
+        "uncompressed": 5855156,
+        "compression": 0
+      },
+      {
+        "name": "resources.arsc",
+        "compressed": 4347300,
+        "uncompressed": 4347300,
+        "compression": 0
+      },
+      {
+        "name": "lib/armeabi-v7a/libreactnative.so",
+        "compressed": 4220332,
+        "uncompressed": 4220332,
+        "compression": 0
+      },
+      {
+        "name": "classes.dex",
+        "compressed": 3698247,
+        "uncompressed": 9451040,
+        "compression": 8
+      },
+      {
+        "name": "classes3.dex",
+        "compressed": 3555982,
+        "uncompressed": 8857972,
+        "compression": 8
+      },
+      {
+        "name": "classes6.dex",
+        "compressed": 3489394,
+        "uncompressed": 9077880,
+        "compression": 8
+      },
+      {
+        "name": "classes4.dex",
+        "compressed": 3360809,
+        "uncompressed": 8516676,
+        "compression": 8
+      },
+      {
+        "name": "lib/x86/libhermesvm.so",
+        "compressed": 2619596,
+        "uncompressed": 2619596,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86/libappmodules.so",
+        "compressed": 2454188,
+        "uncompressed": 2454188,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86_64/libappmodules.so",
+        "compressed": 2407480,
+        "uncompressed": 2407480,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libappmodules.so",
+        "compressed": 2343056,
+        "uncompressed": 2343056,
+        "compression": 0
+      },
+      {
+        "name": "lib/x86_64/libhermesvm.so",
+        "compressed": 2225696,
+        "uncompressed": 2225696,
+        "compression": 0
+      },
+      {
+        "name": "lib/arm64-v8a/libhermesvm.so",
+        "compressed": 2139952,
+        "uncompressed": 2139952,
+        "compression": 0
+      },
+      {
+        "name": "classes5.dex",
+        "compressed": 1938928,
+        "uncompressed": 4855440,
+        "compression": 8
+      },
+      {
+        "name": "res/Ej.png",
+        "compressed": 1758896,
+        "uncompressed": 1758896,
+        "compression": 0
+      },
+      {
+        "name": "lib/armeabi-v7a/libappmodules.so",
+        "compressed": 1714732,
+        "uncompressed": 1714732,
+        "compression": 0
+      },
+      {
+        "name": "res/66.png",
+        "compressed": 1605571,
+        "uncompressed": 1605571,
+        "compression": 0
+      },
+      {
+        "name": "lib/armeabi-v7a/libhermesvm.so",
+        "compressed": 1481564,
+        "uncompressed": 1481564,
+        "compression": 0
+      }
+    ],
+    "duplicate_assets": [
+      [
+        {
+          "name": "res/-m.png",
+          "compressed": 2535,
+          "uncompressed": 2535
+        },
+        {
+          "name": "res/oe1.png",
+          "compressed": 2535,
+          "uncompressed": 2535
+        }
+      ],
+      [
+        {
+          "name": "res/2w.xml",
+          "compressed": 503,
+          "uncompressed": 1136
+        },
+        {
+          "name": "res/pw.xml",
+          "compressed": 503,
+          "uncompressed": 1136
+        }
+      ],
+      [
+        {
+          "name": "res/4y.xml",
+          "compressed": 552,
+          "uncompressed": 1100
+        },
+        {
+          "name": "res/RQ.xml",
+          "compressed": 552,
+          "uncompressed": 1100
+        },
+        {
+          "name": "res/Z2.xml",
+          "compressed": 552,
+          "uncompressed": 1100
+        },
+        {
+          "name": "res/b0.xml",
+          "compressed": 552,
+          "uncompressed": 1100
+        }
+      ],
+      [
+        {
+          "name": "res/5W.jpeg",
+          "compressed": 101645,
+          "uncompressed": 101645
+        },
+        {
+          "name": "res/K_.jpg",
+          "compressed": 101645,
+          "uncompressed": 101645
+        }
+      ],
+      [
+        {
+          "name": "res/8R.xml",
+          "compressed": 548,
+          "uncompressed": 1088
+        },
+        {
+          "name": "res/Ql.xml",
+          "compressed": 548,
+          "uncompressed": 1088
+        },
+        {
+          "name": "res/ag.xml",
+          "compressed": 548,
+          "uncompressed": 1088
+        },
+        {
+          "name": "res/rY1.xml",
+          "compressed": 548,
+          "uncompressed": 1088
+        }
+      ],
+      [
+        {
+          "name": "res/Ld.xml",
+          "compressed": 597,
+          "uncompressed": 1200
+        },
+        {
+          "name": "res/ip.xml",
+          "compressed": 597,
+          "uncompressed": 1200
+        }
+      ],
+      [
+        {
+          "name": "res/Zp.xml",
+          "compressed": 589,
+          "uncompressed": 1168
+        },
+        {
+          "name": "res/uL.xml",
+          "compressed": 589,
+          "uncompressed": 1168
+        }
+      ],
+      [
+        {
+          "name": "res/color/mtrl_navigation_bar_ripple_color.xml",
+          "compressed": 420,
+          "uncompressed": 1672
+        },
+        {
+          "name": "res/color/mtrl_tabs_ripple_color.xml",
+          "compressed": 420,
+          "uncompressed": 1672
+        }
+      ],
+      [
+        {
+          "name": "res/gG.xml",
+          "compressed": 523,
+          "uncompressed": 1176
+        },
+        {
+          "name": "res/xa1.xml",
+          "compressed": 523,
+          "uncompressed": 1176
+        }
+      ]
+    ],
+    "duplicate_asset_saving_bytes": 110112,
+    "fonts": [
+      {
+        "name": "assets/fonts/GTWalsheimPro-Bold.ttf",
+        "compressed": 61578,
+        "uncompressed": 135280
+      },
+      {
+        "name": "assets/fonts/GTWalsheimPro-Medium.ttf",
+        "compressed": 59708,
+        "uncompressed": 133404
+      },
+      {
+        "name": "assets/fonts/GTWalsheimPro-Regular.ttf",
+        "compressed": 61016,
+        "uncompressed": 134768
+      },
+      {
+        "name": "assets/fonts/GlacialIndifference-Bold.ttf",
+        "compressed": 27540,
+        "uncompressed": 53100
+      },
+      {
+        "name": "assets/fonts/GlacialIndifference-Regular.ttf",
+        "compressed": 27492,
+        "uncompressed": 52404
+      }
+    ],
+    "arm64_native": [
+      {
+        "name": "lib/arm64-v8a/libgmm-jni.so",
+        "compressed": 9680880,
+        "uncompressed": 9680880
+      },
+      {
+        "name": "lib/arm64-v8a/libreactnative.so",
+        "compressed": 6080912,
+        "uncompressed": 6080912
+      },
+      {
+        "name": "lib/arm64-v8a/libappmodules.so",
+        "compressed": 2343056,
+        "uncompressed": 2343056
+      },
+      {
+        "name": "lib/arm64-v8a/libhermesvm.so",
+        "compressed": 2139952,
+        "uncompressed": 2139952
+      },
+      {
+        "name": "lib/arm64-v8a/libreanimated.so",
+        "compressed": 1293800,
+        "uncompressed": 1293800
+      },
+      {
+        "name": "lib/arm64-v8a/libc++_shared.so",
+        "compressed": 1292904,
+        "uncompressed": 1292904
+      },
+      {
+        "name": "lib/arm64-v8a/libworklets.so",
+        "compressed": 906680,
+        "uncompressed": 906680
+      },
+      {
+        "name": "lib/arm64-v8a/libreact_codegen_rnscreens.so",
+        "compressed": 787616,
+        "uncompressed": 787616
+      },
+      {
+        "name": "lib/arm64-v8a/libreact_codegen_rnsvg.so",
+        "compressed": 701024,
+        "uncompressed": 701024
+      },
+      {
+        "name": "lib/arm64-v8a/libnative-imagetranscoder.so",
+        "compressed": 585376,
+        "uncompressed": 585376
+      },
+      {
+        "name": "lib/arm64-v8a/libjsi.so",
+        "compressed": 395856,
+        "uncompressed": 395856
+      },
+      {
+        "name": "lib/arm64-v8a/libfbjni.so",
+        "compressed": 177000,
+        "uncompressed": 177000
+      },
+      {
+        "name": "lib/arm64-v8a/libreact_codegen_safeareacontext.so",
+        "compressed": 157192,
+        "uncompressed": 157192
+      },
+      {
+        "name": "lib/arm64-v8a/libhermestooling.so",
+        "compressed": 138144,
+        "uncompressed": 138144
+      },
+      {
+        "name": "lib/arm64-v8a/librnscreens.so",
+        "compressed": 100856,
+        "uncompressed": 100856
+      },
+      {
+        "name": "lib/arm64-v8a/libdatastore_shared_counter.so",
+        "compressed": 51752,
+        "uncompressed": 51752
+      },
+      {
+        "name": "lib/arm64-v8a/libgesturehandler.so",
+        "compressed": 38616,
+        "uncompressed": 38616
+      },
+      {
+        "name": "lib/arm64-v8a/libnative-filters.so",
+        "compressed": 23712,
+        "uncompressed": 23712
+      },
+      {
+        "name": "lib/arm64-v8a/libimagepipeline.so",
+        "compressed": 8760,
+        "uncompressed": 8760
+      }
+    ],
+    "image_lossless_probe": [
+      {
+        "name": "res/Ej.png",
+        "dimensions": [
+          916,
+          1717
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 1758896,
+        "lossless_webp_bytes": 1203670,
+        "potential_saving_bytes": 555226
+      },
+      {
+        "name": "res/66.png",
+        "dimensions": [
+          916,
+          1717
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 1605571,
+        "lossless_webp_bytes": 1097040,
+        "potential_saving_bytes": 508531
+      },
+      {
+        "name": "res/LQ.png",
+        "dimensions": [
+          878,
+          878
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 834360,
+        "lossless_webp_bytes": 451060,
+        "potential_saving_bytes": 383300
+      },
+      {
+        "name": "res/e-.png",
+        "dimensions": [
+          460,
+          612
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 557309,
+        "lossless_webp_bytes": 286500,
+        "potential_saving_bytes": 270809
+      },
+      {
+        "name": "res/eK.png",
+        "dimensions": [
+          703,
+          505
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 533394,
+        "lossless_webp_bytes": 273856,
+        "potential_saving_bytes": 259538
+      },
+      {
+        "name": "res/28.png",
+        "dimensions": [
+          1080,
+          2344
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 194711,
+        "lossless_webp_bytes": 96360,
+        "potential_saving_bytes": 98351
+      },
+      {
+        "name": "res/GE.png",
+        "dimensions": [
+          1080,
+          2344
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 172428,
+        "lossless_webp_bytes": 55606,
+        "potential_saving_bytes": 116822
+      },
+      {
+        "name": "res/Pr.png",
+        "dimensions": [
+          1080,
+          2344
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 170973,
+        "lossless_webp_bytes": 54828,
+        "potential_saving_bytes": 116145
+      },
+      {
+        "name": "res/QZ.png",
+        "dimensions": [
+          1080,
+          2344
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 169072,
+        "lossless_webp_bytes": 52080,
+        "potential_saving_bytes": 116992
+      },
+      {
+        "name": "res/xP.png",
+        "dimensions": [
+          1080,
+          2344
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 157506,
+        "lossless_webp_bytes": 48732,
+        "potential_saving_bytes": 108774
+      },
+      {
+        "name": "res/nF.png",
+        "dimensions": [
+          1080,
+          2344
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 149714,
+        "lossless_webp_bytes": 46860,
+        "potential_saving_bytes": 102854
+      },
+      {
+        "name": "res/Oa.png",
+        "dimensions": [
+          825,
+          420
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 148747,
+        "lossless_webp_bytes": 143226,
+        "potential_saving_bytes": 5521
+      },
+      {
+        "name": "res/6-.png",
+        "dimensions": [
+          825,
+          420
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 129006,
+        "lossless_webp_bytes": 127330,
+        "potential_saving_bytes": 1676
+      },
+      {
+        "name": "res/1r.png",
+        "dimensions": [
+          850,
+          880
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 110706,
+        "lossless_webp_bytes": 61072,
+        "potential_saving_bytes": 49634
+      },
+      {
+        "name": "res/hI.png",
+        "dimensions": [
+          850,
+          880
+        ],
+        "format": "PNG",
+        "original_zip_bytes": 101900,
+        "lossless_webp_bytes": 55908,
+        "potential_saving_bytes": 45992
+      },
+      {
+        "name": "res/5W.jpeg",
+        "dimensions": [
+          1447,
+          1087
+        ],
+        "format": "JPEG",
+        "original_zip_bytes": 101645,
+        "lossless_webp_bytes": 327266,
+        "potential_saving_bytes": 0
+      },
+      {
+        "name": "res/K_.jpg",
+        "dimensions": [
+          1447,
+          1087
+        ],
+        "format": "JPEG",
+        "original_zip_bytes": 101645,
+        "lossless_webp_bytes": 327266,
+        "potential_saving_bytes": 0
+      }
+    ],
+    "arm64_estimated_download_bytes": 42550150,
+    "largest_uncompiled_source_modules": [
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\src\\design\\vehicleArtwork.ts",
+        "source_bytes": 1921115
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\react-native-country-select\\lib\\constants\\countries.json",
+        "source_bytes": 1446072
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\text-encoding\\lib\\encoding-indexes.js",
+        "source_bytes": 530093
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\src\\assets\\gif\\success.json",
+        "source_bytes": 429113
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\react-native\\Libraries\\Renderer\\implementations\\ReactNativeRenderer-prod.js",
+        "source_bytes": 365593
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\react-native\\Libraries\\Renderer\\implementations\\ReactFabric-prod.js",
+        "source_bytes": 359163
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\axios\\dist\\esm\\axios.js",
+        "source_bytes": 162238
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\react-native-popup-menu\\build\\rnpm.js",
+        "source_bytes": 112303
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\text-encoding\\lib\\encoding.js",
+        "source_bytes": 101503
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\pusher-js\\dist\\react-native\\pusher.js",
+        "source_bytes": 87414
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\@reduxjs\\toolkit\\dist\\redux-toolkit.modern.mjs",
+        "source_bytes": 72896
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\src\\screen\\home\\homeScreen\\index.tsx",
+        "source_bytes": 72088
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\react-native\\Libraries\\Components\\ScrollView\\ScrollView.js",
+        "source_bytes": 71895
+      },
+      {
+        "source": "D:\\DROPA2Z\\dropa2z-src\\Taxido_driver\\node_modules\\react-native\\node_modules\\@react-native\\virtualized-lists\\Lists\\VirtualizedList.js",
+        "source_bytes": 67451
+      }
+    ],
+    "dex_package_attributions": [
+      {
+        "package": "<TOTAL>",
+        "dex_attribution_bytes": 27369339
+      },
+      {
+        "package": "com.google.android.libraries.navigation",
+        "dex_attribution_bytes": 7631267
+      },
+      {
+        "package": "com.google.android.gms.internal.ads",
+        "dex_attribution_bytes": 3542370
+      },
+      {
+        "package": "com.google.android.gms.ads",
+        "dex_attribution_bytes": 305890
+      },
+      {
+        "package": "com.google.firebase",
+        "dex_attribution_bytes": 834057
+      },
+      {
+        "package": "com.google.firebase.firestore",
+        "dex_attribution_bytes": 407691
+      },
+      {
+        "package": "com.facebook.react",
+        "dex_attribution_bytes": 1167019
+      },
+      {
+        "package": "com.swmansion",
+        "dex_attribution_bytes": 253370
+      },
+      {
+        "package": "androidx",
+        "dex_attribution_bytes": 4461321
+      }
+    ]
+  }
+}

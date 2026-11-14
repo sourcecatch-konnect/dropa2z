@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from "react-native";
 import { windowHeight, fontSizes, windowWidth } from "../../../theme/appConstant";
 import appColors from "../../../theme/appColors";
@@ -11,7 +12,9 @@ const styles = StyleSheet.create({
         backgroundColor: appColors.primary,
         borderRadius: windowHeight(0.8),
         padding: windowHeight(2),
-    },
+    
+    ...referenceSurfaces.card,
+  },
     contentContainer: {
         flexDirection: 'row',
         alignItems: 'center',

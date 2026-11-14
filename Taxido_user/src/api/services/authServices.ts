@@ -1,3 +1,4 @@
+import { requireApiSuccess } from '../responseError';
 import {
   login,
   register,
@@ -36,23 +37,11 @@ export const socialLogin = async (data: SocialLoginInterface) => {
 };
 
 export const userVerifyOtp = async (data: VerifyOtpInterface) => {
-  return POST_API(data, verifyOtp)
-    .then(res => {
-      return res;
-    })
-    .catch(e => {
-      return e?.response;
-    });
+  return requireApiSuccess(await POST_API(data, verifyOtp), 'Could not verify the code. Please try again.');
 };
 
 export const userRegistration = async (data: UserRegistrationPayload) => {
-  return POST_API(data, register)
-    .then(res => {
-      return res;
-    })
-    .catch(e => {
-      return e?.response;
-    });
+  return requireApiSuccess(await POST_API(data, register), 'Could not register. Please check your details.');
 };
 
 export const self = async () => {

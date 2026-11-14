@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Platform, TouchableOpacity } from 'react-native'
+import {View, ScrollView, Platform, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useEffect, useRef, useState } from 'react'
 import { Button, Header, notificationHelper } from '../../../../commonComponents'
 import { useDispatch, useSelector } from 'react-redux'
@@ -385,7 +386,7 @@ export function AddDriverDocument() {
                     backgroundStyle={{
                         backgroundColor: isDark ? appColors.bgDark : appColors.white,
                     }}
-                >
+                 android_keyboardInputMode="adjustResize" >
                     <BottomSheetView style={{ padding: windowHeight(2) }}>
                         <Text style={{ fontFamily: appFonts.medium, fontSize: fontSizes.FONT4HALF, color: isDark ? appColors.white : appColors.black, marginBottom: windowHeight(2) }}>
                             {translateData.selectOne}

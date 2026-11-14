@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
 
@@ -15,7 +16,9 @@ export const styles = StyleSheet.create({
         padding: windowWidth(15),
         borderRadius: windowHeight(10),
         borderWidth: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     driverInfoInner: {
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -55,7 +58,9 @@ export const styles = StyleSheet.create({
         paddingVertical: windowHeight(4),
         borderRadius: windowHeight(20),
         color: appColors.primary,
-    },
+    
+    ...riderCardFinish,
+  },
     distanceContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -72,7 +77,9 @@ export const styles = StyleSheet.create({
         padding: windowWidth(15),
         borderRadius: windowHeight(10),
         borderWidth: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     locationTextContainer: {
         flex: 1,
         marginLeft: windowWidth(10),
@@ -101,7 +108,9 @@ export const styles = StyleSheet.create({
         flex: 0.48,
         alignItems: 'center',
         borderWidth: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     dateTimeLabel: {
         color: appColors.regularText,
         fontSize: fontSizes.FONT14,
@@ -114,5 +123,7 @@ export const styles = StyleSheet.create({
         padding: windowWidth(15),
         borderRadius: windowHeight(10),
         borderWidth: 1,
-    },
+    
+    ...riderCardFinish,
+  },
 });

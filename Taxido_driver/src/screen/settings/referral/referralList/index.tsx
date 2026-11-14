@@ -1,5 +1,7 @@
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
 import React from 'react'
-import { View, Text, Image, FlatList, StyleSheet, RefreshControl } from 'react-native'
+import {View, Image, FlatList, StyleSheet, RefreshControl} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import { useDispatch, useSelector } from 'react-redux'
 import { Header } from '../../../../commonComponents'
 import { fontSizes, windowHeight, windowWidth } from '../../../../theme/appConstant'
@@ -33,8 +35,8 @@ export function ReferralList() {
     const referredUser = item?.referred || {}
     const status = item?.status || ''
     const isPending = status === 'pending'
-    const statusColor = isPending ? '#FFB400' : '#28A745'
-    const bgColor = isPending ? '#FFF7E5' : '#E8F4F1'
+    const statusColor = isPending ? '#00FF99' : '#A75728'
+    const bgColor = isPending ? '#E5FFF5' : '#F4ECE8'
 
     return (
       <View style={[styles.itemContainer, { backgroundColor: isDark ? appColors.bgDark : appColors.white, borderColor: isDark ? appColors.darkborder : appColors.border, }]}>
@@ -88,7 +90,7 @@ export function ReferralList() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <ReferenceScreen><View style={[{ flex: 1 }, {backgroundColor:'transparent'}]}>
       <Header title={translateData.referralsList} />
       <FlatList
         data={referralDataArray}
@@ -145,7 +147,7 @@ export function ReferralList() {
           </View>
         }
       />
-    </View>
+    </View></ReferenceScreen>
   )
 }
 

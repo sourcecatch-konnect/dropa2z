@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import { windowHeight, windowWidth, fontSizes } from '../../../theme/appConstant'
 import appFonts from '../../../theme/appFonts'
@@ -36,6 +37,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: windowHeight(0), height: 4 },
     elevation: 5,
     height: windowHeight(70),
+  
+    ...referenceSurfaces.card,
   },
   itemText: {
     fontSize: fontSizes.FONT6HALF,
@@ -130,6 +133,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  
+    ...referenceSurfaces.control,
   },
   bottomNote: {
     fontFamily: appFonts.medium,

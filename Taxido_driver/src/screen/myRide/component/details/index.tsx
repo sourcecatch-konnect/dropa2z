@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, Linking } from 'react-native'
+import {View, Image, TouchableOpacity, Linking} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from 'react'
 import appColors from '../../../../theme/appColors'
 import images from '../../../../utils/images/images'

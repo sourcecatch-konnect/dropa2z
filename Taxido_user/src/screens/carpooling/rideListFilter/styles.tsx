@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { windowHeight, appColors, fontSizes, appFonts } from "@src/themes";
 
@@ -12,7 +13,9 @@ const styles = StyleSheet.create({
         marginTop: windowHeight(14),
         width: "91%",
         alignSelf: "center",
-    },
+    
+    ...riderCardFinish,
+  },
     sortBy: { color: appColors.primaryText, fontSize: fontSizes.FONT21, fontFamily: appFonts.semiBold },
     filterOptions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: windowHeight(8) },
     itemText: {

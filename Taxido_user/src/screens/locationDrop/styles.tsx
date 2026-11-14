@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { commonStyles } from "../../styles/commonStyle";
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
@@ -12,8 +13,10 @@ const styles = StyleSheet.create({
     borderColor: appColors.primaryGray,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: windowHeight(5),
+    borderRadius: 16,
     ...commonStyles.shadowContainer,
+  
+    ...riderCardFinish,
   },
   viewContainer: {
     backgroundColor: appColors.whiteColor,
@@ -52,7 +55,7 @@ const styles = StyleSheet.create({
   },
   mapView: {
     backgroundColor: appColors.whiteColor,
-    borderRadius: windowHeight(5.9),
+    borderRadius: 16,
     marginVertical: windowHeight(12),
     paddingVertical: windowHeight(4),
     borderWidth: windowHeight(1),
@@ -81,7 +84,7 @@ const styles = StyleSheet.create({
     width: 300,
     padding: windowHeight(18),
     backgroundColor: appColors.whiteColor,
-    borderRadius: windowHeight(9.8),
+    borderRadius: 16,
     alignItems: "center",
   },
   modalText: {
@@ -105,19 +108,23 @@ const styles = StyleSheet.create({
   },
   viewContainerToll: {
     backgroundColor: appColors.alertBg,
-    borderRadius: windowHeight(4.8),
+    borderRadius: 16,
     ...external.ai_center,
     ...external.js_center,
     ...external.fd_row,
     paddingVertical: windowHeight(12),
     ...external.mh_20,
+  
+    ...riderCardFinish,
   },
   dateField: {
     marginTop: windowHeight(12),
-    borderRadius: windowHeight(4),
+    borderRadius: 16,
     borderWidth: windowHeight(1),
     alignItems: "center",
     justifyContent: "space-between",
+  
+    ...riderCardFinish,
   },
   dateInput: {
     color: appColors.primaryText,
@@ -129,7 +136,7 @@ const styles = StyleSheet.create({
   locationBtn: {
     height: windowHeight(45),
     width: "47.8%",
-    borderRadius: windowHeight(5),
+    borderRadius: 16,
     marginVertical: windowWidth(26),
     alignItems: "center",
     justifyContent: "center",
@@ -201,13 +208,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(20),
     paddingTop: windowHeight(5),
     justifyContent: 'flex-end',
-    borderRadius: windowWidth(8),
+    borderRadius: 16,
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   scrollContainer: {
     position: 'relative',
   },
   inputContainer: {
+    width: '100%',
+    minWidth: 0,
     alignItems: 'center',
     position: 'relative',
   },
@@ -229,12 +240,19 @@ const styles = StyleSheet.create({
   },
   inputWithIcons: {
     flex: 1,
+    minWidth: 0,
     position: 'relative',
   },
   inputWidth: {
-    width: windowWidth(280)
+    flex: 1,
+    minWidth: 0,
   },
+  inlineInputRow:{flexDirection:'row',alignItems:'center'},
+  inlineInputActions:{position:'relative',top:undefined,right:undefined,transform:[],flexDirection:'row',alignItems:'center',flexShrink:0,marginLeft:4},
+  addressAction:{minWidth:30,minHeight:44,alignItems:'center',justifyContent:'center'},
   input: {
+    flex: 1,
+    minWidth: 0,
     height: windowHeight(30),
     borderColor: appColors.border,
     paddingTop: windowHeight(7),

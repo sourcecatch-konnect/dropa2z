@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 import { appColors } from "@src/themes";
@@ -5,7 +6,7 @@ import { external } from "../../../styles/externalStyle";
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: appColors.primary,
+    backgroundColor: appColors.primaryText,
     paddingTop: windowHeight(15),
   },
   containerStyle: {
@@ -30,6 +31,8 @@ const styles = StyleSheet.create({
     marginHorizontal: windowWidth(18),
     backgroundColor: appColors.primary,
     marginVertical: windowHeight(5.9),
+  
+    ...riderCardFinish,
   },
   titleStyle: {
     fontFamily: appFonts.medium,

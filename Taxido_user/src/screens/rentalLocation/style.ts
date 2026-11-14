@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { commonStyles } from "../../styles/commonStyle";
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
@@ -13,6 +14,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: windowHeight(5),
     ...commonStyles.shadowContainer,
+  
+    ...riderCardFinish,
   },
   dateTimeView: {
     paddingHorizontal: windowHeight(12),
@@ -75,6 +78,8 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: windowHeight(1),
     borderColor: appColors.lightGray,
+  
+    ...riderCardFinish,
   },
   chooseAnotherAccount: {
     ...commonStyles.mediumTextBlack12,
@@ -138,6 +143,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: windowHeight(40),
+  
+    ...riderCardFinish,
   },
   noDataText: {
     height: windowHeight(45),
@@ -192,6 +199,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.blackColor,
     alignItems: "center",
     justifyContent: "center",
+  
+    ...riderCardFinish,
   },
   numberText: {
     color: appColors.whiteColor,
@@ -250,6 +259,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     borderRadius: windowWidth(8),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
   containerSearch: {
     flex: 1,
@@ -259,6 +270,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     borderRadius: windowWidth(8),
     borderColor: appColors.border,
+  
+    ...riderCardFinish,
   },
 });
 

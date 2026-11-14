@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appColors from '../../../theme/appColors'
 import appFonts from '../../../theme/appFonts'
@@ -6,6 +7,8 @@ import { windowHeight } from '../chat/context'
 const documentstyles = StyleSheet.create({
   container: {
     flex: 1,
+  
+    ...referenceSurfaces.card,
   },
   uri: {
     width: '101%',

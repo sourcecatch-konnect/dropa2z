@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import {
   appColors,
@@ -33,7 +34,7 @@ const styles = StyleSheet.create({
   subContainer: {
     height: windowHeight(190),
     marginHorizontal: windowWidth(5),
-    borderRadius: windowHeight(5),
+    borderRadius: 16,
   },
   profileContainer: {
     justifyContent: 'space-between',
@@ -64,16 +65,18 @@ const styles = StyleSheet.create({
   message: {
     height: windowHeight(35),
     width: windowWidth(50),
-    borderRadius: windowHeight(5),
+    borderRadius: 16,
     justifyContent: 'center',
   },
   call: {
     height: windowHeight(40),
     width: windowHeight(40),
     backgroundColor: appColors.lightGray,
-    borderRadius: windowHeight(5),
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  
+    ...riderCardFinish,
   },
   modalBg: {
     flex: 1,
@@ -83,7 +86,7 @@ const styles = StyleSheet.create({
   modalBgMain: {
     paddingVertical: windowHeight(16),
     paddingHorizontal: windowWidth(20),
-    borderRadius: windowHeight(10),
+    borderRadius: 16,
     width: '98%',
   },
   helpView: { width: '100%', alignItems: 'flex-end' },
@@ -98,7 +101,7 @@ const styles = StyleSheet.create({
     height: windowHeight(85),
     width: windowWidth(95),
     marginHorizontal: windowWidth(8),
-    borderRadius: windowHeight(5),
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -138,8 +141,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: appColors.lightGreen,
     padding: windowHeight(5),
-    borderRadius: windowHeight(5),
+    borderRadius: 16,
     marginTop: windowHeight(2),
+  
+    ...riderCardFinish,
   },
   pin: {
     backgroundColor: appColors.primary,
@@ -148,6 +153,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(3),
     marginHorizontal: windowWidth(2),
     color: appColors.whiteColor,
+  
+    ...riderCardFinish,
   },
   pinTitle: {
     color: appColors.primaryText,
@@ -165,7 +172,7 @@ const styles = StyleSheet.create({
   container2: {
     paddingVertical: windowHeight(12.5),
     paddingHorizontal: windowWidth(20),
-    borderRadius: windowHeight(7.9),
+    borderRadius: 16,
     marginBottom: windowHeight(8),
     width: '100%',
     marginTop: windowHeight(3),
@@ -206,7 +213,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderColor: appColors.border,
     borderWidth: windowHeight(1),
-    borderRadius: windowHeight(7.9),
+    borderRadius: 16,
     marginTop: windowHeight(10),
     marginHorizontal: windowWidth(10),
   },
@@ -257,7 +264,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: appColors.lightGray,
-    borderRadius: windowWidth(5),
+    borderRadius: 16,
+  
+    ...riderCardFinish,
   }
 });
 export default styles;

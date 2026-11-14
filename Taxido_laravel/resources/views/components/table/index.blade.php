@@ -87,14 +87,6 @@
                     </tr>
                     @endforelse
                 </tbody>
-                <tfoot>
-                    <tr>
-                        @include('components.table.table-header', [
-                            'columns' => $columns,
-                            'showCheckbox' => $showCheckbox
-                        ])
-                    </tr>
-                </tfoot>
             </table>
         </div>
         @if ($data)

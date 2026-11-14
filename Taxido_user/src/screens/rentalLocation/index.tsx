@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
-import { Text, TouchableOpacity, View, ScrollView, Modal, FlatList, Keyboard, TextInput } from "react-native";
+import {TouchableOpacity, View, ScrollView, Modal, FlatList, Keyboard} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import { History, Calender, AddressMarker, Save, PickLocation } from "@utils/icons";
 import { styles } from "./style";
 import { commonStyles } from "../../styles/commonStyle";
@@ -335,7 +336,7 @@ export function RentalLocation() {
         replace("SignIn");
       } else if (settingData.values.activation.login_number == 0) {
         setValue("CountinueScreen", screenName);
-        replace("SignInWithMail");
+        replace("SignIn");
       }
     }
   };

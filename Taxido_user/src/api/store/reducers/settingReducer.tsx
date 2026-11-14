@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { deliveryCopy } from "@src/utils/deliveryCopy";
 import {
   currencyDataGet,
   settingDataGet,
@@ -105,7 +106,7 @@ const settingSlice = createSlice({
         translateDataGet.fulfilled,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.translateData = action.payload;
+          state.translateData = deliveryCopy(action.payload);
           state.success = true;
         }
       )

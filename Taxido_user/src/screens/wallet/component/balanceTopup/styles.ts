@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native';
 import { appColors, fontSizes, appFonts, windowHeight, windowWidth } from '@src/themes';
 
@@ -7,8 +9,13 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(9.3),
     overflow: 'hidden',
     marginHorizontal: windowWidth(20),
-    height: windowHeight(156),
-    backgroundColor: '#0F453A',
+    minHeight:200,
+    paddingVertical:12,
+    backgroundColor: '#17191C',
+  
+    ...referenceSurfaces.card,
+  
+    ...riderCardFinish,
   },
   walletImage: {
     height: windowHeight(128),
@@ -17,18 +24,16 @@ const styles = StyleSheet.create({
     resizeMode: 'stretch',
   },
   subBalance: {
-    position: 'absolute',
-    height: windowHeight(40),
     width: '100%',
     justifyContent: 'space-between',
   },
   balanceView: {
     borderRadius: windowHeight(9.3),
     justifyContent: 'center',
-    marginVertical: windowHeight(10),
+    marginVertical: windowHeight(6),
   },
   balanceTitle: {
-    color: '#BADFD6',
+    color: '#FFE6BC',
     fontSize: fontSizes.FONT18,
     marginBottom: windowHeight(0.5),
     fontFamily: appFonts.regular,
@@ -47,6 +52,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: windowHeight(15),
     marginHorizontal: windowWidth(20),
+  
+    ...referenceSurfaces.control,
   },
   topupTitle: {
     color: appColors.primary,

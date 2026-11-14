@@ -1,4 +1,5 @@
-import { View, Text } from 'react-native'
+import {View} from 'react-native';
+import {Text} from '../../design/Typography';
 import React from 'react'
 import Icons from '../../utils/icons/icons'
 import styles from './styles'
@@ -19,6 +20,53 @@ export function AddressData({ locationDetails = [] }: AddressDataProps) {
   if (locationDetails.length === 0) return null
 
   const isSingle = locationDetails.length === 1
+
+  if (locationDetails.length > 2) {
+    return (
+      <View style={{ width: '100%', marginTop: 8 }}>
+        {locationDetails.map((location, index) => {
+          const lastIndex = locationDetails.length - 1
+          const label = index === 0 ? 'P' : index === lastIndex ? 'D' : String(index)
+
+          return (
+            <View
+              key={`${index}-${location}`}
+              style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}
+            >
+              <View style={{ width: 26, alignItems: 'center' }}>
+                <View
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 11,
+                    borderWidth: 1,
+                    borderColor: appColors.primary,
+                    backgroundColor: index === lastIndex ? appColors.primary : colors.background,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: index === lastIndex ? appColors.white : appColors.primary, fontSize: 11 }}>
+                    {label}
+                  </Text>
+                </View>
+                {index < lastIndex && (
+                  <View style={{ height: 14, borderLeftWidth: 1, borderStyle: 'dashed', borderColor: colors.border }} />
+                )}
+              </View>
+              <Text
+                style={{ flex: 1, color: colors.text, marginLeft: 8 }}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {typeof location === 'string' ? location : String(location ?? '')}
+              </Text>
+            </View>
+          )
+        })}
+      </View>
+    )
+  }
 
   return (
     <View style={[styles.address1, { flexDirection: viewRtlStyle }]}>

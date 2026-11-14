@@ -1006,7 +1006,7 @@
             const findDriverServiceId = {{ \Modules\Taxido\Models\Service::where('slug', 'finddriver')->first()->id ?? 0 }};
 
             let map, marker;
-            const defaultLocation = { lat: -1.3119705387570564, lng: 36.90288910995129 };
+            const defaultLocation = { lat: 21.0077, lng: 75.5626 };
             const selectedVehicleId = "{{ old('vehicle_info.vehicle_type_id', @$driver?->vehicle_info?->vehicle_type_id ?? '') }}";
             const driverId = "{{ @$driver?->id ?? '0' }}";
              const savedCategoryId = "{{ old('service_category_id', @$driver?->service_category_id ?? '') }}";

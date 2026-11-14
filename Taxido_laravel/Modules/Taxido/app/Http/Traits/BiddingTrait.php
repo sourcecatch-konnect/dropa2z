@@ -144,6 +144,11 @@ trait BiddingTrait
 
         if ($request) {
             $service = getServiceById($request?->service_id);
+            $serviceCategoryType = getServiceCategoryTyeById($request->service_category_id);
+            $isMeteredCabRide = $service?->type === ServicesEnum::CAB &&
+                ! in_array($serviceCategoryType, [ServiceCategoryEnum::RENTAL, ServiceCategoryEnum::PACKAGE], true);
+            $isGoodsDelivery = in_array($service?->type, [ServicesEnum::PARCEL, ServicesEnum::FREIGHT], true);
+            $includedMinutes = $isGoodsDelivery ? max(0, (int) ($vehicleTypeZone?->goods_included_minutes ?? 0)) : 0;
 
             if ($cabSettings['activation']['surge_price_enable']) {
                 if ($request?->current_time) {
@@ -152,9 +157,15 @@ trait BiddingTrait
                 }
             }
 
-            if ($service?->type == ServicesEnum::PARCEL) {
-                if (! $request->weight) {
-                    throw new Exception('The weight field cannot be empty for parcel bookings.', 422);
+            if ($isGoodsDelivery) {
+                if (! is_numeric($request->weight) || (float) $request->weight <= 0) {
+                    throw new Exception('Enter a goods weight greater than zero.', 422);
+                }
+                $vehicleSlug = VehicleType::find($vehicleTypeZone?->vehicle_type_id)?->slug;
+                $weightLimit = \Modules\Taxido\Services\DeliveryServiceCards::maxWeight((string) $vehicleSlug)
+                    ?? (float) ($cabSettings['ride']['parcel_weight_limit'] ?? 0);
+                if ($weightLimit > 0 && (float) $request->weight > $weightLimit) {
+                    throw new Exception("The maximum allowed goods weight is {$weightLimit} kg.", 422);
                 }
 
                 if ($cabSettings['activation']['additional_weight_charge'] && $request->weight) {
@@ -164,8 +175,6 @@ trait BiddingTrait
                     }
                 }
             } elseif ($service?->type == ServicesEnum::CAB) {
-                $serviceCategoryType = getServiceCategoryTyeById($request->service_category_id);
-
                 if ($serviceCategoryType == ServiceCategoryEnum::PACKAGE) {
                     if (! $request->hourly_package_id) {
                         throw new Exception('The hourly package id is required.', 422);
@@ -253,15 +262,17 @@ trait BiddingTrait
                     }
                 }
 
-                if ($cabSettings['activation']['additional_distance_charge']) {
+                // Goods quotes always use the complete booked road route,
+                // including stops, at the Admin's configured vehicle/zone rates.
+                if ($isMeteredCabRide || $isGoodsDelivery || $cabSettings['activation']['additional_distance_charge']) {
                     if ($totalDistance > $baseDistance) {
                         $additionalDistanceCharge = (($totalDistance - $baseDistance) * $perDistanceCharge);
                     }
                 }
 
-                if ($cabSettings['activation']['additional_minute_charge']) {
+                if ($isMeteredCabRide || $isGoodsDelivery || $cabSettings['activation']['additional_minute_charge']) {
                     if ($totalDuration && $perMinuteCharge) {
-                        $additionalMinuteCharge = $perMinuteCharge * $totalDuration;
+                        $additionalMinuteCharge = $perMinuteCharge * max(0, $totalDuration - $includedMinutes);
                     }
                 }
 
@@ -354,6 +365,8 @@ trait BiddingTrait
                 'total_distance' => $totalDistance,
                 'distance_unit' => $rideDistance['distance_unit'],
                 'base_distance' => $baseDistance,
+                'goods_included_minutes' => $includedMinutes,
+                'is_goods_delivery' => $isGoodsDelivery,
                 'base_fare_charge' => round($baseFareCharge, 2),
                 'additional_distance_charge' => round($additionalDistanceCharge, 2),
                 'additional_minute_charge' => round($additionalMinuteCharge, 2),

@@ -1,10 +1,6 @@
-import {
-  View,
-  BackHandler,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-} from "react-native";
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
+import {View, BackHandler, ScrollView, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Button, Header } from "@src/commonComponent";
 import { ImageContainer } from "./imageContainer/index";
@@ -18,16 +14,10 @@ import {
   windowWidth,
 } from "@src/themes";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  clearValue,
-  getValue,
-  setValue,
-} from "../../../../utils/localstorage/index";
+import {setValue} from "../../../../utils/localstorage/index";
 import { selfData } from "../../../../api/store/actions/accountAction";
 import { useAppNavigation } from "@src/utils/navigation";
-import { URL } from "@src/api/config";
 import { notificationHelper } from "@src/commonComponent";
-import { useNavigation } from "@react-navigation/native";
 import { AppDispatch } from "@src/api/store";
 import {
   BottomSheetModal,
@@ -38,6 +28,8 @@ import { Camera } from "@src/utils/icons";
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import { Gallery } from "@src/assets/icons/gallery";
 import { Remove } from "@src/assets/icons/remove";
+import {saveProfileUpdate} from '../../../../api/services/profileUpdate';
+import {apiErrorMessage} from '../../../../api/responseError';
 
 export function EditProfile() {
   const { goBack } = useAppNavigation();
@@ -49,7 +41,6 @@ export function EditProfile() {
   const [show, setShow] = useState(false);
   const [form, setForm] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const navigation = useNavigation();
   const { translateData } = useSelector((state: any) => state.setting);
 
   useEffect(() => {
@@ -71,7 +62,12 @@ export function EditProfile() {
   const [phoneNumberError, setPhoneNumberError] = useState<string>("");
   const [emailError, setEmailError] = useState<string>("");
 
-  const update = async (formDataObj: any) => {
+  const update = async (formDataObj: any, removePhoto=false) => {
+    if(isUpdating)return;
+    if (!formDataObj) {
+      notificationHelper("", translateData.fillAllFields, "error");
+      return;
+    }
     const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
     if (formDataObj.phoneNumber) {
       if (formDataObj.phoneNumber?.length < 6) {
@@ -95,136 +91,30 @@ export function EditProfile() {
       setEmailError("");
     }
 
-    if (!formDataObj) {
-      notificationHelper("", translateData.fillAllFields, "error");
-      return;
-    }
-
     setIsUpdating(true);
-    const token = await getValue("token");
-
     try {
-      const formData = new FormData();
-      formData.append("name", formDataObj.username);
-      formData.append("email", formDataObj.email);
-      formData.append("country_code", formDataObj.countryCode);
-      formData.append("phone", formDataObj.phoneNumber);
-      formData.append("_method", "PUT");
-
-      if (profileImg) {
-        formData.append("profile_image", {
-          uri: profileImg.uri,
-          type: profileImg.type,
-          name: profileImg.fileName,
-        });
-      }
-
-
-      const response = await fetch(`${URL}/api/updateProfile`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-
-      if (response.status === 403) {
-        notificationHelper("", translateData.loginAgain, "error");
-        await clearValue("token");
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "SignIn" }],
-        });
-        return;
-      }
-
-      if (!response.ok) {
-        const responseData = await response.json();
-        console.error("Error updating profile:", responseData);
-        notificationHelper("", translateData.profileFail, "error");
-      } else {
-        dispatch(selfData())
-          .unwrap()
-          .then(res => {
-            setImageUri(res?.profile_image_url);
-          })
-          .catch(err => {
-            console.error("Failed to load self data:", err);
-          });
-        notificationHelper("", translateData.profileSuccessfully, "success");
-        goBack();
-        if (profileImg) {
-          setValue("profile_image_uri", profileImg.uri);
-        }
-      }
+      await saveProfileUpdate(formDataObj,profileImg,removePhoto);
+      const response=await dispatch(selfData()).unwrap();
+      const updatedProfile=response?.data?.data??response?.data;
+      if(response?.status!==200||!updatedProfile?.id)
+        throw new Error('Your profile was submitted, but could not be refreshed. Please try again.');
+      if(!removePhoto&&profileImg?.uri&&!updatedProfile.profile_image_url)
+        throw new Error('Your photo was not saved. Please select it again and retry.');
+      if(removePhoto&&updatedProfile.profile_image_url)
+        throw new Error('Your photo could not be removed. Please try again.');
+      setImageUri(updatedProfile.profile_image_url||'');
+      setProfileImage(null);
+      await setValue('profile_image_uri',updatedProfile.profile_image_url||'');
+      notificationHelper('',translateData.profileSuccessfully,'success');
+      goBack();
     } catch (error) {
-      console.error("Error:", error);
-      notificationHelper("", translateData.profileFail, "error");
+      notificationHelper('',apiErrorMessage(error,translateData.profileFail||'Could not update your profile.'),'error');
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const RemoveUpdate = async (formDataObj: any) => {
-    setIsUpdating(true);
-    const token = await getValue("token");
-
-    try {
-      const formData = new FormData();
-      formData.append("name", formDataObj.username);
-      formData.append("email", formDataObj.email);
-      formData.append("country_code", formDataObj.countryCode);
-      formData.append("phone", formDataObj.phoneNumber);
-      formData.append("profile_image_id", "");
-      formData.append("_method", "PUT");
-
-      const response = await fetch(`${URL}/api/updateProfile`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 403) {
-        notificationHelper("", translateData.loginAgain, "error");
-        await clearValue("token");
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "SignIn" }],
-        });
-        return;
-      }
-
-      if (!response.ok) {
-        const responseData = await response.json();
-        console.error("Error updating profile:", responseData);
-        notificationHelper("", translateData.profileFail, "error");
-      } else {
-        dispatch(selfData())
-          .unwrap()
-          .then(res => {
-            setImageUri(res?.profile_image_url);
-          })
-          .catch(err => {
-            console.error("Failed to load self data:", err);
-          });
-        notificationHelper("", translateData.profileSuccessfully, "success");
-        goBack();
-        if (profileImg) {
-          setValue("profile_image_uri", profileImg.uri);
-        }
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      notificationHelper("", translateData.profileFail, "error");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const RemoveUpdate = (formDataObj: any) => update(formDataObj, true);
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["35%"], []);
@@ -249,13 +139,12 @@ export function EditProfile() {
 
     if (selectedImage?.uri) {
       setImageUri(selectedImage.uri);
-      await setValue("profile_image_uri", selectedImage.uri);
       bottomSheetModalRef.current?.dismiss();
     }
   };
 
   return (
-    <>
+    <ReferenceScreen><>
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={{
@@ -267,22 +156,22 @@ export function EditProfile() {
             <View
               style={{
                 backgroundColor: isDark ? bgFullStyle : appColors.lightGray,
-                height: "100%",
+                paddingBottom: 20,
               }}>
-              <View style={{ height: "75%" }}>
+              <View>
                 <View
                   style={{
                     backgroundColor: isDark
                       ? appColors.bgDark
                       : appColors.whiteColor,
-                    height: windowHeight(400),
+                    paddingBottom: 22,
                     marginHorizontal: windowWidth(20),
                     marginTop: windowHeight(20),
                     borderWidth: 1,
                     borderColor: isDark
                       ? appColors.darkBorder
                       : appColors.border,
-                    borderRadius: windowHeight(8),
+                    borderRadius: 22,
                   }}>
                   <ImageContainer
                     data={self}
@@ -310,7 +199,8 @@ export function EditProfile() {
               <View
                 style={{
                   paddingHorizontal: windowWidth(20),
-                  paddingBottom: windowHeight(20),
+                  paddingBottom: 20,
+                  paddingTop:20,
                   backgroundColor: isDark
                     ? appColors.darkHeader
                     : appColors.lightGray,
@@ -336,7 +226,7 @@ export function EditProfile() {
           }}
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.whiteColor,
-          }}>
+          }} android_keyboardInputMode="adjustResize" >
           <BottomSheetView style={{ padding: windowHeight(15) }}>
             <Text
               style={{
@@ -410,7 +300,6 @@ export function EditProfile() {
 
             <TouchableOpacity
               onPress={async () => {
-                setImageUri("");
                 RemoveUpdate(form);
                 bottomSheetModalRef.current?.dismiss();
               }}
@@ -444,6 +333,6 @@ export function EditProfile() {
           </BottomSheetView>
         </BottomSheetModal>
       </BottomSheetModalProvider>
-    </>
+    </></ReferenceScreen>
   );
 }

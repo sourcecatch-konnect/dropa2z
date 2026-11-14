@@ -1,4 +1,4 @@
-package com.taxidodriver.webiots
+package com.dropa2z.driver
 
 import android.app.Application
 import com.facebook.react.PackageList

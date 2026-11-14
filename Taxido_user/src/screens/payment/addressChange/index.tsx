@@ -1,13 +1,7 @@
+import {BrandLoader} from '../../../design/BrandLogo';
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import {View, TouchableOpacity, Image, ActivityIndicator, Alert} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import { WebView } from "react-native-webview";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Back, AddressMarker } from "@src/utils/icons";
@@ -215,7 +209,7 @@ export function AddressChange() {
     try {
       // Validate inputs
       if (!rideId) {
-        throw new Error("Ride ID is missing");
+        throw new Error("Delivery ID is missing");
       }
 
       if (
@@ -223,7 +217,7 @@ export function AddressChange() {
         !rideDatas.location_coordinates ||
         !rideDatas.locations
       ) {
-        throw new Error("Ride data is invalid or missing");
+        throw new Error("Delivery data is invalid or missing");
       }
 
       // Get current arrays from rideDatas
@@ -528,7 +522,7 @@ export function AddressChange() {
 
         {loadingMap ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={appColors.primary} />
+            <BrandLoader size="large" color={appColors.primary} />
           </View>
         ) : initialCoords ? (
           <>
@@ -547,7 +541,7 @@ export function AddressChange() {
           </>
         ) : (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={appColors.primary} />
+            <BrandLoader size="large" color={appColors.primary} />
           </View>
         )}
 
@@ -599,7 +593,7 @@ export function AddressChange() {
             }
             activeOpacity={0.8}>
             {isUpdatingLocation || fetchingAddress ? (
-              <ActivityIndicator size="large" color={appColors.whiteColor} />
+              <BrandLoader size="large" color={appColors.whiteColor} />
             ) : (
               <Text style={styles.confirmText}>
                 {translateData.confirmLocation ||
@@ -619,7 +613,7 @@ export function AddressChange() {
               : appColors.whiteColor,
           }}
           handleIndicatorStyle={{ backgroundColor: appColors.primary }}
-          onChange={handleSheetChanges}>
+          onChange={handleSheetChanges} android_keyboardInputMode="adjustResize" >
           {bottomSheetContent}
         </BottomSheetModal>
       </View>

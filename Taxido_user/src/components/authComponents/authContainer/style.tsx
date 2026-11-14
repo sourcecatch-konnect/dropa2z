@@ -9,8 +9,8 @@ const styles = StyleSheet.create({
     ...commonStyles.shadowContainer,
     backgroundColor: appColors.whiteColor,
     paddingHorizontal: windowHeight(16),
-    borderTopRightRadius: windowHeight(16),
-    borderTopLeftRadius: windowHeight(16),
+    borderTopRightRadius: 28,
+    borderTopLeftRadius: 28,
     borderBottomLeftRadius: windowHeight(0),
     borderBottomRightRadius: windowHeight(0)
   },
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   },
   img: {
     height: windowHeight(28),
-    width: windowHeight(90),
+    width: "100%",
     ...external.as_center,
     marginTop: windowHeight(8),
     resizeMode: 'contain',
@@ -33,6 +33,12 @@ const styles = StyleSheet.create({
   imageMainView: {
     flex: 1,
     justifyContent: "flex-end",
+  },
+  imageMainViewKeyboard: {
+    justifyContent: "flex-start",
+  },
+  contentContainerKeyboard: {
+    justifyContent: "flex-start",
   },
   imageView: {
     justifyContent: "flex-end",

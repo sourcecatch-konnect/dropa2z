@@ -28,11 +28,16 @@ const saveLocationSlice = createSlice({
 
     builder.addCase(
       addSaveLocation.fulfilled,
-      (state: any, action: PayloadAction<{ data: any; status: number }>) => {
+      (state: any, action: any) => {
         state.loading = false;
         state.saveLocationData = action.payload.data;
         state.statusCode = action.payload.status;
         state.success = true;
+        const item = { ...action.meta.arg, ...action.payload };
+        if (item.id) {
+          const list = state.saveLocationDataGet?.data || [];
+          state.saveLocationDataGet = { ...state.saveLocationDataGet, data: [item, ...list.filter((saved: any) => String(saved.id) !== String(item.id))] };
+        }
       }
     );
     builder.addCase(addSaveLocation.rejected, (state: any, action: any) => {
@@ -47,7 +52,13 @@ const saveLocationSlice = createSlice({
     });
     builder.addCase(
       deleteSaveLocation.fulfilled,
-      (state: any, action: PayloadAction<any[]>) => { }
+      (state: any, action: any) => {
+        state.loading = false;
+        state.success = true;
+        if (state.saveLocationDataGet?.data) {
+          state.saveLocationDataGet.data = state.saveLocationDataGet.data.filter((item: any) => String(item.id) !== String(action.meta.arg));
+        }
+      }
     );
     builder.addCase(deleteSaveLocation.rejected, (state: any) => {
       state.loading = false;
@@ -60,7 +71,15 @@ const saveLocationSlice = createSlice({
     });
     builder.addCase(
       updateSaveLocation.fulfilled,
-      (state: any, action: PayloadAction<any[]>) => { }
+      (state: any, action: any) => {
+        state.loading = false;
+        state.success = true;
+        const { locationID, data } = action.meta.arg;
+        if (state.saveLocationDataGet?.data) {
+          state.saveLocationDataGet.data = state.saveLocationDataGet.data.map((item: any) =>
+            String(item.id) === String(locationID) ? { ...item, ...data } : item);
+        }
+      }
     );
     builder.addCase(updateSaveLocation.rejected, (state: any) => {
       state.loading = false;

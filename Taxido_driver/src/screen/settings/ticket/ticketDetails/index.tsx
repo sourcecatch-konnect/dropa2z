@@ -1,16 +1,9 @@
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  TextInput,
-  FlatList,
-  Alert,
-  PermissionsAndroid,
-  Platform,
-  RefreshControl,
-} from 'react-native'
+import {KeyboardViewport} from '../../../../design/KeyboardViewport';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {KeyboardAvoidingView} from 'react-native';
+import {BrandLoader} from '../../../../design/BrandLogo';
+import {View, Image, TouchableOpacity, TouchableWithoutFeedback, FlatList, Alert, PermissionsAndroid, Platform, RefreshControl} from 'react-native';
+import {Text, TextInput} from '../../../../design/Typography';
 import React, { useCallback, useEffect, useState } from 'react'
 import { Header, notificationHelper } from '../../../../commonComponents'
 import appColors from '../../../../theme/appColors'
@@ -33,9 +26,10 @@ import { ActivityIndicator } from 'react-native-paper'
 import { AppDispatch } from '../../../../api/store'
 import RNBlobUtil from 'react-native-blob-util'
 
-export function TicketDetails({ route }: any) {
+export function TicketDetails({
+ route }: any) {
   const { ticketData } = route.params
-  const [textViewShow, setTextViewShow] = useState<boolean>(false)
+  const [textViewShow, setTextViewShow] = useState<boolean>(true)
   const [inputText, setInputText] = useState<string>('')
   const [files, setFiles] = useState<any>([])
   const { messageData } = useSelector((state: any) => state.tickets)
@@ -304,12 +298,12 @@ export function TicketDetails({ route }: any) {
       })
   }, [dispatch])
   return (
-    <View style={styles.screenMainContainer}>
+    <KeyboardViewport style={{flex:1}}>
       <Header title={translateData.ticketDetails} />
       <View style={styles.list}>
         {loading ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="small" color={appColors.primary} />
+            <BrandLoader size="small" color={appColors.primary} />
           </View>
         ) : (
           <FlatList
@@ -469,13 +463,13 @@ export function TicketDetails({ route }: any) {
                 activeOpacity={0.7}
               >
                 <Text style={styles.btnTitle}>
-                  {translateData.ticketMsgSend}
+                  {translateData.ticketMsgSend || "Send"}
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </TouchableWithoutFeedback>
-    </View>
+    </KeyboardViewport>
   )
 }

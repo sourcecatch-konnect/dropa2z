@@ -7,7 +7,7 @@ const style = StyleSheet.create({
     backgroundColor: appColors.lightGray,
     borderColor: appColors.lightGray,
     borderWidth: windowHeight(1),
-    borderRadius: windowHeight(6),
+    borderRadius: 14,
     width: windowWidth(60),
     height: windowHeight(40),
     borderBottomWidth: windowHeight(0.3),
@@ -27,7 +27,7 @@ const style = StyleSheet.create({
     flexDirection: 'row',
   },
   otpInput: {
-    borderRadius: windowHeight(5),
+    borderRadius: 14,
     textAlign: "center",
     textAlignVertical: 'center',
     paddingVertical: 0,

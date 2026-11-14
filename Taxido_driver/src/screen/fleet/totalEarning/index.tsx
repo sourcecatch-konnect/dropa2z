@@ -1,13 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
-import {
-  Text,
-  TouchableOpacity,
-  View,
-  ScrollView,
-  StyleSheet,
-  Pressable,
-  BackHandler,
-} from 'react-native'
+import {TouchableOpacity, View, ScrollView, StyleSheet, Pressable, BackHandler} from 'react-native';
+import {Text} from '../../../design/Typography';
 import appColors from '../../../theme/appColors'
 import { Header } from '../../../commonComponents'
 import Svg, { Rect, Line, Text as SvgText } from 'react-native-svg'

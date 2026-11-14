@@ -1,4 +1,6 @@
-import { View, Text, FlatList, Image, TouchableOpacity, BackHandler } from 'react-native';
+import {VehicleGraphic} from '../../design/VehicleGraphic';
+import {View, FlatList, Image, TouchableOpacity, BackHandler} from 'react-native';
+import {Text} from '../../design/Typography';
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Header, notificationHelper } from '@src/commonComponent';
@@ -89,12 +91,9 @@ const VehicleItem = React.memo(({ item, isSelected, isDark, onPress, appColors, 
       ],
       isSelected && styles.selectedVehicleItem,
     ]}>
-    <Image
-      source={{
-        uri: item.vehicle_image_url,
-      }}
-      style={styles.vehicleImage}
-    />
+    <VehicleGraphic source={{
+  uri: item.vehicle_image_url
+}} style={styles.vehicleImage} vehicle={item} />
     <View
       style={[
         styles.border,

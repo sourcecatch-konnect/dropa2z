@@ -47,7 +47,9 @@ class SettingRepository extends BaseRepository
                 Config::set('mail.from.address', $request['email']['mail_from_address'] ?? '');
             }
 
-            Mail::to($request['mail'])->queue(new TestMail());
+            // A test must use the configuration submitted in this request and
+            // report its real SMTP result to the administrator.
+            Mail::to($request['mail'])->send(new TestMail());
 
             return json_encode(['success' => true, 'message' => 'Mail Send Successfully']);
         } catch (Exception $e) {
@@ -58,6 +60,10 @@ class SettingRepository extends BaseRepository
 
     public function update($request, $id)
     {
+        if (!empty($request['test_mail'])) {
+            return $this->test($request);
+        }
+
         DB::beginTransaction();
         try {
             $settings = $this->model->findOrFail($id);
@@ -181,6 +187,17 @@ class SettingRepository extends BaseRepository
                 DotenvEditor::setKeys([
                     'GOOGLE_RECAPTCHA_SECRET' => $value['google_reCaptcha']['secret'],
                     'GOOGLE_RECAPTCHA_KEY'    => $value['google_reCaptcha']['site_key'],
+                ]);
+
+                DotenvEditor::save();
+            }
+
+            if (isset($value['social_login']['google'])
+                && array_key_exists('client_id', $value['social_login']['google'])
+                && array_key_exists('client_secret', $value['social_login']['google'])) {
+                DotenvEditor::setKeys([
+                    'GOOGLE_CLIENT_ID'     => $value['social_login']['google']['client_id'],
+                    'GOOGLE_CLIENT_SECRET' => $value['social_login']['google']['client_secret'],
                 ]);
 
                 DotenvEditor::save();

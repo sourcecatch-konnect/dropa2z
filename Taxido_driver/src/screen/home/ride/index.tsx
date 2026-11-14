@@ -1,13 +1,6 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  Vibration,
-  NativeModules,
-  Alert,
-} from 'react-native'
-import React, { useState, useEffect, useMemo } from 'react'
+import {View, TouchableOpacity, Vibration, NativeModules, Alert} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import appColors from '../../../theme/appColors'
 import { useTheme, useRoute } from '@react-navigation/native'
 import styles from './styles'
@@ -27,6 +20,38 @@ import { useAppNavigation } from '../../../utils/navigation'
 import getEchoInstance from '../../../utils/echo'
 import { WebView } from 'react-native-webview'
 
+function decodeRoadPolyline(encoded: string) {
+  const coordinates: Array<{ latitude: number; longitude: number }> = []
+  let index = 0
+  let latitude = 0
+  let longitude = 0
+
+  while (index < encoded.length) {
+    let result = 0
+    let shift = 0
+    let byte: number
+    do {
+      byte = encoded.charCodeAt(index++) - 63
+      result |= (byte & 0x1f) << shift
+      shift += 5
+    } while (byte >= 0x20)
+    latitude += result & 1 ? ~(result >> 1) : result >> 1
+
+    result = 0
+    shift = 0
+    do {
+      byte = encoded.charCodeAt(index++) - 63
+      result |= (byte & 0x1f) << shift
+      shift += 5
+    } while (byte >= 0x20)
+    longitude += result & 1 ? ~(result >> 1) : result >> 1
+
+    coordinates.push({ latitude: latitude / 1e5, longitude: longitude / 1e5 })
+  }
+
+  return coordinates
+}
+
 export function Ride() {
   const navigation = useAppNavigation()
   const { textRtlStyle, viewRtlStyle, isDark, Google_Map_Key } = useValues()
@@ -42,6 +67,10 @@ export function Ride() {
   const { zoneValue } = useSelector((state: any) => state.zoneUpdate)
   const { selfDriver } = useSelector((state: any) => state.account)
   const [bidload, setbidloading] = useState(false)
+  const [roadRouteCoordinates, setRoadRouteCoordinates] = useState<Array<{ latitude: number; longitude: number }>>([])
+  const routeRequestId = useRef(0)
+  const mapWebViewRef = useRef<any>(null)
+  const isMapWebViewReady = useRef(false)
   const increaseAmount = parseFloat(
     taxidoSettingData?.cabbooking_values?.ride?.increase_amount_range ?? 10,
   )
@@ -142,9 +171,12 @@ export function Ride() {
                   navigation.navigate('TabNav')
                 } else {
                   playRingtone()
-                  navigation.navigate('AcceptFare', {
-                    ride_Id: bidData.ride_id || bidData.id,
-                  })
+                  if (Number(bidData.ride_id) > 0) {
+                    navigation.navigate('AcceptFare', {ride_Id:Number(bidData.ride_id)})
+                  } else {
+                    navigation.navigate('TabNav')
+                    notificationHelper('', 'Delivery accepted. Open the updated delivery from Active deliveries.', 'success')
+                  }
                 }
               } else if (bidData?.status === 'rejected') {
                 notificationHelper(
@@ -171,9 +203,8 @@ export function Ride() {
     }
   }, [selfDriver?.id, bidId, ride?.id, navigation])
 
-  // Listen for ride cancellation by user
-  // Server fires .driver.ride.request with type:'cancelled' on driver-ride-request-{driverId}
-  // Confirmed by Pusher log: pusher:unsubscribe on private-driver-ride-request-{driverId}
+  // Listen for cancellation while this request detail screen is open. Home is
+  // blurred while this screen is active, so it cannot remove the request for us.
   useEffect(() => {
     const driverId = selfDriver?.id
     if (!driverId) return
@@ -194,22 +225,26 @@ export function Ride() {
         const channelName = `driver-ride-request-${driverId}`
         console.log('[Ride] Registering cancellation listener on:', channelName)
 
-        activeEcho
-          .private(channelName)
-          .listen('.cancel.bidding.ride.request', (data: any) => {
-            console.log('[Ride] Cancellation event received on socket:', data)
+        const handleCancellation = (data: any) => {
+          const cancelledRideId = data?.id ?? data?.ride_request_id
+          if (data?.type !== 'cancelled' && data?.status !== 'cancelled') return
 
-            // Validate that the event's ride request ID matches our current ride's ID
-            if (ride?.id && String(data?.id) !== String(ride.id)) {
-              console.log(
-                `[Ride] Event ride ID ${data?.id} does not match current ride ID ${ride.id}. Ignoring.`,
-              )
-              return
-            }
+          if (ride?.id && String(cancelledRideId) !== String(ride.id)) {
+            console.log(
+              `[Ride] Cancellation for request ${cancelledRideId} does not match open request ${ride.id}. Ignoring.`,
+            )
+            return
+          }
 
-            console.log('[Ride] Ride cancelled by user, navigating back')
-            navigation.goBack()
-          })
+          console.log('[Ride] Rider cancelled this request; returning to Home')
+          navigation.goBack()
+        }
+
+        const cancellationChannel = activeEcho.private(channelName)
+        // This is the event used by the Rider cancellation endpoint.
+        cancellationChannel.listen('.driver.ride.request', handleCancellation)
+        // Keep compatibility with the older bidding cancellation event.
+        cancellationChannel.listen('.cancel.bidding.ride.request', handleCancellation)
       } catch (err) {
         console.error('[Ride] Cancellation listener Echo error:', err)
       }
@@ -326,6 +361,77 @@ export function Ride() {
       }))
       : []
 
+  const routeCoordinatesKey = JSON.stringify(ride?.location_coordinates || [])
+
+  useEffect(() => {
+    const currentRequestId = ++routeRequestId.current
+    const points = [pickup, ...addStops, destination].filter(point =>
+      Number.isFinite(point?.latitude) &&
+      Number.isFinite(point?.longitude) &&
+      !(point.latitude === 0 && point.longitude === 0),
+    )
+
+    setRoadRouteCoordinates([])
+    if (!Google_Map_Key || points.length < 2) return
+
+    fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': Google_Map_Key,
+        'X-Goog-FieldMask': 'routes.distanceMeters,routes.polyline.encodedPolyline',
+      },
+      body: JSON.stringify({
+        origin: { location: { latLng: { latitude: points[0].latitude, longitude: points[0].longitude } } },
+        destination: {
+          location: {
+            latLng: {
+              latitude: points[points.length - 1].latitude,
+              longitude: points[points.length - 1].longitude,
+            },
+          },
+        },
+        intermediates: points.slice(1, -1).map(point => ({
+          location: { latLng: { latitude: point.latitude, longitude: point.longitude } },
+        })),
+        travelMode: 'DRIVE',
+        computeAlternativeRoutes: true,
+        units: 'METRIC',
+      }),
+    })
+      .then(async response => {
+        const result = await response.json()
+        if (!response.ok) {
+          throw new Error(result?.error?.message || `Routes API request failed (${response.status})`)
+        }
+        const routes = Array.isArray(result?.routes) ? result.routes : []
+        const shortestRoute = routes.reduce((shortest: any, candidate: any) =>
+          Number(candidate?.distanceMeters) < Number(shortest?.distanceMeters) ? candidate : shortest,
+        routes[0])
+        const encodedPolyline = shortestRoute?.polyline?.encodedPolyline
+        if (!encodedPolyline) throw new Error('Routes API returned no road geometry')
+        const route = decodeRoadPolyline(encodedPolyline)
+        if (currentRequestId === routeRequestId.current && route.length > 1) {
+          setRoadRouteCoordinates(route)
+        }
+      })
+      .catch(error => {
+        if (currentRequestId === routeRequestId.current) {
+          console.warn('[Driver Ride] Road route unavailable:', error?.message || error)
+        }
+      })
+
+    return () => {
+      if (routeRequestId.current === currentRequestId) routeRequestId.current += 1
+    }
+  }, [Google_Map_Key, routeCoordinatesKey])
+
+  useEffect(() => {
+    if (!isMapWebViewReady.current || !mapWebViewRef.current) return
+    const route = roadRouteCoordinates.map(point => ({ lat: point.latitude, lng: point.longitude }))
+    mapWebViewRef.current.injectJavaScript(`window.updateRoadRoute(${JSON.stringify(route)}); true;`)
+  }, [roadRouteCoordinates])
+
   const mapHtml = useMemo(() => {
     const addStopsJson = JSON.stringify(addStops || [])
     const useGoogle = mapType === 'google_map'
@@ -360,7 +466,6 @@ export function Ride() {
       const destination = { lat: ${destination?.latitude ?? 0}, lng: ${destination?.longitude ?? 0
       } };
       const addStops = ${addStopsJson};
-      const ORS_API_KEY = "5b3ce3597851110001cf62483cfa5bfc3bba4b20b1327f0fbd05417b";
 
       function toLatLngObj(p) {
         return { lat: parseFloat(p.latitude ?? p.lat), lng: parseFloat(p.longitude ?? p.lng) };
@@ -395,16 +500,16 @@ export function Ride() {
             const darkModeStyles = [
               { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
               { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-              { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+              { elementType: "labels.text.fill", stylers: [{ color: "#557468" }] },
               {
                 featureType: "administrative.locality",
                 elementType: "labels.text.fill",
-                stylers: [{ color: "#d59563" }]
+                stylers: [{ color: "#63D5A7" }]
               },
               {
                 featureType: "poi",
                 elementType: "labels.text.fill",
-                stylers: [{ color: "#d59563" }]
+                stylers: [{ color: "#63D5A7" }]
               },
               {
                 featureType: "poi.park",
@@ -424,7 +529,7 @@ export function Ride() {
               {
                 featureType: "road.highway",
                 elementType: "geometry",
-                stylers: [{ color: "#746855" }]
+                stylers: [{ color: "#557468" }]
               },
               {
                 featureType: "road.highway",
@@ -459,42 +564,23 @@ export function Ride() {
 
           const initialBounds = createBoundsFromPoints(allPoints);
           setTimeout(() => map.fitBounds(initialBounds, 50), 200);
-
-          const waypoints = stops.map(s => ({ location: new google.maps.LatLng(s.lat, s.lng), stopover: true }));
-          const directionsService = new google.maps.DirectionsService();
-          const directionsRenderer = new google.maps.DirectionsRenderer({
-            map,
-            suppressMarkers: true,
-            polylineOptions: { strokeColor: appColor, strokeWeight: 5, strokeOpacity: 1.0 }
-          });
-
-          directionsService.route({
-            origin: allPoints[0],
-            destination: allPoints[allPoints.length - 1],
-            waypoints,
-            optimizeWaypoints: false,
-            travelMode: "DRIVING"
-          }, (result, status) => {
-            if (status === "OK" && result && result.routes && result.routes[0]) {
-              directionsRenderer.setDirections(result);
-              const rb = result.routes[0].bounds || new google.maps.LatLngBounds();
-              map.fitBounds(rb);
-            } else {
-              console.warn("Directions request failed:", status);
-              const path = allPoints.map(p => new google.maps.LatLng(p.lat, p.lng));
-              const polyline = new google.maps.Polyline({
-                path,
-                geodesic: true,
-                strokeColor: appColor,
-                strokeOpacity: 1.0,
-                strokeWeight: 5,
-                map
-              });
-              const polyBounds = new google.maps.LatLngBounds();
-              path.forEach(pt => polyBounds.extend(pt));
-              map.fitBounds(polyBounds);
-            }
-          });
+          let routeLine = null;
+          window.updateRoadRoute = function(points) {
+            if (routeLine) routeLine.setMap(null);
+            routeLine = null;
+            if (!Array.isArray(points) || points.length < 2) return;
+            routeLine = new google.maps.Polyline({
+              path: points,
+              geodesic: false,
+              strokeColor: appColor,
+              strokeOpacity: 1.0,
+              strokeWeight: 5,
+              map,
+            });
+            const routeBounds = new google.maps.LatLngBounds();
+            routeLine.getPath().forEach(point => routeBounds.extend(point));
+            map.fitBounds(routeBounds);
+          };
 
         } else {
           // ================= LEAFLET (OpenStreetMap) =================
@@ -522,32 +608,21 @@ export function Ride() {
           const markerBounds = createBoundsFromPoints(allPoints);
           setTimeout(() => map.fitBounds(markerBounds, { padding: [40, 40] }), 150);
 
-          try {
-            const coordsForORS = allPoints.map(p => [p.lng, p.lat]);
-            const orsUrl = "https://api.openrouteservice.org/v2/directions/driving-car/geojson";
-            const res = await fetch(orsUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": ORS_API_KEY
-              },
-              body: JSON.stringify({ coordinates: coordsForORS })
-            });
-            const data = await res.json();
-            if (data?.features?.[0]?.geometry?.coordinates) {
-              const coords = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]);
-              const route = L.polyline(coords, { color: appColor, weight: 5 }).addTo(map);
-              map.fitBounds(route.getBounds(), { padding: [40, 40] });
-              return;
-            }
-          } catch (err) {
-            console.error("ORS routing failed:", err);
-          }
-
-          const fallbackLine = allPoints.map(p => [p.lat, p.lng]);
-          const route = L.polyline(fallbackLine, { color: appColor, weight: 5 }).addTo(map);
-          map.fitBounds(route.getBounds(), { padding: [40, 40] });
+          map.fitBounds(markerBounds, { padding: [40, 40] });
+          let routeLine = null;
+          window.updateRoadRoute = function(points) {
+            if (routeLine) map.removeLayer(routeLine);
+            routeLine = null;
+            if (!Array.isArray(points) || points.length < 2) return;
+            routeLine = L.polyline(points.map(point => [point.lat, point.lng]), {
+              color: appColor,
+              weight: 5,
+            }).addTo(map);
+            map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+          };
         }
+
+        window.ReactNativeWebView?.postMessage("WebViewReady");
       }
 
       window.addEventListener("load", function(){ setTimeout(initMap, 50); });
@@ -564,9 +639,17 @@ export function Ride() {
     <View style={commanStyles.main}>
       <View style={styles.mapSection}>
         <WebView
+          ref={mapWebViewRef}
           originWhitelist={['*']}
           source={{ html: mapHtml }}
           style={{ flex: 1 }}
+          onMessage={event => {
+            if (event.nativeEvent.data === 'WebViewReady') {
+              isMapWebViewReady.current = true
+              const route = roadRouteCoordinates.map(point => ({ lat: point.latitude, lng: point.longitude }))
+              mapWebViewRef.current?.injectJavaScript(`window.updateRoadRoute(${JSON.stringify(route)}); true;`)
+            }
+          }}
         />
       </View>
 

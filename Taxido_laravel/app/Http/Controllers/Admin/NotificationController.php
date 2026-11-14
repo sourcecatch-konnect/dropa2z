@@ -22,6 +22,29 @@ class NotificationController extends Controller
         return view('admin.notification.index', compact('notifications'));
     }
 
+    public function poll()
+    {
+        $notifications = auth()->user()
+            ->unreadNotifications()
+            ->where('type', '!=', 'Modules\\Taxido\\Notifications\\SOSAlertNotification')
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(fn ($notification) => [
+                'id' => $notification->id,
+                'title' => $notification->data['title'] ?? 'DropA2Z',
+                'message' => $notification->data['message'] ?? 'You have a new notification.',
+                'url' => $notification->data['url'] ?? route('admin.notification.index'),
+                'time' => $notification->created_at->diffForHumans(),
+            ])
+            ->values();
+
+        return response()->json([
+            'count' => $notifications->count(),
+            'notifications' => $notifications,
+        ]);
+    }
+
     public function markAsRead(Request $request)
     {
         return $this->repository->markAsRead($request);

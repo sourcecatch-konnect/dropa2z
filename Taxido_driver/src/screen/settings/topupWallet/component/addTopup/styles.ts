@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appColors from '../../../../../theme/appColors'
 import appFonts from '../../../../../theme/appFonts'
@@ -60,9 +61,11 @@ const styles = StyleSheet.create({
   },
   inputView: {
     alignItems: 'center',
-    borderRadius: windowWidth(1.5),
+    borderRadius: 14,
     borderWidth: windowHeight(0.1),
     paddingHorizontal: windowWidth(4),
+  
+    ...referenceSurfaces.control,
   },
   textinput: {
     height: windowHeight(6.5),
@@ -77,7 +80,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: windowWidth(4.5),
     paddingVertical: windowHeight(1.5),
     borderWidth: windowHeight(0.1),
-    borderRadius: windowWidth(1.5),
+    borderRadius: 14,
     borderColor: appColors.border,
     marginTop: windowHeight(0.1),
   },
@@ -91,6 +94,8 @@ const styles = StyleSheet.create({
   inputContainer: {
     height: '58%',
     justifyContent: 'space-between'
+  ,
+    ...referenceSurfaces.control,
   },
   modalMessage: {
     fontSize: fontSizes.FONT19,

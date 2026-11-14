@@ -7,7 +7,7 @@ import { CouponsVerifyInterface } from '@src/api/interface/couponInterface';
 export const couponListData = createAsyncThunk(
     COUPON,
     async (data: any) => {
-        const response = await couponService.couponListData();
+        const response = await couponService.couponListData(data);
         return response?.data;
     },
 );

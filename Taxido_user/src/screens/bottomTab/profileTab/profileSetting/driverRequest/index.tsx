@@ -1,10 +1,6 @@
-import {
-  SafeAreaView,
-  View,
-  FlatList,
-  ActivityIndicator,
-  Text,
-} from "react-native";
+import {BrandLoader} from '../../../../../design/BrandLogo';
+import {SafeAreaView, View, FlatList, ActivityIndicator} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React, { useEffect } from "react";
 import { Header, HeaderTab } from "@src/commonComponent";
 import { commonStyles } from "../../../../../styles/commonStyle";
@@ -39,7 +35,7 @@ export function DriverRequestScreen() {
       >
         {loading ? (
           <View style={styles.loadingView}>
-            <ActivityIndicator size="large" color={styles.loadingColor.color} />
+            <BrandLoader size="large" color={styles.loadingColor.color} />
           </View>
         ) : findDriverRequestsData?.data?.length > 0 ? (
           <FlatList

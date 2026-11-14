@@ -1,3 +1,4 @@
+import {riderFieldFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appColors, appFonts, fontSizes, windowHeight } from "@src/themes";
 
@@ -34,6 +35,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     zIndex: 10,
+  
+    ...riderFieldFinish,
   },
   textInput: {
     flex: 1,

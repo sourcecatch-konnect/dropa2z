@@ -1,9 +1,10 @@
+import {useKeyboardState} from '../../../utils/useKeyboardState';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { SafeAreaView, ScrollView, View, BackHandler, Text, StyleSheet, Image, Modal } from "react-native";
-import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import {SafeAreaView, View, BackHandler, StyleSheet, Image, Keyboard} from 'react-native';
+import {Text} from '../../../design/Typography';
+import { useIsFocused } from "@react-navigation/native";
 import { commonStyles } from "../../../styles/commonStyle";
 import { TodayOfferContainer } from "../../../components/homeScreen/todaysOffer";
-import { TopCategory } from "../../../components/homeScreen/topCategory";
 import { HomeSlider } from "../../../components/homeScreen/slider";
 import { HeaderContainer } from "../../../components/homeScreen/headerContainer";
 import styles from "./styles";
@@ -14,9 +15,8 @@ import { appColors, appFonts, fontSizes, windowHeight } from "@src/themes";
 import { useDispatch, useSelector } from "react-redux";
 import { vehicleData } from "../../../api/store/actions/vehicleTypeAction";
 import { useAppNavigation } from "@src/utils/navigation";
-import { Recentbooking } from "@src/screens/recentBooking";
 import { BottomTitle } from "@src/components";
-import { allRides, notificationDataGet, paymentsData, serviceDataGet, taxidosettingDataGet, userSaveLocation, walletData } from "@src/api/store/actions";
+import { allRides, homeScreenData, notificationDataGet, paymentsData, serviceDataGet, taxidosettingDataGet, userSaveLocation, walletData } from "@src/api/store/actions";
 import { HomeLoader } from "../HomeLoader";
 import useStoredLocation from "@src/components/helper/useStoredLocation";
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from "@gorhom/bottom-sheet";
@@ -25,17 +25,21 @@ import { userZone } from "@src/api/store/actions";
 import Images from "@src/utils/images";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DynamicIceland from "../../../components/homeScreen/DynamicIceland";
-import { LowBalance } from "@src/commonComponent/lowBalance";
+import { LocationDrop } from "@src/screens/locationDrop";
+import { getGoodsServiceOptions } from "@src/utils/goodsServiceOptions";
+import {FestiveHomeHero} from '../../../design/FestiveHomeHero';
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
 
 export function HomeScreen() {
   const dispatch = useDispatch();
   const { textColorStyle, viewRTLStyle, isDark, bgFullStyle, setIsRTL, isRTL } = useValues();
   const isFocused = useIsFocused();
-  const [isScrolling, setIsScrolling] = useState(true);
+  const {visible:keyboardVisible}=useKeyboardState();
   const { translateData, taxidoSettingData } = useSelector((state: any) => state.setting);
   const { reset } = useAppNavigation();
   const { self } = useSelector((state: any) => state.account);
-  const { homeScreenDataPrimary, loading } = useSelector((state: any) => state.home);
+  const { homeScreenData: homeScreenDataPrimary, loading } = useSelector((state: any) => state.home);
+  const { serviceData } = useSelector((state: any) => state.service);
   const { latitude, longitude } = useStoredLocation();
   const exitBottomSheetRef = useRef<BottomSheet>(null);
   const exitSnapPoints = useMemo(() => ["1%", "22%"], []);
@@ -67,9 +71,11 @@ export function HomeScreen() {
 
   useEffect(() => {
     const delay = (ms: number) => new Promise(res => setTimeout(() => res(true), ms));
+    if (!isFocused) return;
     const init = async () => {
       await dispatch(allRides() as any);
       await dispatch(serviceDataGet() as any);
+      await dispatch(homeScreenData({ service: 'parcel' }) as any);
 
       await delay(300);
       dispatch(vehicleData() as any);
@@ -84,9 +90,11 @@ export function HomeScreen() {
       getVehicleTypes();
     };
     init();
-  }, [dispatch, getVehicleTypes]);
+  }, [dispatch, getVehicleTypes, isFocused]);
 
   useEffect(() => {
+    if(!isFocused)return;
+    let disposed=false;
     const getAddress = async () => {
       let lat = await getValue("user_latitude_Selected");
       let lng = await getValue("user_longitude_Selected");
@@ -97,24 +105,21 @@ export function HomeScreen() {
 
       try {
         setLoaderService(true);
-        dispatch(
+        const zone=await dispatch(
           userZone({ lat: finalLat.toString(), lng: finalLng.toString() }) as any,
-        ).then(async (res: any) => {
-          if (!res?.payload?.id) {
-            setServiceAvailable(false);
-            setLoaderService(false);
-          } else {
-            setServiceAvailable(true);
-            setLoaderService(false);
-          }
-        });
+        ).unwrap();
+        if(!disposed)setServiceAvailable(Boolean(zone?.id));
       } catch (error) {
         console.error("Error fetching address:", error);
+        // A failed network request is not an authoritative unavailable zone.
+      } finally {
+        if(!disposed)setLoaderService(false);
       }
     };
 
     getAddress();
-  }, [dispatch, latitude, longitude, taxidoSettingData]);
+    return()=>{disposed=true;};
+  }, [dispatch, latitude, longitude, taxidoSettingData,isFocused]);
 
 
 
@@ -155,113 +160,76 @@ export function HomeScreen() {
     [],
   );
 
+  
+
   const isDataEmpty =
     !homeScreenDataPrimary ||
     Object.keys(homeScreenDataPrimary).length === 0 ||
     homeScreenDataPrimary === null;
 
-
-  const [lowBalance, setLowBalance] = useState<boolean>(false);
-  const { walletTypedata }: any = useSelector((state: any) => state.wallet);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (walletTypedata?.balance < 0) {
-        setLowBalance(true);
-      } else {
-        setLowBalance(false);
-      }
-    }, [walletTypedata?.balance])
+  const defaultDelivery = getGoodsServiceOptions(serviceData?.data)[0];
+  const rideCategory = defaultDelivery && {
+    id: defaultDelivery.categoryId,
+    slug: defaultDelivery.categorySlug,
+    service_id: defaultDelivery.serviceId,
+    service_type: defaultDelivery.serviceType,
+  };
+  const homeFeed = (
+    <>
+      <TodayOfferContainer title="Promos & coupons" couponsData={homeScreenDataPrimary?.coupons || []} serviceId={defaultDelivery?.serviceId} />
+    </>
   );
 
+
   return (
-    <View
+    <ReferenceScreen><View
       style={[
         commonStyles.flexContainer,
-        { backgroundColor: appColors.lightGray },
+        { backgroundColor: isDark ? appColors.bgDark : appColors.lightGray },
       ]}>
-      <Modal
-        visible={lowBalance}
-        transparent
-        animationType="fade"
-      >
-        <LowBalance setLowBalance={setLowBalance} />
-      </Modal>
-
-      <SafeAreaView style={styles.container}>
-        <HeaderContainer />
-      </SafeAreaView>
-      {loading || isDataEmpty ? (
+      {(!serviceAvilable || !rideCategory || isDataEmpty) && !keyboardVisible && <FestiveHomeHero/>}
+      {/* Refresh existing data in the background so returning from the map or
+          Saved Locations keeps the mounted booking form and its other stops. */}
+      {isDataEmpty ? (
         <HomeLoader />
+      ) : serviceAvilable === null ? (
+        <HomeLoader />
+      ) : serviceAvilable && rideCategory ? (
+        <View style={{ flex: 1 }}>
+        <LocationDrop
+          key={defaultDelivery?.key}
+          embedded
+          festive
+          inlineHeader={editing=><FestiveHomeHero paused={editing}/>}
+          serviceParams={{
+            service_ID: rideCategory?.service_id,
+            service_name: rideCategory?.service_type,
+            service_category_ID: rideCategory?.id,
+            service_category_slug: rideCategory?.slug,
+            preferredVehicleKind: defaultDelivery?.vehicleKind,
+            defultAddress: "",
+            defultCoords: { lat: latitude, lng: longitude },
+          }}
+          inlineFooter={homeFeed}
+        />
+        </View>
       ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={true}
-          nestedScrollEnabled={true}
-          scrollEnabled={isScrolling}
-          contentContainerStyle={[
-            styles.containerStyle,
-            {
-              backgroundColor: isDark ? appColors.bgDark : appColors.lightGray,
-            },
-          ]}>
-          {loaderService || serviceAvilable === null ? (
-            <HomeLoader />
-          ) : serviceAvilable ? (
-            <>
-              {homeScreenDataPrimary?.banners?.length > 0 && (
-                <HomeSlider
-                  onSwipeStart={() => setIsScrolling(false)}
-                  onSwipeEnd={() => setIsScrolling(true)}
-                  bannerData={homeScreenDataPrimary.banners}
-                />
-              )}
-              {homeScreenDataPrimary?.service_categories?.length > 0 && (
-                <TopCategory
-                  categoryData={homeScreenDataPrimary.service_categories}
-                />
-              )}
-
-              {homeScreenDataPrimary?.recent_rides?.length > 0 && (
-                <Recentbooking
-                  recentRideData={homeScreenDataPrimary.recent_rides}
-                />
-              )}
-              {homeScreenDataPrimary?.coupons?.length > 0 &&
-                taxidoSettingData?.cabbooking_values?.activation?.coupon_enable ==
-                1 && (
-                  <View style={styles.todayOfferContainer}>
-                    <TodayOfferContainer
-                      couponsData={homeScreenDataPrimary.coupons}
-                    />
-                  </View>
-                )}
-            </>
-          ) : (
-            <View style={{ flex: 1, justifyContent: "center" }}>
-              <Image
-                source={
-                  isDark ? Images.noServiceDark : Images.noServices
-                }
-                resizeMode="contain"
-                style={styles.image}
-              />
-              <Text
-                style={[
-                  styles.titles,
-                  {
-                    color: isDark
-                      ? appColors.whiteColor
-                      : appColors.primaryText,
-                  },
-                ]}>
-                {translateData?.ServiceUnavailableNo}
-              </Text>
-            </View>
-          )}
-
-          <BottomTitle />
-        </ScrollView>
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Image
+            source={isDark ? Images.noServiceDark : Images.noServices}
+            resizeMode="contain"
+            style={styles.image}
+          />
+          <Text
+            style={[
+              styles.titles,
+              {
+                color: isDark ? appColors.whiteColor : appColors.primaryText,
+              },
+            ]}>
+            {translateData?.ServiceUnavailableNo}
+          </Text>
+        </View>
       )}
 
       {currentRideReqData && <DynamicIceland rideData={currentRideReqData} />}
@@ -277,7 +245,7 @@ export function HomeScreen() {
           backgroundColor: appColors.primary,
           width: "13%",
         }}
-        backgroundStyle={{ backgroundColor: bgFullStyle }}>
+        backgroundStyle={{ backgroundColor: bgFullStyle }} android_keyboardInputMode="adjustResize" >
         <BottomSheetView
           style={[
             bottomSheetStyles.contentContainer,
@@ -325,7 +293,7 @@ export function HomeScreen() {
           </View>
         </BottomSheetView>
       </BottomSheet>
-    </View>
+    </View></ReferenceScreen>
   );
 }
 

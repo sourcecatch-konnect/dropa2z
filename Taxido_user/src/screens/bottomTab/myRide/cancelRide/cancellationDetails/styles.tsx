@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, windowHeight, windowWidth } from '@src/themes';
 import { commonStyles } from '../../../../../styles/commonStyle';
@@ -10,6 +11,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(5.8),
     paddingHorizontal: windowWidth(12),
     paddingVertical: windowHeight(7),
+  
+    ...riderCardFinish,
   },
   billText: {
     ...commonStyles.extraBold,

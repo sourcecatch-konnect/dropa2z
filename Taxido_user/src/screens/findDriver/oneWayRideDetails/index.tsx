@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Image, ScrollView, Text, View } from "react-native";
+import {Image, ScrollView, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import styles from "./styles";
 import { Button, Header } from "@src/commonComponent";
 import {

@@ -15,6 +15,7 @@ const Images = {
   bgDarkOnboard: require('../../assets/images/bgDarkOnboard.png'),
   otp: require('../../assets/images/otp.png'),
   splash: require('../../assets/images/splash.png'),
+  dropa2zLogo: require('../../assets/images/dropa2z-backend-logo.jpeg'),
   splashDark: require('../../assets/images/splashDark.png'),
   ProfileDefault: require('../../assets/images/ProfileDefault.png'),
   imgCarNormal: require('../../assets/images/regularCarImg.png'),

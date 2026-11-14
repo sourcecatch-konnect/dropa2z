@@ -22,8 +22,9 @@
                                         data-id="{{ $category->id }}">
                                         <div class="dd-handle dd3-handle">Drag</div>
                                         <div class="dd3-content">{{ $category->name }}
-                                            <button type="button" class="delete delete-category" data-bs-toggle="modal"
-                                                data-bs-target="#confirmation"
+                                            <button type="button" class="delete secure-action-btn" data-bs-toggle="modal"
+                                                data-bs-target="#secureActionConfirmation"
+                                                data-method="DELETE"
                                                 data-url="{{ route('admin.category.destroy', $category->id) }}">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
@@ -35,7 +36,6 @@
                                             @endphp
                                             <a href="{{ $route }}" class="edit"><i
                                                     class="ri-edit-2-line"></i></a>
-                                            <x-modal.confirm />
                                         </div>
                                         @if (!$category?->childs?->isEmpty())
                                             @include('admin.category.childs', [
@@ -97,11 +97,6 @@
             $('.dd').nestable({
                 maxDepth: 12
             }).on('change', updateToDatabase);
-
-            $(document).on('click', '.delete-category', function() {
-                const url = $(this).data('url');
-                $('#deleteForm').attr('action', url);
-            });
         });
     </script>
 @endpush

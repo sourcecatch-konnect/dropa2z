@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, fontSizes, windowHeight, windowWidth, appFonts } from '@src/themes';
 import { external } from '@src/styles/externalStyle';
@@ -23,6 +24,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginHorizontal: windowWidth(20),
     marginTop: windowHeight(7.5),
+  
+    ...riderCardFinish,
   },
   categoryImage: {
     width: windowHeight(50),

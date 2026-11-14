@@ -1,4 +1,6 @@
-import { BackHandler, Image, SafeAreaView, Text, View } from "react-native";
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
+import {AppState, BackHandler, Image, SafeAreaView, View} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React, { useCallback, useEffect, useState } from "react";
 import { Button, HeaderTab } from "@src/commonComponent";
 import { commonStyles } from "../../../../styles/commonStyle";
@@ -48,10 +50,25 @@ export function RideScreen() {
       setToken(value);
       setLoading(false);
       if (value) {
-        dispatch(allRides());
+        // The focused list refresh below handles the initial fetch.
       }
     });
   }, [dispatch]);
+
+  useFocusEffect(useCallback(() => {
+    if (!token) return;
+    let active = true;
+    let pending = false;
+    const refresh = async () => {
+      if (!active || pending || AppState.currentState !== 'active') return;
+      pending = true;
+      try { await dispatch(allRides()).unwrap(); } catch (_) {} finally { pending = false; }
+    };
+    refresh();
+    const timer = setInterval(refresh, 5000);
+    const listener = AppState.addEventListener('change', value => { if (value === 'active') refresh(); });
+    return () => { active = false; clearInterval(timer); listener.remove(); };
+  }, [dispatch, token]));
 
   const gotoSignIn = async () => {
     clearValue();
@@ -69,7 +86,7 @@ export function RideScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeAreaContainer, { backgroundColor: bgFullStyle }]}>
+    <ReferenceScreen><SafeAreaView style={[[styles.safeAreaContainer, { backgroundColor: bgFullStyle }], {backgroundColor:'transparent'}]}>
       <HeaderTab tabName={translateData.rideTitle} />
       <View style={[commonStyles.flexContainer, { backgroundColor: linearColorStyle }]}>
         {loading ? null : token ? (
@@ -92,6 +109,6 @@ export function RideScreen() {
           </View>
         )}
       </View>
-    </SafeAreaView>
+    </SafeAreaView></ReferenceScreen>
   );
 }

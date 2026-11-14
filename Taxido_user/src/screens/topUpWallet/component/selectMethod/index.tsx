@@ -1,4 +1,5 @@
-import { View, Text, TextInput, FlatList, Image, TouchableOpacity } from "react-native";
+import {View, FlatList, Image, TouchableOpacity} from 'react-native';
+import {Text, TextInput} from '../../../../design/Typography';
 import React, { useEffect, useState } from "react";
 import styles from "./styles";
 import { useNavigation, useTheme } from "@react-navigation/native";
@@ -14,7 +15,7 @@ import { useAppNavigation } from "@src/utils/navigation";
 
 const SelectMethod = () => {
   const { colors } = useTheme();
-  const { viewRTLStyle } = useValues();
+  const { viewRTLStyle, isDark } = useValues();
   const [amount, setAmount] = useState();
   const { paymentMethodData } = useSelector((state: any) => state.payment);
   const activePaymentMethods = paymentMethodData?.data?.filter((method: any) => method?.status === true);
@@ -146,7 +147,7 @@ const SelectMethod = () => {
             { backgroundColor: colors.card, color: colors.text },
           ]}
           placeholder={translateData.amount}
-          placeholderTextColor={appColors.regularText}
+          placeholderTextColor={isDark ? "#BBC1CA" : appColors.regularText}
           keyboardType={"numeric"}
           value={amount}
           onChangeText={(text) => setAmount(text)}

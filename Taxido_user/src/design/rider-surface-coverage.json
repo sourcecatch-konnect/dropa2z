@@ -1,0 +1,636 @@
+[
+  {
+    "file": "Taxido_user/src/screens/addNewLocation/locationCategory/style.tsx",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/ambulance/ambulancePayment/styles.ts",
+    "styles": [
+      "container",
+      "mainContainer",
+      "ambulanceView",
+      "containerCoupon",
+      "paymentMethodView",
+      "billView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/ambulance/bookAmbulance/styles.ts",
+    "styles": [
+      "container",
+      "mainContainer",
+      "ambulanceView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/auth/signIn/styles.tsx",
+    "styles": [
+      "countryCodeContainer",
+      "phoneNumberInput",
+      "faceBook"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/auth/signUp/styles.tsx",
+    "styles": [
+      "phoneNumberInput",
+      "countryCodeContainer1"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bookRide/styles.tsx",
+    "styles": [
+      "container",
+      "ridekm",
+      "containerCoupon",
+      "containerCouponMain",
+      "recommended",
+      "pressable",
+      "timerContainer",
+      "loaderContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/category/categoryDetail/style.tsx",
+    "styles": [
+      "mainContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/category/findingDriver/styles.tsx",
+    "styles": [
+      "listItemContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/category/selectRide/container/detailContainer/styles.tsx",
+    "styles": [
+      "dataContainer",
+      "titleContainer",
+      "containerCoupon",
+      "containerCouponMain",
+      "coin",
+      "recommended",
+      "timerContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/category/selectRide/container/locationTime/styles.tsx",
+    "styles": [
+      "container",
+      "locationContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/category/selectRide/container/multipleStop/styles.tsx",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/myRide/activeRideScreen/activeDetails/styles.tsx",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/myRide/cancelRide/cancellationDetails/styles.tsx",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/myRide/completeRideScreen/detailContainer/taxiDetails/styles.tsx",
+    "styles": [
+      "vehicleContainer1"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/myRide/pendingRideScreen/pendingDetails/styles.tsx",
+    "styles": [
+      "container",
+      "pendingViewContainer",
+      "pin"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/myRide/pendingRideScreen/styles.tsx",
+    "styles": [
+      "cancellation_reasonView",
+      "rentalMainView",
+      "scheduleView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/myRide/rideContainer/style.tsx",
+    "styles": [
+      "addressContainer",
+      "call",
+      "service_name_view",
+      "service_category_view",
+      "MessageView",
+      "safetyCallView",
+      "containerReview"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/myRide/rideStatus/styles.tsx",
+    "styles": [
+      "mainView",
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/myRide/scheduleRideScreen/scheduleDetails/styles.tsx",
+    "styles": [
+      "container",
+      "viewData"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/appPageScreen/style.tsx",
+    "styles": [
+      "appPagesContainer",
+      "symbolView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/editProfile/style.tsx",
+    "styles": [
+      "char",
+      "countryCodeContainer",
+      "phoneNumberInput"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/profileSetting/driverRequest/details/styles.ts",
+    "styles": [
+      "container",
+      "serviceName",
+      "locationsContainer",
+      "dateTimeBox",
+      "billDetailsContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/profileSetting/profileComponent/AlertContainer/styles.tsx",
+    "styles": [
+      "alertBox"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/profileSetting/profileComponent/profileScreen/style.tsx",
+    "styles": [
+      "itemContainer",
+      "container",
+      "alertManu"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/profileSetting/profileComponent/userContainer/style.tsx",
+    "styles": [
+      "walletContainer",
+      "nameTag"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/promoCode/style.tsx",
+    "styles": [
+      "promoCodeCodeContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/promoCodeDetail/styles.ts",
+    "styles": [
+      "labelName",
+      "titleCode"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/savedLocation/component/locationSave/styles.ts",
+    "styles": [
+      "textInputContainer",
+      "optionContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/bottomTab/profileTab/savedLocation/style.tsx",
+    "styles": [
+      "containerList",
+      "addressContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/accountVerification/styles.ts",
+    "styles": [
+      "imgView",
+      "docSelection",
+      "dropDownContainer",
+      "placeholder"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/addVehicle/styles.ts",
+    "styles": [
+      "imgView",
+      "docSelection",
+      "dropDownContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/carpolingRideDetails/styles.tsx",
+    "styles": [
+      "scrollView",
+      "MessageView",
+      "safetyCallView",
+      "cardMainView",
+      "userData",
+      "vieww"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/carpoolingDate/styles.ts",
+    "styles": [
+      "subContainer",
+      "timeContainer",
+      "calendar"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/carpoolingDetails/styles.ts",
+    "styles": [
+      "MessageView",
+      "safetyCallView",
+      "scrollMainView",
+      "cityStatusesView",
+      "citiesMainContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/carpoolingHome/styles.ts",
+    "styles": [
+      "back",
+      "add",
+      "createRideView",
+      "searchRideView",
+      "locationMainView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/preferences/style.ts",
+    "styles": [
+      "imgView",
+      "docSelection",
+      "dropDownContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/publishRide/styles.ts",
+    "styles": [
+      "addView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/rideList/styles.tsx",
+    "styles": [
+      "back",
+      "MessageView",
+      "safetyCallView",
+      "dataView",
+      "seatMainView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/carpooling/rideListFilter/styles.tsx",
+    "styles": [
+      "mainView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/chooseRider/addNewRider/styles.tsx",
+    "styles": [
+      "countryCodeContainer",
+      "phoneNumberInput"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/dateTimeSchedule/component/timepicker/styles.ts",
+    "styles": [
+      "rowContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/dateTimeSchedule/styles.tsx",
+    "styles": [
+      "timeContainer",
+      "calanderStyle"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/findDriver/findDriverHome/styles.tsx",
+    "styles": [
+      "createRideView",
+      "searchRideView",
+      "locationMainView",
+      "packageMainView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/findDriver/locationScreen/styles.tsx",
+    "styles": [
+      "containers",
+      "dateTimeCard",
+      "gearOption",
+      "recentCardContainer",
+      "suggestionsCard",
+      "timePickerBox"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/findDriver/oneWayDaily/styles.tsx",
+    "styles": [
+      "scrollView",
+      "rideInfoContainer",
+      "MessageView",
+      "safetyCallView",
+      "dateTimeContainer",
+      "carTypeCard",
+      "driverCard"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/findDriver/oneWayRideDetails/styles.ts",
+    "styles": [
+      "driverProfileCard",
+      "locationCard",
+      "dateTimeSplitCard",
+      "selectedCarCard",
+      "reviewCard",
+      "reviewRating"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/findDriver/oneWaySelect/styles.ts",
+    "styles": [
+      "scrollView",
+      "scheduleView",
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/homeScreen/component/styles.ts",
+    "styles": [
+      "subContainer",
+      "timeContainer",
+      "calendar"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/homeScreen/home/styles.tsx",
+    "styles": [
+      "swipeContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/homeService/styles.tsx",
+    "styles": [
+      "categoryItem"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/intro/onBoarding/styles.tsx",
+    "styles": [
+      "backArrow",
+      "dropdownManu"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/locationDrop/styles.tsx",
+    "styles": [
+      "container",
+      "viewContainerToll",
+      "dateField",
+      "containers"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/locationScreen/locationDetails/style.tsx",
+    "styles": [
+      "popupContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/locationSelect/styles.ts",
+    "styles": [
+      "textInputContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/outStation/Freight/descriptionText/styles.tsx",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/outStation/Freight/pictureCargo/styles.tsx",
+    "styles": [
+      "cargoView",
+      "dashedBorder"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/outStation/Parcel/styles.tsx",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/outStation/sharedRide/styles.tsx",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/outStation/style.tsx",
+    "styles": [
+      "container",
+      "viewContainer",
+      "layer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/payment/addressChange/styles.ts",
+    "styles": [
+      "textInputContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/payment/styles.tsx",
+    "styles": [
+      "pin",
+      "call",
+      "containerReview"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/paymentMethod/styles.ts",
+    "styles": [
+      "billContainer",
+      "paymentContainer",
+      "containerCoupon"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/paymentRental/styles.tsx",
+    "styles": [
+      "message",
+      "call",
+      "containerReview"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/recentBooking/styles.ts",
+    "styles": [
+      "view"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/referralID/style.tsx",
+    "styles": [
+      "box"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/rentalBooking/styles.ts",
+    "styles": [
+      "datetimeView",
+      "tripMainView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/rentalCarDetail/styles.ts",
+    "styles": [
+      "subImgView",
+      "subContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/rentalLocation/style.ts",
+    "styles": [
+      "container",
+      "viewStyle",
+      "addressView",
+      "numberContainer",
+      "containerField",
+      "containerSearch"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/rentalLocationSearch/styles.ts",
+    "styles": [
+      "container",
+      "numberContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/rentalVehicleSelect/styles.ts",
+    "styles": [
+      "vehicleItem",
+      "listContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/rideActive/component/mapIcon/styles.ts",
+    "styles": [
+      "target",
+      "shield"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/rideActive/styles.ts",
+    "styles": [
+      "call",
+      "pinView",
+      "pin",
+      "share"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/ticket/createTicket/styles.ts",
+    "styles": [
+      "descriptionField",
+      "dropDownContainer",
+      "imgView",
+      "docSelection",
+      "placeholder"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/ticket/supportTicket/styles.ts",
+    "styles": [
+      "ticketContainer",
+      "statusContainer",
+      "departSubView",
+      "priorityView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/ticket/ticketDetails/styles.ts",
+    "styles": [
+      "cardContainer",
+      "userRound"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/topUpWallet/component/selectMethod/styles.ts",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/wallet/component/balanceTopup/styles.ts",
+    "styles": [
+      "mainBalance"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/wallet/component/List/styles.ts",
+    "styles": [
+      "dataView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/screens/wallet/styles.ts",
+    "styles": [
+      "dataView"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/components/homeScreen/topCategory/styles.tsx",
+    "styles": [
+      "itemContainer",
+      "packageMainView",
+      "centerLocation"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/components/notificationContainer/messageContainer/styles.tsx",
+    "styles": [
+      "container"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/components/outStationDetails/styles.ts",
+    "styles": [
+      "timeContainer"
+    ]
+  },
+  {
+    "file": "Taxido_user/src/components/pickUpDetails/styles.tsx",
+    "styles": [
+      "container"
+    ]
+  }
+]

@@ -342,6 +342,22 @@
                                             </div>
                                         </div>
 
+                                        {{-- Fleet Registration --}}
+                                        <div class="form-group row">
+                                            <label class="col-md-5" for="activation[fleet_registration]">{{ __('taxido::static.settings.fleet_registration') }}
+                                                <i class="ri-error-warning-line" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="{{ __('taxido::static.settings.fleet_registration_span') }}"></i>
+                                            </label>
+                                            <div class="col-md-7">
+                                                <div class="editor-space">
+                                                    <label class="switch">
+                                                        <input class="form-control" type="hidden" name="activation[fleet_registration]" value="0">
+                                                        <input class="form-check-input" type="checkbox" name="activation[fleet_registration]" value="1" {{ ($taxidosettings['activation']['fleet_registration'] ?? '1') == '1' ? 'checked' : '' }}>
+                                                        <span class="switch-state"></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         {{-- Fleet Verification --}}
                                         <div class="form-group row">
                                             <label class="col-md-5" for="activation[fleet_verification]">{{ __('taxido::static.settings.fleet_verification') }}
@@ -1893,7 +1909,7 @@
                 window.initMap = function () {
                     try {
                         map = new google.maps.Map(document.getElementById('map-container'), {
-                            center: { lat: 20.5937, lng: 78.9629 },
+                            center: { lat: 21.0077, lng: 75.5626 },
                             zoom: 4
                         });
                         $('.test-map-btn').html('{{ __("taxido::static.settings.test_map") }}').prop('disabled', false);

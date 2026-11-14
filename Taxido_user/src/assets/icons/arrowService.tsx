@@ -6,7 +6,7 @@ export function ArrowService() {
         <Svg width={12} height={12} fill="none">
             <G clipPath="url(#a)">
                 <Path
-                    stroke="#199675"
+                    stroke="#FC9F03"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeMiterlimit={10}

@@ -1,0 +1,52 @@
+import React from 'react';
+import renderer,{act} from 'react-test-renderer';
+import {LiveBookingProvider,useLiveBookings} from '../src/utils/LiveBookingProvider';
+import {GET_API,navigationRef} from '../src/api/methods';
+import {showBookingActivity,clearBookingActivity} from '../src/utils/bookingActivityNotification';
+const mockStorage=new Map<string,string>();
+let mockRequests:any[]=[],mockRides:any[]=[],mockFail=false;
+const mockListeners:Record<string,Function>={};
+const mockDispatch=jest.fn(()=>({unwrap:async()=>({id:3})}));
+const mockState:any={account:{self:{id:7}},setting:{taxidoSettingData:{cabbooking_values:{ride:{find_driver_time_limit:5}}}}};
+jest.mock('react-redux',()=>({useSelector:(select:any)=>select(mockState),useDispatch:()=>mockDispatch}));
+jest.mock('@react-native-async-storage/async-storage',()=>({__esModule:true,default:{getItem:jest.fn(async(key:string)=>mockStorage.get(key)||null),setItem:jest.fn(async(k:string,v:string)=>mockStorage.set(k,v)),removeItem:jest.fn(async(k:string)=>mockStorage.delete(k))}}));
+jest.mock('../src/api/methods',()=>({GET_API:jest.fn(async(endpoint:string)=>mockFail?{status:500,data:{message:'failed'}}:{status:200,data:{data:endpoint==='rideRequest'?mockRequests:endpoint==='ride'?mockRides:mockRides.find(r=>String(r.id)===endpoint.split('/')[1])}}),navigationRef:{isReady:()=>true,navigate:jest.fn(),getRootState:()=>({routes:[{name:'MyTabs'},{name:'BookRide',params:{countinueRideId:3}}]}),resetRoot:jest.fn(),addListener:jest.fn(()=>()=>{})}}));
+jest.mock('../src/api/store/actions',()=>({userZone:(p:any)=>p,vehicleTypeDataGet:(p:any)=>p,notificationDataGet:()=>({type:'notifications'})}));
+jest.mock('../src/utils/echo',()=>({__esModule:true,releaseScopedEcho:jest.fn(),default:jest.fn(async()=>({private:(channel:string)=>{const c:any={listen:(event:string,callback:Function)=>{mockListeners[`${channel}:${event}`]=callback;return c;},notification:()=>c};return c;},leave:jest.fn(),disconnect:jest.fn()}))}));
+jest.mock('../src/utils/bookingActivityNotification',()=>({showBookingActivity:jest.fn(async()=>{}),clearBookingActivity:jest.fn(async()=>{})}));
+let state:ReturnType<typeof useLiveBookings>,tree:renderer.ReactTestRenderer;
+function Probe(){state=useLiveBookings();return null;}
+const mount=async()=>{await act(async()=>{tree=renderer.create(<LiveBookingProvider><Probe/></LiveBookingProvider>);});};
+beforeEach(()=>{jest.clearAllMocks();mockStorage.clear();mockStorage.set('token','session-7');mockRequests=[];mockRides=[];mockFail=false;});
+afterEach(()=>{if(tree)act(()=>tree.unmount());});
+const request={id:3,ride_number:10003,status:'requested',created_at:'2026-11-05T10:00:00Z',locations:['Pickup','Drop'],location_coordinates:[{lat:21,lng:75},{lat:21.1,lng:75.1}],service_id:1,service_category_id:2,weight:4,vehicle_type:{id:9}};
+it('keeps one card and notification history across live acceptance, duplicate events, and completion',async()=>{
+  mockRequests=[request];await mount();expect(state!.bookings).toHaveLength(1);
+  expect(mockListeners['ride-request.3:.ride.status_update']).toBeDefined();
+  mockRequests=[{...request,ride_id:8}];mockRides=[{id:8,ride_status:{slug:'accepted'}}];
+  await act(async()=>{await mockListeners['rider.7:.ride.accepted']();});
+  expect(state!.bookings).toHaveLength(1);expect(state!.bookings[0].kind).toBe('ride');
+  await act(async()=>{await state!.refresh();await state!.refresh();});
+  expect(state!.notices.filter(n=>n.booking.status==='accepted')).toHaveLength(1);
+  expect(mockListeners['ride-status.8:.ride.status']).toBeDefined();
+  mockRides=[{id:8,ride_status:{slug:'completed'}}];
+  await act(async()=>{await state!.refresh();});
+  expect(state!.bookings).toEqual([]);expect(state!.notices[0].booking.status).toBe('completed');
+  expect(clearBookingActivity).toHaveBeenCalled();
+});
+it('keeps the active card on a server failure and opens the fresh assigned delivery',async()=>{
+  mockRequests=[request];await mount();mockFail=true;
+  await act(async()=>{await state!.refresh();});expect(state!.bookings).toHaveLength(1);
+  mockFail=false;mockRequests=[{...request,ride_id:8}];mockRides=[{id:8,ride_status:{slug:'arrived'}}];
+  await act(async()=>{await state!.openBooking(state!.bookings[0]);});
+  expect(navigationRef.resetRoot).toHaveBeenCalledWith({index:1,routes:[{name:'MyTabs'},expect.objectContaining({name:'RideActive',params:expect.objectContaining({activeRideOTP:mockRides[0]})})]});
+});
+it('resumes the existing search ID and deadline without creating a booking',async()=>{
+  mockRequests=[request];await mount();
+  await act(async()=>{await state!.openBooking(state!.bookings[0]);});
+  expect(navigationRef.resetRoot).toHaveBeenCalledWith({index:1,routes:[{name:'MyTabs'},expect.objectContaining({name:'BookRide',params:expect.objectContaining({countinueRide:true,countinueRideId:3,vehicleIdValue:9,parcelWeight:4,searchExpiresAt:Date.parse(request.created_at)+300000})})]});
+  expect(mockDispatch).toHaveBeenCalledWith(expect.objectContaining({weight:4,service_id:1}));
+  expect((navigationRef.navigate as jest.Mock).mock.calls.some(call=>call[0]==='Outstation')).toBe(false);
+  expect((GET_API as jest.Mock).mock.calls.every(call=>typeof call[0]==='string')).toBe(true);
+  expect(showBookingActivity).toHaveBeenCalledTimes(1);
+});

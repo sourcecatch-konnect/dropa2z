@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView, Alert } from "react-native";
+import {View, TouchableOpacity, Image, ScrollView, Alert} from 'react-native';
+import {Text} from '../../../design/Typography';
 import DropDownPicker from "react-native-dropdown-picker";
 import { Calendar } from "react-native-calendars";
 import { RightArrows, LeftArrow, Back } from "@utils/icons";
@@ -111,7 +112,7 @@ export function Calander({ onPress }: any) {
     setTimeValue(formattedTime);
 
     if (fieldValue === "Ride") {
-      navigate("Ride", {
+      navigate("Delivery", {
         DateValue: formattedDate,
         TimeValue: formattedTime,
         service_name: service_name,
@@ -453,7 +454,7 @@ export function Calander({ onPress }: any) {
 
             if (selectedDate > maxDate) {
               if (marking && marking.selected) {
-                backgroundColor = 'green';
+                backgroundColor = 'orange';
                 color = appColors.whiteColor;
               } else {
                 backgroundColor = '';

@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../design/ReferenceChrome';
 import { StyleSheet } from "react-native";
 import { windowHeight, fontSizes, windowWidth } from "../../theme/appConstant";
 import appColors from "../../theme/appColors";
@@ -11,7 +12,9 @@ const styles = StyleSheet.create({
         borderRadius: windowHeight(0.8),
         paddingBottom: windowHeight(2.3),
         borderWidth: windowHeight(0.1)
-    },
+    ,
+    ...referenceSurfaces.card,
+  },
     centerText: {
         position: 'absolute',
         top: '34%',
@@ -27,7 +30,9 @@ const styles = StyleSheet.create({
         fontFamily: appFonts.bold,
         color: appColors.primary,
         top: '15%',
-    },
+    
+    ...referenceSurfaces.title,
+  },
     legendValue: {
         fontWeight: 'bold',
     },

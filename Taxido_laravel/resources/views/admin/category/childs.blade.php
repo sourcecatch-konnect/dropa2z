@@ -5,7 +5,8 @@
             <div class="dd-handle dd3-handle">{{ __('static.categories.drag') }}</div>
             <div class="dd3-content">
                 {{ $child->name }}
-                <button type="button" class="delete delete-category" data-bs-toggle="modal" data-bs-target="#confirmation"
+                <button type="button" class="delete secure-action-btn" data-bs-toggle="modal"
+                    data-bs-target="#secureActionConfirmation" data-method="DELETE"
                     data-url="{{ route('admin.category.destroy', $child->id) }}">
                     <i class="ri-delete-bin-line"></i>
                 </button>

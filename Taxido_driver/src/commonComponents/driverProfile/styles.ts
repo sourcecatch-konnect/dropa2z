@@ -4,12 +4,19 @@ import appFonts from '../../theme/appFonts'
 
 const styles = StyleSheet.create({
   profile: {
-    height: windowHeight(12.5),
+    minHeight: 112,
     width: '100%',
-    justifyContent: 'space-between',
+    padding: 12,
+    gap: 12,
     borderRadius: windowHeight(1.5),
   },
+  profileCompact: {
+    minHeight: 0,
+    padding: 8,
+    gap: 6,
+  },
   subProfile: {
+    alignItems: 'center',
     marginHorizontal: windowWidth(2.5),
     marginVertical: windowHeight(1.2),
   },

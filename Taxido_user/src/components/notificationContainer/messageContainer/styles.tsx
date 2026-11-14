@@ -1,10 +1,13 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from 'react-native';
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
 import { external } from '../../../styles/externalStyle';
 import { commonStyles } from '../../../styles/commonStyle';
+import {referenceSurfaces} from '../../../design/ReferenceChrome';
 
 const styles = StyleSheet.create({
     container: {
+        ...referenceSurfaces.card,
         borderWidth: windowHeight(1),
         ...external.mb_15,
         borderRadius: windowHeight(5.5),
@@ -15,7 +18,9 @@ const styles = StyleSheet.create({
         ...commonStyles.shadowContainer,
         width: '96.3%',
         alignSelf: 'center',
-    },
+    
+    ...riderCardFinish,
+  },
     viewText: {
         width: windowHeight(31),
         height: windowHeight(31),

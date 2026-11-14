@@ -1,8 +1,9 @@
+import {notificationContent} from './notificationPresentation';
 
 import messaging from "@react-native-firebase/messaging";
 import notifee, {
   EventType,
-  AndroidImportance,
+  AndroidStyle, AndroidImportance,
 } from "@notifee/react-native";
 
 // Request notification permission
@@ -36,7 +37,7 @@ export async function getFCMToken() {
 async function createNotificationChannel() {
   const channelId = await notifee.createChannel({
     id: "default",
-    name: "Default Channel",
+    name: "Dropa2z delivery updates",
     importance: AndroidImportance.HIGH,
   });
 
@@ -47,15 +48,7 @@ async function createNotificationChannel() {
 async function showLocalNotification(remoteMessage: any) {
   const channelId = await createNotificationChannel();
 
-  const title =
-    remoteMessage.notification?.title ||
-    remoteMessage.data?.title ||
-    "New Notification";
-
-  const body =
-    remoteMessage.notification?.body ||
-    remoteMessage.data?.body ||
-    "";
+  const {title,body}=notificationContent(remoteMessage);
 
   await notifee.displayNotification({
     title,
@@ -63,7 +56,9 @@ async function showLocalNotification(remoteMessage: any) {
     data: remoteMessage.data,
     android: {
       channelId,
-      smallIcon: "ic_launcher",
+      smallIcon: "dropa2z_notification",
+      color: "#FC9F03",
+      style: {type: AndroidStyle.BIGTEXT, text:body},
       pressAction: {
         id: "default",
       },

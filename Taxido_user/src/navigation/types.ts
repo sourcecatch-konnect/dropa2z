@@ -24,6 +24,7 @@ export type SignUpParams = {
   countryCode?: string,
   phoneNumber?: string,
   cca2?: string,
+  verificationToken?: string,
 }
 
 export type ChooseRiderScreen = {
@@ -68,6 +69,9 @@ export type RootStackParamList = {
   SavedLocation: undefined;
   MyTabs: any;
   AppPageScreen: undefined;
+  Documents: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
   CompleteRideScreen: undefined;
   CancelRideScreen: undefined;
   PendingRideScreen: undefined;
@@ -77,14 +81,15 @@ export type RootStackParamList = {
   Onboarding: undefined;
   OutStation: undefined;
   LocationDrop: undefined;
+  Delivery: Record<string, any>;
   ChooseRider: undefined;
-  BookRide: undefined;
+  BookRide: Record<string, any>;
   CancelRide: undefined;
   CancelFare: undefined;
   AddNewRider: undefined;
   OnTheWayDetails: undefined;
-  DriverInfos: undefined;
-  ChatScreen: undefined;
+  DriverInfos: {driverInfo?: any; rideInfo?: any} | undefined;
+  ChatScreen: {driverId?:string|number;riderId?:string|number;rideId?:string|number;driverName?:string;driverImage?:string;from?:string} | undefined;
   RideActive: RideActive;
   Payment: undefined;
   Calander: undefined;

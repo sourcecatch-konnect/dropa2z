@@ -1,13 +1,6 @@
-import {
-  ScrollView,
-  View,
-  TouchableOpacity,
-  Image,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  Linking,
-} from "react-native";
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
+import {AppState, ScrollView, View, TouchableOpacity, Image, TouchableWithoutFeedback, Linking} from 'react-native';
+import {Text, TextInput} from '../../../../design/Typography';
 import React, {
   useCallback,
   useEffect,
@@ -46,7 +39,7 @@ import {
 import { styles } from "../rideContainer/style";
 import Images from "@src/utils/images";
 import { useDispatch, useSelector } from "react-redux";
-import { clearValue, getValue } from "@src/utils/localstorage";
+import { deleteValue, getValue, setValue } from "@src/utils/localstorage";
 import {
   allRide,
   paymentsData,
@@ -56,7 +49,8 @@ import {
   cancelationDataGet,
 } from "@src/api/store/actions";
 import { URL } from "@src/api/config";
-import { UserRegistrationPayload } from "@src/api/interface/authInterface";
+import { DriverReviewDataInterface } from "@src/api/interface/reviewInterface";
+import { UpdateRideInterface } from "@src/api/interface/allRideInterface";
 import styless from "./styles";
 import { commonStyles } from "@src/styles/commonStyle";
 import { apiformatDates } from "@src/utils/functions";
@@ -65,7 +59,12 @@ import BottomSheet, {
   BottomSheetFlatList,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import getEchoInstance from "@src/utils/echo";
+
+const FALLBACK_CANCELLATION_REASONS = [
+  { id: "changed-plans", title: "I changed my plans" },
+  { id: "driver-delayed", title: "Driver is taking too long" },
+  { id: "booked-by-mistake", title: "I booked by mistake" },
+];
 
 export function PendingRideScreen() {
   const {
@@ -76,21 +75,28 @@ export function PendingRideScreen() {
     isDark,
     isRTL,
   } = useValues();
-  const route = useRoute();
-  const { item, vehicleDetail, rideStatus } = route?.params;
-  const dispatch = useDispatch();
+  const route = useRoute() as any;
+  const { item: routeItem, vehicleDetail, rideStatus } = route?.params;
+  const [rideSnapshot, setRideSnapshot] = useState<any>(null);
+  const item = rideSnapshot ? { ...routeItem, ...rideSnapshot } : routeItem;
+  const dispatch = useDispatch<any>();
   const { navigate }: any = useNavigation();
-  const { rideData } = useSelector((state: any) => state.allRide);
   const [rating, setRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState<string>("");
   const { translateData } = useSelector((state: any) => state.setting);
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { zoneValue } = useSelector((state: any) => state.zone);
   const { self } = useSelector((state: any) => state.account);
   const [loader, setLoader] = useState(false);
   const [paymentLoading, setpaymentLoading] = useState(false);
-  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
-  const { canceldata } = useSelector(state => state.cancelationReason);
+  const { canceldata } = useSelector((state: any) => state.cancelationReason);
+  const cancellationReasons = Array.isArray(canceldata?.data)
+    ? canceldata.data
+    : [];
+  const cancellationReasonOptions =
+    cancellationReasons.length > 0
+      ? cancellationReasons
+      : FALLBACK_CANCELLATION_REASONS;
   const sheetRef = useRef<BottomSheet>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
@@ -100,6 +106,39 @@ export function PendingRideScreen() {
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ["74%"], []);
+  const reviewPromptRequestedRef = useRef(false);
+  const reviewPromptOpenRef = useRef(false);
+  const lastObservedStatusRef = useRef(routeItem?.ride_status?.slug);
+
+  const closeReviewPrompt = useCallback(() => {
+    reviewPromptOpenRef.current = false;
+    void setValue(`dropa2z_review_prompt_dismissed_${item?.id}`, "true");
+    bottomSheetRef.current?.close();
+  }, [item?.id]);
+
+  const openReviewPrompt = useCallback(() => {
+    reviewPromptOpenRef.current = true;
+    bottomSheetRef.current?.expand();
+  }, []);
+
+  const maybePromptForReview = useCallback(async (ride: any) => {
+    const currentRide = ride?.data?.data ?? ride?.data ?? ride;
+    if (
+      reviewPromptRequestedRef.current ||
+      currentRide?.ride_status?.slug !== "completed" ||
+      currentRide?.riderReview != null
+    ) {
+      return;
+    }
+
+    const dismissed = await getValue(
+      `dropa2z_review_prompt_dismissed_${item?.id}`,
+    );
+    if (dismissed === "true" || reviewPromptRequestedRef.current) return;
+
+    reviewPromptRequestedRef.current = true;
+    openReviewPrompt();
+  }, [item?.id, openReviewPrompt]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -117,7 +156,7 @@ export function PendingRideScreen() {
     setLoader(true);
     const token = await getValue("token");
     const response = await fetch(
-      `${URL}/api/ride/rider-invoice/${rideData?.invoice_id}`,
+      `${URL}/api/ride/rider-invoice/${item?.invoice_id}`,
       {
         method: "GET",
         headers: {
@@ -132,19 +171,20 @@ export function PendingRideScreen() {
       navigate("PdfViewer", {
         pdfUrl: response?.url,
         token: token,
-        rideNumber: rideData?.invoice_id,
+        rideNumber: item?.invoice_id,
       });
     }
   };
 
   const cancelRental = () => {
+    setSelectedItem(null);
     sheetRef.current?.snapToIndex(0);
   };
 
-  const cancelRide = selectedItem => {
+  const cancelRide = (selectedItem: any) => {
     const ride_id = item?.id;
 
-    let payload: ReviewInterface = {
+    let payload: UpdateRideInterface = {
       status: "cancelled",
       cancellation_reason: selectedItem.title,
     };
@@ -193,12 +233,16 @@ export function PendingRideScreen() {
   };
 
   const review = () => {
-    bottomSheetRef.current?.expand();
-    setIsBottomSheetVisible(true);
+    openReviewPrompt();
   };
 
   const reviewSubmit = async () => {
-    let payload: UserRegistrationPayload = {
+    if (rating < 1) {
+      notificationHelper("", "Choose a star rating to submit your review.", "error");
+      return;
+    }
+
+    let payload: DriverReviewDataInterface = {
       ride_id: item?.id,
       driver_id: item?.driver_id,
       rating: rating,
@@ -207,118 +251,138 @@ export function PendingRideScreen() {
     dispatch(driverReviewPost(payload))
       .unwrap()
       .then((res: any) => {
-        if (res?.success === false) {
-          notificationHelper("", res.message, "error");
-          bottomSheetRef.current?.close();
-          setIsBottomSheetVisible(false);
-        } else {
-          dispatch(allRides());
-          bottomSheetRef.current?.close();
-          setIsBottomSheetVisible(false);
-          notificationHelper("", translateData.reviewSubmited, "success");
-          navigation.goBack();
+        const responseData = res?.data ?? res;
+        if (res?.status >= 400 || responseData?.success === false) {
+          notificationHelper(
+            "",
+            responseData?.message || "Could not submit your review. Please try again.",
+            "error",
+          );
+          return;
         }
+
+        dispatch(allRides());
+        closeReviewPrompt();
+        notificationHelper("", translateData.reviewSubmited, "success");
+        navigation.goBack();
       })
-      .catch(err => {
+      .catch((err: any) => {
         notificationHelper("", err, "error");
       });
   };
 
   useFocusEffect(
     useCallback(() => {
+      let screenFocused = true;
+      let requestInFlight = false;
+      let ridePoll: ReturnType<typeof setInterval> | undefined;
+
+      const refreshRide = async () => {
+        if (!screenFocused || requestInFlight) return;
+        requestInFlight = true;
+        try {
+          const response = await dispatch(allRide({ ride_id: item.id })).unwrap();
+          if (!screenFocused) return;
+          if (response?.status === 403) {
+            notificationHelper("", translateData.loginAgain, "error");
+            await deleteValue("token");
+            (navigation as any).reset({
+              index: 0,
+              routes: [{ name: "SignIn" }],
+            });
+            return;
+          }
+          const freshRide = response?.data?.data ?? response?.data ?? response;
+          if (!freshRide || String(freshRide.id) !== String(item.id)) return;
+
+          setRideSnapshot((previous: any) => {
+            const updatedRide = {
+              ...routeItem,
+              ...(previous ?? {}),
+              ...freshRide,
+            };
+            if (
+              previous &&
+              previous?.ride_status?.slug === updatedRide?.ride_status?.slug &&
+              previous?.payment_status === updatedRide?.payment_status &&
+              previous?.riderReview?.id === updatedRide?.riderReview?.id &&
+              JSON.stringify(previous?.parcel_delivery_progress ?? null) ===
+                JSON.stringify(updatedRide?.parcel_delivery_progress ?? null)
+            ) {
+              return previous;
+            }
+            return updatedRide;
+          });
+          const freshStatus = freshRide?.ride_status?.slug;
+          const previousStatus = lastObservedStatusRef.current;
+          if (freshStatus) lastObservedStatusRef.current = freshStatus;
+          await maybePromptForReview(freshRide);
+
+          if (freshStatus === "started" && previousStatus !== "started") {
+            setLoader(false);
+            navigation.navigate("RideActive", { activeRideOTP: freshRide });
+          } else if (freshStatus === "cancelled") {
+            if (ridePoll) clearInterval(ridePoll);
+            // Historical cancellations are viewable records, not new events.
+            if (previousStatus !== "cancelled") {
+              notificationHelper(
+                "",
+                translateData.rideCancelNotification || "Delivery has been cancelled.",
+                "error",
+              );
+              navigation.navigate("MyTabs");
+              dispatch(allRides());
+            }
+          } else if (freshStatus === "completed") {
+            if (ridePoll) clearInterval(ridePoll);
+            dispatch(allRides());
+          }
+        } catch (error: any) {
+          if (error?.status === 403 || error?.response?.status === 403) {
+            notificationHelper("", translateData.loginAgain, "error");
+            await deleteValue("token");
+            (navigation as any).reset({
+              index: 0,
+              routes: [{ name: "SignIn" }],
+            });
+          } else {
+            console.error("Error refreshing active ride:", error);
+          }
+        } finally {
+          requestInFlight = false;
+        }
+      };
+
       dispatch(paymentsData())
         .unwrap()
         .then((res: any) => {
           if (res?.status == 403) {
             notificationHelper("", translateData.loginAgain, "error");
-            clearValue("token").then(() => {
-              navigation.reset({
+            deleteValue("token").then(() => {
+              (navigation as any).reset({
                 index: 0,
                 routes: [{ name: "SignIn" }],
               });
             });
           }
         })
-        .catch(error => {
+        .catch((error: any) => {
           console.error("Error in paymentsData:", error);
         });
 
-      dispatch(allRide({ ride_id: item.id }))
-        .unwrap()
-        .then((res: any) => {
-          if (res?.status == 403) {
-            notificationHelper("", translateData.loginAgain, "error");
-            clearValue("token").then(() => {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "SignIn" }],
-              });
-            });
-          }
-        })
-        .catch(error => {
-          console.error("Error in allRide:", error);
-        });
-    }, [item.id]),
+      void refreshRide();
+      ridePoll = setInterval(() => void refreshRide(), 5000);
+      const appStateSubscription = AppState.addEventListener("change", state => {
+        if (state === "active") void refreshRide();
+      });
+
+      return () => {
+        screenFocused = false;
+        if (ridePoll) clearInterval(ridePoll);
+        appStateSubscription.remove();
+      };
+    }, [item.id, maybePromptForReview, dispatch, navigation, routeItem, translateData]),
   );
-
-  // Echo real-time ride status listener
-  useEffect(() => {
-    const rideId = item?.id;
-    if (!rideId) return;
-
-    let echo: any;
-
-    const setupEchoListener = async () => {
-      try {
-        echo = await getEchoInstance();
-        echo
-          .private(`ride.${rideId}`)
-          .listen(".ride.status_update", (data: any) => {
-            const status = data?.status;
-            if (status) {
-              // Refresh ride data from API to keep Redux state in sync
-              dispatch(allRide({ ride_id: rideId }))
-                .unwrap()
-                .catch((error: any) => {
-                  console.error("[PendingRide] allRide refresh error:", error);
-                });
-
-              if (status === "started") {
-                // Use Echo event data instead of Firebase rideDoc
-                setLoader(false);
-                // @ts-ignore - Navigation type issue
-                navigation.navigate("RideActive", { activeRideOTP: data });
-              } else if (status === "cancelled") {
-                notificationHelper(
-                  "",
-                  translateData.rideCancelNotification ||
-                  "Ride has been cancelled.",
-                  "error",
-                );
-                navigate("MyTabs");
-                dispatch(allRides());
-              } else if (status === "completed") {
-                dispatch(allRides());
-              }
-            }
-          });
-      } catch (error: any) {
-        console.error(
-          "[PendingRide] Echo setup error:",
-          error?.message || error,
-        );
-      }
-    };
-
-    setupEchoListener();
-
-    return () => {
-      if (echo) {
-        echo.leave(`ride.${rideId}`);
-      }
-    };
-  }, [item?.id]);
 
   const handleStarPress = (selectedRating: number) => {
     setRating(selectedRating);
@@ -332,7 +396,7 @@ export function PendingRideScreen() {
         console.error("[StartRide] Ride ID missing");
         notificationHelper(
           "",
-          translateData?.somethingWrong || "Ride ID missing",
+          translateData?.somethingWrong || "Delivery ID missing",
           "error",
         );
         return;
@@ -355,7 +419,7 @@ export function PendingRideScreen() {
     }
   };
 
-  const gotoMessage = item => {
+  const gotoMessage = (item: any) => {
     navigate("ChatScreen", {
       driverId: item?.driver?.id,
       riderId: item?.rider?.id,
@@ -365,7 +429,7 @@ export function PendingRideScreen() {
     });
   };
 
-  const gotoCall = item => {
+  const gotoCall = (item: any) => {
     const phoneNumber = `${item?.driver?.phone}`;
     Linking.openURL(`tel:${phoneNumber}`);
   };
@@ -373,7 +437,7 @@ export function PendingRideScreen() {
   const formattedDate = apiformatDates(item.created_at);
   const hasProfileImage = !!item?.driver?.driver_profile_image_url;
 
-  const handleSheetChange = useCallback(index => { }, []);
+  const handleSheetChange = useCallback((_index: number) => { }, []);
 
   const onConfirmCancel = () => {
     if (!selectedItem) return;
@@ -381,7 +445,7 @@ export function PendingRideScreen() {
   };
 
   const renderItem = useCallback(
-    ({ item }) => {
+    ({ item }: { item: any }) => {
       const isSelected = selectedItem?.id === item.id;
 
       return (
@@ -415,7 +479,7 @@ export function PendingRideScreen() {
   );
 
   return (
-    <View style={{ flex: 1 }}>
+    <ReferenceScreen><View style={[{ flex: 1 }, {backgroundColor:'transparent'}]}>
       <Header
         value={`${rideStatus} ${translateData.ride}`}
         container={
@@ -1170,7 +1234,7 @@ export function PendingRideScreen() {
 
                   <View style={styless.cancellation_reasonView}>
                     <Text style={styless.cancellation_reasonText}>
-                      {rideData?.cancellation_reason}
+                      {item?.cancellation_reason}
                     </Text>
                   </View>
                 </View>
@@ -1325,13 +1389,23 @@ export function PendingRideScreen() {
                       loading={loader}
                     />
                   ) : (
-                    <Button
-                      backgroundColor={appColors.primary}
-                      textColor={appColors.whiteColor}
-                      title={translateData.startRide}
-                      onPress={gotoOtpRide}
-                      loading={loader}
-                    />
+                    <>
+                      <Button
+                        backgroundColor={appColors.primary}
+                        textColor={appColors.whiteColor}
+                        title={translateData.startRide}
+                        onPress={gotoOtpRide}
+                        loading={loader}
+                      />
+                      <View style={{ height: windowHeight(10) }} />
+                      <Button
+                        backgroundColor={appColors.alertRed}
+                        textColor={appColors.whiteColor}
+                        title={translateData.modelCancelText || "Cancel Delivery"}
+                        onPress={cancelRental}
+                        loading={loader}
+                      />
+                    </>
                   )}
                 </View>
               )}
@@ -1385,13 +1459,19 @@ export function PendingRideScreen() {
         index={-1}
         snapPoints={snapPoints}
         backdropComponent={renderBackdrop}
+        onChange={(index) => {
+          if (index === -1 && reviewPromptOpenRef.current) {
+            reviewPromptOpenRef.current = false;
+            void setValue(`dropa2z_review_prompt_dismissed_${item?.id}`, "true");
+          }
+        }}
         handleIndicatorStyle={{
           backgroundColor: appColors.primary,
           width: "13%",
         }}
         enablePanDownToClose={true}
         backgroundStyle={{ backgroundColor: bgFullStyle }}
-      >
+       android_keyboardInputMode="adjustResize" >
         <BottomSheetView>
           <TouchableWithoutFeedback>
             <View style={styles.bgmodal}>
@@ -1406,8 +1486,16 @@ export function PendingRideScreen() {
                     },
                   ]}
                 >
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Close review prompt"
+                    onPress={closeReviewPrompt}
+                    style={{ alignSelf: "flex-end", padding: windowHeight(4) }}
+                  >
+                    <Text style={{ color: textColorStyle, fontSize: windowHeight(16) }}>Close</Text>
+                  </TouchableOpacity>
                   <Text style={[styles.title, { color: textColorStyle }]}>
-                    {translateData.modalTitle}
+                    {translateData.modalTitle || "How was your delivery?"}
                   </Text>
 
                   <View style={styles.userAlign}>
@@ -1502,6 +1590,9 @@ export function PendingRideScreen() {
                   >
                     {translateData.addComments}
                   </Text>
+                  <Text style={{ color: appColors.gray, marginHorizontal: windowWidth(6), marginBottom: windowHeight(4) }}>
+                    Optional
+                  </Text>
 
                   <View style={[styless.textinput]}>
                     <TextInput
@@ -1518,6 +1609,8 @@ export function PendingRideScreen() {
                       textAlignVertical="top"
                       value={reviewText}
                       onChangeText={text => setReviewText(text)}
+                      placeholder="Add a comment (optional)"
+                      placeholderTextColor={appColors.gray}
                     />
                   </View>
 
@@ -1544,9 +1637,9 @@ export function PendingRideScreen() {
         onChange={handleSheetChange}
         index={-1}
         enablePanDownToClose
-      >
+       android_keyboardInputMode="adjustResize" >
         <BottomSheetFlatList
-          data={canceldata?.data}
+          data={cancellationReasonOptions}
           keyExtractor={item =>
             item?.id?.toString() || Math.random().toString()
           } // Fixed: use unique ID
@@ -1572,6 +1665,6 @@ export function PendingRideScreen() {
           </TouchableOpacity>
         </View>
       </BottomSheet>
-    </View>
+    </View></ReferenceScreen>
   );
 }

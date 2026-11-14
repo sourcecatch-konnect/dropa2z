@@ -1,5 +1,7 @@
+import {BrandLoader} from '../../../design/BrandLogo';
 import React, { useState } from 'react';
-import { View, ActivityIndicator, Platform, Alert, Text, TouchableOpacity } from 'react-native';
+import {View, ActivityIndicator, Platform, Alert, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { WebView } from 'react-native-webview';
 import appColors from '../../../theme/appColors';
 import { fontSizes, windowHeight } from '../../../theme/appConstant';
@@ -87,7 +89,7 @@ export function PdfViewer({ route }: any) {
             </View>
             {loading && (
                 <View style={styles.loaderContainer}>
-                    <ActivityIndicator size="large" color={appColors.primary} />
+                    <BrandLoader size="large" color={appColors.primary} />
                 </View>
             )}
 

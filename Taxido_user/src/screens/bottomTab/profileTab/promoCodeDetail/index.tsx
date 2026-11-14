@@ -1,5 +1,7 @@
-import { View, Text, Image, TouchableOpacity, Platform } from "react-native";
+import {View, Image, TouchableOpacity, Platform, ScrollView} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from "react";
+import {DesignIcon} from "../../../../design/DesignIcon";
 import { HeaderContainer, notificationHelper } from "@src/commonComponent";
 import { useValues } from "@src/utils/context/index";;
 import { styles } from "./styles";
@@ -73,7 +75,7 @@ export function PromoCodeDetail({ route }: { route: any }) {
       <View style={[styles.headerContainer, { backgroundColor: bgFullStyle }]}>
         <HeaderContainer value={translateData.promoCodeDetails} />
       </View>
-      <View style={styles.detailsContainer}>
+      <ScrollView contentContainerStyle={[styles.detailsContainer,{paddingBottom:32}]} showsVerticalScrollIndicator={false}>
         <View
           style={[
             styles.detailsComonent,
@@ -104,10 +106,10 @@ export function PromoCodeDetail({ route }: { route: any }) {
             <View
               style={[styles.imageContainer, { alignItems: viewSelfRTLStyle }]}
             >
-              <Image source={Images.discount} style={styles.discountImage} />
+              <View style={{width:54,height:54,borderRadius:17,backgroundColor:isDark?"#3B2B19":"#FFF2DF",alignItems:"center",justifyContent:"center"}}><DesignIcon name="tag" color={isDark?"#FFBE60":"#A64B00"} width={29} height={29}/></View>
             </View>
           </View>
-          <Text style={[styles.discription, { textAlign: textRTLStyle }]}>
+          <Text style={[styles.discription, { textAlign: textRTLStyle,color:isDark?"#BBC1CA":"#656C76",lineHeight:22 }]}>
             {item.description}
           </Text>
           {item.services && item.services?.length > 0 && renderTags(item.services, "Services")}
@@ -123,21 +125,22 @@ export function PromoCodeDetail({ route }: { route: any }) {
               >
                 {translateData.validTill}:
               </Text>
-              <Text style={[styles.date, { textAlign: textRTLStyle }]}>
+              <Text style={[styles.date, { textAlign: textRTLStyle,color:isDark?"#BBC1CA":"#656C76",lineHeight:22 }]}>
                 {`\u2022 ${translateData.offerValidUntil} ${formatDate(item.end_date)}`}
               </Text>
             </View>
           )}
           <TouchableOpacity
             activeOpacity={0.7}
-            style={[styles.copyBtn, { flexDirection: viewRTLStyle }]}
+            accessibilityRole="button" accessibilityLabel={`Copy coupon ${item.code}`}
+            style={[styles.copyBtn, { flexDirection: viewRTLStyle,minHeight:48,borderRadius:14 }]}
             onPress={() => copyToClipboard(item)}
           >
             <Copied />
             <Text style={styles.btnText}>{item.code}</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }

@@ -1,12 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import {
-  View,
-  TouchableOpacity,
-  Text,
-  TextInput,
-  ScrollView,
-  BackHandler,
-} from 'react-native'
+import {View, TouchableOpacity, ScrollView, BackHandler} from 'react-native';
+import {Text, TextInput} from '../../../../design/Typography';
 import appColors from '../../../../theme/appColors'
 import { ProgressBar } from '../component'
 import { Input, Button } from '../../../../commonComponents'
@@ -22,14 +16,10 @@ import { RootStackParamList } from '../../../../navigation/main/types'
 import Icons from '../../../../utils/icons/icons'
 import { useValues } from '../../../../utils/context'
 import { windowWidth } from '../../../intro/onBoarding/styles'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { useAppRoute } from '../../../../utils/navigation'
-import { ValidatePhoneNumber } from '../../../../utils/validation'
+import { ValidatePhoneNumber, validateName } from '../../../../utils/validation'
 import { windowHeight } from '../../../../theme/appConstant'
-import { AppDispatch } from '../../../../api/store'
-import { countryData, preferenceData } from '../../../../api/store/action'
-import DropDownPicker from 'react-native-dropdown-picker'
-import CountrySelect from 'react-native-country-select'
 
 type navigation = NativeStackNavigationProp<RootStackParamList>
 
@@ -48,44 +38,31 @@ export function CreateAccount() {
     (state: any) => state.setting,
   )
   const route = useAppRoute()
-  const usercredential = route.params?.phoneNumber ?? '1234567890'
-  const rawCode = route.params?.countryCode ?? '91'
+  const usercredential = route.params?.phoneNumber ?? ''
+  const registrationProof = route.params?.registrationProof
+  const verifiedChannel = route.params?.verifiedChannel ?? registrationProof?.type ??
+    (route.params?.googleIdToken ? 'google' : route.params?.email ? 'email' : 'phone')
+  const isPhoneVerified = verifiedChannel === 'phone'
+  const isContactVerified = verifiedChannel === 'google' || verifiedChannel === 'email'
   const userType = route.params?.userType ?? ''
-  const cleanCode = rawCode.replace('+', '')
-  const [countryCode, setCountryCode] = useState({
-    callingCode: [cleanCode],
-    cca2: route?.params?.cca2 ?? 'US',
-  })
-  const [email, setEmail] = useState('')
+  // Dropa2z currently operates with Indian phone numbers only. Keep the
+  // required payload value, without asking drivers to choose a country.
+  const countryCode = { callingCode: ['91'], cca2: 'IN' }
+  const [email, setEmail] = useState(route.params?.email ?? (usercredential.includes('@') ? usercredential : ''))
   const [referral, setReferral] = useState<string>('')
-  const [isEmailUser, setIsEmailUser] = useState(false)
-  const dispatch = useDispatch<AppDispatch>()
-  const { countryList, selfDriver } = useSelector((state: any) => state.account)
-  const [open, setOpen] = useState(false)
-  const [value, setValue] = useState<string | null>(null)
-  const [selectedCountryName, setSelectedCountryName] = useState<string | null>(
-    null,
-  )
-  const [items, setItems] = useState<any[]>([])
-  const [countryError, setCountryError] = useState<string>('')
-  const [pickerVisible, setPickerVisible] = useState(false)
+  const isEmailUser = !isPhoneVerified
 
   const [formData, setFormData] = useState({
-    username: '',
-    name: '',
-    phoneNumber: '',
-    email: '',
+    username: route.params?.name ?? '',
+    name: route.params?.name ?? '',
+    phoneNumber: isPhoneVerified ? usercredential : '',
+    email: route.params?.email ?? (usercredential.includes('@') ? usercredential : ''),
     password: '',
     confirmPassword: '',
     countryCode: countryCode,
     referral: '',
-    countryName: '',
+    countryName: 'India',
   })
-
-  useEffect(() => {
-    dispatch(countryData())
-    dispatch(preferenceData())
-  }, [])
 
   useFocusEffect(
     useCallback(() => {
@@ -102,18 +79,6 @@ export function CreateAccount() {
       })
     }, []),
   )
-
-  useEffect(() => {
-    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/
-    const isEmail = emailRegex.test(usercredential.trim())
-    setIsEmailUser(isEmail)
-
-    if (isEmail) {
-      setEmail(usercredential.trim())
-    } else {
-      setPhoneNumber(usercredential.trim())
-    }
-  }, [usercredential])
 
   const [error, setError] = useState<any>({
     username: '',
@@ -134,21 +99,12 @@ export function CreateAccount() {
       setFormData(prev => ({ ...prev, email: cleanEmail }))
     } else {
       const cleanPhone = usercredential.trim()
-      setPhoneNumber(cleanPhone)
-      setFormData(prev => ({ ...prev, phoneNumber: cleanPhone }))
+      if (isPhoneVerified) {
+        setPhoneNumber(cleanPhone)
+        setFormData(prev => ({ ...prev, phoneNumber: cleanPhone }))
+      }
     }
-  }, [usercredential])
-
-  useEffect(() => {
-    if (selectedCountryName) {
-      setFormData(prev => ({
-        ...prev,
-        countryName: selectedCountryName,
-      }))
-    }
-  }, [selectedCountryName])
-
-  useEffect(() => { }, [formData.countryName])
+  }, [usercredential, isPhoneVerified])
 
   const handleChange = (key: string, value: string) => {
     setFormData(prev => ({
@@ -174,47 +130,31 @@ export function CreateAccount() {
     }
     let hasError = false
 
-    // Check if country is selected
-    if (!value || !selectedCountryName) {
-      setCountryError(translateData?.countrycodewarn) // or use translateData
-      hasError = true
-    } else {
-      setCountryError('')
-    }
-
-    // Make sure countryName is in formData before submitting
-    if (selectedCountryName && !formData.countryName) {
-      setFormData(prev => ({
-        ...prev,
-        countryName: selectedCountryName,
-      }))
-    }
-
     const phoneError = ValidatePhoneNumber(phone)
-    if (isEmailUser && phoneError) {
+    if (isPhoneVerified && phoneError) {
       newErrors.phoneNumber = phoneError
       hasError = true
     }
 
-    if (name === '') {
-      newErrors.name = translateData.pleaseEnterYourName
+    if (validateName(name)) {
+      newErrors.name = validateName(name)
       hasError = true
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!isEmailUser && emailValue === '') {
+    if (isContactVerified && emailValue === '') {
       newErrors.email = translateData.emailVerifyyyyy
       hasError = true
-    } else if (!isEmailUser && !emailRegex.test(emailValue)) {
+    } else if (emailValue !== '' && !emailRegex.test(emailValue)) {
       newErrors.email = translateData.emailformateteee
       hasError = true
     }
 
-    if (formData.password.trim() === '') {
-      newErrors.password = translateData.password
+    if ((formData.password || formData.confirmPassword) && formData.password.length < 8) {
+      newErrors.password = translateData.passwordMinLength
       hasError = true
     }
-    if (formData.confirmPassword.trim() === '') {
+    if ((formData.password || formData.confirmPassword) && !formData.confirmPassword) {
       newErrors.confirmPassword = translateData.confirmPassword
       hasError = true
     }
@@ -234,28 +174,21 @@ export function CreateAccount() {
       return
     }
 
-    // Ensure countryName is set in formData before submitting
-    if (selectedCountryName && !formData.countryName) {
-      setFormData(prev => ({
-        ...prev,
-        countryName: selectedCountryName,
-      }))
-    }
-
     setError({ phoneNumber: '', email: '', password: '', confirmPassword: '' })
     setShowWarning(false)
-    setAccountDetail(formData)
-    navigation.navigate('UploadedDocument', { type: userType })
-  }
-
-  const onSelectCountry = (country: any) => {
-    const callingCode = country.idd.root + (country.idd.suffixes[0] || '')
-    setCountryCode({
-      callingCode: [callingCode.replace('+', '')],
-      cca2: country.cca2,
+    setAccountDetail({
+      ...formData,
+      email: emailValue,
+      phoneNumber: isPhoneVerified ? phone : '',
+      countryCode,
+      countryName: 'India',
+      verifiedChannel,
+      verificationToken: registrationProof?.token,
+      verificationContact: registrationProof?.contact,
+      googleIdToken: route.params?.googleIdToken,
     })
-    setPickerVisible(false)
-    setIsFocused(false)
+    if(userType==='fleet')navigation.navigate('UploadedDocument',{type:userType});
+    else navigation.navigate('VehicleRegistration');
   }
 
   useEffect(() => {
@@ -271,40 +204,6 @@ export function CreateAccount() {
 
     return () => backHandler.remove()
   }, [])
-
-  useEffect(() => {
-    const formatted =
-      countryList?.data?.map((item: any) => ({
-        label: `${item.name}`,
-        value: item.calling_code,
-      })) || []
-
-    // Add a default option if no countries are available
-    if (formatted.length === 0) {
-      formatted.push({ label: translateData?.selectCountry, value: '' })
-    }
-
-    setItems(formatted)
-
-    // Automatically set the country name if countryCode is pre-filled from route params
-    if (countryCode?.callingCode?.[0] && formatted.length > 0) {
-      const matchingCountry = formatted.find(
-        (item: any) => item.value === countryCode.callingCode[0],
-      )
-      if (matchingCountry) {
-        // Set the dropdown value and country name
-        setValue(countryCode.callingCode[0])
-        setSelectedCountryName(matchingCountry.label)
-
-        // Update formData with the country name
-        setFormData(prev => ({
-          ...prev,
-          countryName: matchingCountry.label,
-        }))
-      }
-    }
-  }, [countryList, countryCode])
-  const [isFocused, setIsFocused] = useState(false)
 
   return (
     <View style={{ flex: 1 }}>
@@ -327,14 +226,15 @@ export function CreateAccount() {
               placeholder={translateData.enterYourName}
               value={formData.name}
               onChangeText={text => handleChange('name', text)}
-              showWarning={showWarning && formData.name === ''}
-              warning={translateData.pleaseEnterYourName}
+              showWarning={!!error.name}
+              warning={error.name}
               backgroundColor={
                 isDark ? appColors.darkThemeSub : appColors.white
               }
               borderColor={colors.border}
             />
           </View>
+          {isPhoneVerified && <>
           <Text
             style={[
               styles.mobileNumber,
@@ -356,31 +256,19 @@ export function CreateAccount() {
                   { right: rtl ? windowWidth(12) : windowWidth(0.5) },
                 ]}
               >
-                <TouchableOpacity
+                <View
                   style={[
                     styles.countryCode,
                     {
                       backgroundColor: isDark
                         ? appColors.darkThemeSub
                         : appColors.white,
-                      borderColor: isFocused ? colors.primary : colors.border,
+                      borderColor: colors.border,
                     },
                   ]}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    setIsFocused(true)
-                    setPickerVisible(true)
-                  }}
-                  disabled={!isEmailUser}
                 >
-                  <TouchableOpacity
+                  <View
                     style={styles.pickerButton}
-                    disabled={!isEmailUser}
-                    activeOpacity={0.9}
-                    onPress={() => {
-                      setIsFocused(true)
-                      setPickerVisible(true)
-                    }}
                   >
                     <Text
                       style={[
@@ -390,8 +278,8 @@ export function CreateAccount() {
                     >
                       +{countryCode.callingCode[0]}
                     </Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
+                  </View>
+                </View>
               </View>
               <View
                 style={[
@@ -404,7 +292,7 @@ export function CreateAccount() {
                 ]}
               >
                 <TextInput
-                  editable={isEmailUser}
+                  editable={false}
                   placeholder={translateData.enterPhone}
                   placeholderTextColor={
                     isDark ? appColors.darkText : appColors.secondaryFont
@@ -424,7 +312,7 @@ export function CreateAccount() {
                   style={[
                     styles.number,
                     {
-                      backgroundColor: isEmailUser
+                    backgroundColor: isPhoneVerified
                         ? isDark
                           ? appColors.darkThemeSub
                           : appColors.white
@@ -439,131 +327,16 @@ export function CreateAccount() {
               </View>
             </View>
 
-            {isEmailUser && error.phoneNumber ? (
+              {isPhoneVerified && error.phoneNumber ? (
               <Text style={[styles.errorText, { textAlign: textRtlStyle }]}>
                 {error.phoneNumber}
               </Text>
             ) : null}
           </View>
-          <Text
-            style={[
-              styles.mobileNumber,
-              {
-                color: isDark ? appColors.white : appColors.primaryFont,
-
-                textAlign: textRtlStyle,
-                marginBottom: windowHeight(0.5),
-                marginTop: windowHeight(2),
-              },
-            ]}
-          >
-            {translateData?.country}
-          </Text>
-          <DropDownPicker
-            open={open}
-            value={value}
-            items={items}
-            setOpen={setOpen}
-            setValue={callback => {
-              const newValue =
-                typeof callback === 'function' ? callback(value) : callback
-              setValue(newValue)
-
-              if (newValue) {
-                const selectedItem = items.find(
-                  (item: any) => item.value === newValue,
-                )
-                setSelectedCountryName(selectedItem?.label ?? null)
-              } else {
-                setSelectedCountryName(null)
-              }
-            }}
-            setItems={setItems}
-            searchable={true}
-            searchPlaceholder={translateData?.searchCounty}
-            searchTextInputStyle={{
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: isDark
-                ? appColors.darkThemeSub
-                : appColors.white,
-            }}
-            searchContainerStyle={{
-              borderBottomColor: colors.border,
-            }}
-            searchPlaceholderTextColor={appColors.secondaryFont}
-            placeholder={
-              items.length > 0
-                ? translateData?.selectCountry
-                : translateData?.noCountryAvilbel
-            }
-            containerStyle={styles.container}
-            placeholderStyle={[
-              styles.placeholderStyles,
-              { color: isDark ? appColors.darkText : appColors.secondaryFont },
-            ]}
-            style={{
-              backgroundColor: isDark
-                ? appColors.darkThemeSub
-                : appColors.white,
-              borderColor: open ? appColors.primary : colors.border,
-              flexDirection: viewRtlStyle,
-              paddingHorizontal: windowHeight(1.9),
-            }}
-            dropDownContainerStyle={{
-              backgroundColor: isDark ? colors.card : appColors.dropDownColor,
-              borderColor: colors.border,
-              marginTop: windowHeight(0.5),
-            }}
-            textStyle={[styles.text, { color: colors.text }]}
-            labelStyle={[
-              styles.text,
-              { color: isDark ? appColors.white : appColors.black },
-            ]}
-            listItemLabelStyle={{
-              color: isDark ? appColors.white : appColors.black,
-            }}
-            scrollViewProps={{
-              showsVerticalScrollIndicator: false,
-              nestedScrollEnabled: true,
-            }}
-            zIndex={2}
-            listMode="SCROLLVIEW"
-            dropDownDirection="AUTO"
-            ListEmptyComponent={() => (
-              <View
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: windowHeight(1.3),
-                }}
-              >
-                <Text style={{ color: colors.text }}>
-                  {translateData?.noCountryAvilbel}
-                </Text>
-              </View>
-            )}
-            ArrowDownIconComponent={() => (
-              <View style={{ transform: [{ rotate: '-90deg' }] }}>
-                <Icons.Back color={colors.text} />
-              </View>
-            )}
-            ArrowUpIconComponent={() => (
-              <View style={{ transform: [{ rotate: '90deg' }] }}>
-                <Icons.Back color={colors.text} />
-              </View>
-            )}
-          />
-
-          {countryError !== '' && (
-            <Text style={[styles.errorText, { textAlign: textRtlStyle }]}>
-              {countryError}
-            </Text>
-          )}
-
+          </>}
           <View style={styles.email}>
             <Input
-              editable={!isEmailUser}
+              editable={!isContactVerified}
               title={translateData.email}
               titleShow={true}
               placeholder={translateData.enterEmail}
@@ -575,7 +348,7 @@ export function CreateAccount() {
                 handleChange('email', text)
               }}
               backgroundColor={
-                !isEmailUser
+                isContactVerified
                   ? isDark
                     ? appColors.darkThemeSub
                     : appColors.white
@@ -587,15 +360,22 @@ export function CreateAccount() {
             />
           </View>
           <View style={{ bottom: windowHeight(0.8) }}>
-            {!isEmailUser && emailFormatWarning !== '' && (
+            {emailFormatWarning !== '' && (
               <Text style={[styles.errorText, { textAlign: textRtlStyle }]}>
                 {emailFormatWarning}
               </Text>
             )}
           </View>
 
+          {isContactVerified && (
+            <Text style={{ color: appColors.secondaryFont, marginBottom: windowHeight(1) }}>
+              You can add and verify a mobile number later in Profile Settings.
+            </Text>
+          )}
+
           <Input
             title={translateData.createaccount}
+            Optional={true}
             titleShow={true}
             placeholder={translateData.password}
             value={formData.password}
@@ -608,8 +388,7 @@ export function CreateAccount() {
             }
             onChangeText={text => handleChange('password', text)}
             showWarning={
-              showWarning &&
-              (formData.password === '' || formData.password.length < 8)
+              showWarning && !!formData.password && formData.password.length < 8
             }
             backgroundColor={isDark ? appColors.darkThemeSub : appColors.white}
             borderColor={colors.border}
@@ -635,6 +414,7 @@ export function CreateAccount() {
             <Input
               title={translateData.cPw}
               titleShow={true}
+              Optional={true}
               placeholder={translateData.confirmPassword}
               value={formData.confirmPassword}
               onChangeText={text => handleChange('confirmPassword', text)}
@@ -680,7 +460,7 @@ export function CreateAccount() {
                     handleChange('referral', text)
                   }}
                   backgroundColor={
-                    !isEmailUser
+                    !isContactVerified
                       ? isDark
                         ? appColors.darkThemeSub
                         : appColors.white
@@ -701,18 +481,6 @@ export function CreateAccount() {
         </View>
         <View style={{ height: windowHeight(45) }} />
       </ScrollView>
-      {pickerVisible && (
-        <CountrySelect
-          visible={pickerVisible}
-          onSelect={onSelectCountry}
-          onClose={() => {
-            setPickerVisible(false)
-            setIsFocused(false)
-          }}
-          theme={isDark ? 'dark' : 'light'}
-          modalType="bottomSheet"
-        />
-      )}
     </View>
   )
 }

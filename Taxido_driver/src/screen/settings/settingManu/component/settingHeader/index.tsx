@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React from 'react'
 import Icons from '../../../../../utils/icons/icons'
 import styles from './styles'
@@ -7,6 +8,7 @@ import { useNavigation, useTheme } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../../../navigation/main/types'
 import { useSelector } from 'react-redux'
+import {ReferenceLogo} from '../../../../../design/ReferenceChrome'
 
 type navigation = NativeStackNavigationProp<RootStackParamList>
 
@@ -24,6 +26,8 @@ export function SettingHeader() {
   }
 
   return (
+    <View style={{backgroundColor:colors.card,paddingTop:12,paddingBottom:8}}>
+      <View style={{alignItems:'center',paddingBottom:6}}><ReferenceLogo driver width={130}/></View>
     <View
       style={[
         styles.main,
@@ -56,6 +60,7 @@ export function SettingHeader() {
           <Icons.WalletSetting color={colors.text} />
         </TouchableOpacity>
       </View>
+    </View>
     </View>
   )
 }

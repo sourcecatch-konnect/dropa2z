@@ -1,4 +1,6 @@
-import { View, Text, Image, TouchableOpacity, BackHandler, Platform } from 'react-native'
+import {DeliveryBackButton} from '../../../design/DeliveryBackButton';
+import {View, Image, TouchableOpacity, BackHandler, Platform} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useTheme, useRoute, useFocusEffect } from '@react-navigation/native'
 import styles from './styles'
@@ -18,6 +20,9 @@ import appFonts from '../../../theme/appFonts'
 import Animated, { useAnimatedStyle, interpolate, Extrapolate } from 'react-native-reanimated'
 import { useValues } from '../../../utils/context'
 import { AppDispatch } from '../../../api/store'
+import {rideUpdate as markPickupArrived} from '../../../api/services/rideService'
+import {requireApiSuccess} from '../../../api/responseError'
+import {bookingSnapshot} from '../../../utils/bookingPeople'
 import { FAB } from 'react-native-paper'
 import Icons from '../../../utils/icons/icons'
 import ContentLoader, { Rect } from 'react-content-loader/native'
@@ -142,16 +147,18 @@ export function AcceptFare() {
   }, [ride_Id, dispatch])
 
   const gotoPickup = async () => {
+    if (arrivedLoading) return
     setArrivedLoading(true)
-    dispatch(
-      rideDataPut({
-        data: { status: 'arrived' },
-        ride_id: ride_Id,
-      }),
-    ).then(async (res: any) => {
-      navigation.navigate('OtpRide', { rideData: rideData, ride_Id: ride_Id })
-      setArrivedLoading(false)
-    })
+    try {
+      requireApiSuccess(await markPickupArrived({data:{status:'arrived'},ride_id:ride_Id}), 'Could not mark arrival at pickup. Please try again.')
+      const current = bookingSnapshot(await dispatch(rideDataGet(ride_Id)).unwrap())
+      if (Number(current?.id) !== Number(ride_Id) || current?.ride_status?.slug !== 'arrived') {
+        throw new Error('Arrival was not confirmed. Please refresh this delivery before entering the PIN.')
+      }
+      navigation.navigate('OtpRide', {rideData:current,ride_Id:current.id})
+    } catch (error:any) {
+      notificationHelper('',error?.message || 'Could not mark arrival at pickup. Please try again.','error')
+    } finally {setArrivedLoading(false)}
   }
 
   const cancelOpen = () => {
@@ -205,15 +212,9 @@ export function AcceptFare() {
   }
 
   const gotoOtherMap = (maptype: any) => {
-    navigation.navigate('MapWebView', {
-      lat: rideData?.location_coordinates?.[
-        rideData?.location_coordinates?.length - 1
-      ]?.lat,
-      lng: rideData?.location_coordinates?.[
-        rideData?.location_coordinates?.length - 1
-      ]?.lng,
-      type: maptype,
-    })
+    const destination=rideData?.location_coordinates?.[0];
+    if(maptype==='google') {navigation.navigate('DeliveryNavigation',{title:'Navigate to pickup',destinations:destination?[{...destination,title:'Pickup'}]:[]});return;}
+    navigation.navigate('MapWebView',{lat:destination?.lat,lng:destination?.lng,type:maptype});
   }
 
   // Shimmer effect component for loading state
@@ -246,9 +247,7 @@ export function AcceptFare() {
             driverId={Driver_Id}
           />
         </View>
-        <View style={styles.backButton}>
-          <BackButton />
-        </View>
+        <DeliveryBackButton/>
         <FAB
           icon={Icons.Map}
           style={[
@@ -318,7 +317,7 @@ export function AcceptFare() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView>
             {rideData ? (
               <>
@@ -337,6 +336,7 @@ export function AcceptFare() {
                     rideDetails={rideData}
                   />
                 </View>
+                {!!rideData?.parcel_delivery_progress?.pickup_vehicle_confirmed_at && <Text style={{color:isDark?'#FFBE60':'#A64B00',marginVertical:10}}>Customer confirmed the pickup vehicle</Text>}
                 <TotalFair
                   onPress={gotoPickup}
                   totalAmount={rideData?.total}
@@ -387,7 +387,7 @@ export function AcceptFare() {
           backgroundStyle={{
             backgroundColor: isDark ? appColors.bgDark : appColors.white,
           }}
-        >
+         android_keyboardInputMode="adjustResize" >
           <BottomSheetView>
             <Text
               style={{

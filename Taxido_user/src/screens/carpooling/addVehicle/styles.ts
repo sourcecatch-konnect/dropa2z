@@ -1,3 +1,4 @@
+import {riderCardFinish,riderFieldFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { appColors, appFonts, windowHeight, windowWidth } from "@src/themes";
 
@@ -18,6 +19,8 @@ const styles = StyleSheet.create({
     right: windowHeight(2),
     borderWidth: windowHeight(0.2),
     borderRadius: windowHeight(5),
+  
+    ...riderCardFinish,
   },
   closeIcon: {
     position: "absolute",
@@ -40,6 +43,8 @@ const styles = StyleSheet.create({
     padding: windowHeight(8),
     top: windowHeight(3),
     borderRadius: windowHeight(5.5),
+  
+    ...riderCardFinish,
   },
   docContainer: {
     borderWidth: windowHeight(0.9),
@@ -61,6 +66,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(5),
     color: appColors.subtitle,
     marginTop: windowHeight(2),
+  
+    ...riderFieldFinish,
   },
   input: {
     borderWidth: windowHeight(1),

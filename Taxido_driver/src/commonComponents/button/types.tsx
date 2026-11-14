@@ -9,6 +9,7 @@ interface CustomButtonProps {
   borderWidth?: string | number | any;
   activeOpacity?: any,
   textDecorationLine?:any
+  textStyle?: any
 }
 
 export default CustomButtonProps

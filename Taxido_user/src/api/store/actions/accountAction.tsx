@@ -61,13 +61,7 @@ export const verifyMobileEmail = createAsyncThunk(
   },
 );
 
-export const accountDelete = createAsyncThunk(DELETEACCOUNT, async () => {
-  const response = await accountServices.accountDelete();
-  if (response.status == 200) {
-    return response?.data;
-  } else if (response.status == 401) {
-    return "Unauthorized";
-  } else {
-    return "Error";
-  }
+export const accountDelete = createAsyncThunk(DELETEACCOUNT, async (confirmation:{confirmation:string;acknowledged:boolean}) => {
+  const response = await accountServices.accountDelete(confirmation);
+  return response.data;
 });

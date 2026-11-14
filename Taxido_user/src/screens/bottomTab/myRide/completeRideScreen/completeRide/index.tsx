@@ -1,4 +1,5 @@
-import { ScrollView, View, Text, Modal, TouchableOpacity } from 'react-native';
+import {ScrollView, View, Modal, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React, { useState } from 'react';
 import RideContainer from '../../rideContainer';
 import { Header, Button } from '@src/commonComponent';

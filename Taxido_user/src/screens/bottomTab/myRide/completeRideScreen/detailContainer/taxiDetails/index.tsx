@@ -1,4 +1,6 @@
-import { Image, Text, View } from 'react-native';
+import {VehicleGraphic} from '../../../../../../design/VehicleGraphic';
+import {Image, View} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import React from 'react';
 import { commonStyles } from '../../../../../../styles/commonStyle';
 import { external } from '../../../../../../styles/externalStyle';
@@ -365,15 +367,9 @@ export function TaxiDetails({ paddingHorizontal, texiDetail }: taxidetailsProps)
             },
           ]}>
           <View style={[styles.vehicleContainer, { backgroundColor: isDark ? appColors.darkPrimary : appColors.lightGray }]}>
-            <Image
-              style={styles.imgContainer}
-              source={{
-                uri:
-                  texiDetail?.service?.service_type === "ambulance"
-                    ? texiDetail?.ambulance_image_url
-                    : texiDetail?.vehicle_type?.vehicle_image_url,
-              }}
-            />
+            <VehicleGraphic style={styles.imgContainer} source={{
+  uri: texiDetail?.service?.service_type === "ambulance" ? texiDetail?.ambulance_image_url : texiDetail?.vehicle_type?.vehicle_image_url
+}} vehicle={texiDetail?.vehicle_type} />
           </View>
           <View style={{ flexDirection: viewRTLStyle }}>
             <View style={styles.vehicleView}>

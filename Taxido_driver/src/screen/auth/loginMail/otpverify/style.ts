@@ -38,6 +38,9 @@ const style = StyleSheet.create({
     backgroundColor: appColors.white,
     paddingHorizontal: windowWidth(3),
   },
+  bottomContainerKeyboard: {
+    height: '100%',
+  },
   sendBtn: {
     position: 'absolute',
     bottom: windowHeight(2),

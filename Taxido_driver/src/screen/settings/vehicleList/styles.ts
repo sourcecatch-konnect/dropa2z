@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
   },
   tipContainer: {
     borderWidth: windowHeight(0.1),
-    borderRadius: windowHeight(0.7),
+    borderRadius: 14,
     marginHorizontal: windowWidth(4.5),
     marginTop: windowHeight(2.5),
     alignItems: 'center',
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     borderWidth: windowHeight(0.1),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: windowHeight(0.7),
+    borderRadius: 14,
     borderColor: appColors.border,
   },
   title: {
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.white,
     borderColor: appColors.border,
     marginHorizontal: windowWidth(4.5),
-    borderRadius: windowHeight(0.7),
+    borderRadius: 14,
     marginTop: windowHeight(2.5),
     overflow: 'hidden',
   },
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   carImg: {
     height: windowHeight(15),
     width: '100%',
-    borderRadius: windowHeight(1),
+    borderRadius: 14,
     marginBottom: windowHeight(1.5),
   },
   descContainer: {
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   iconBox: {
     backgroundColor: appColors.graybackground,
     padding: windowWidth(2),
-    borderRadius: windowWidth(2),
+    borderRadius: 14,
     alignItems: 'center',
     marginRight: windowWidth(3),
     marginBottom: windowHeight(1.5),
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   iconBox1: {
     backgroundColor: appColors.graybackground,
     padding: windowWidth(2),
-    borderRadius: windowWidth(2),
+    borderRadius: 14,
     alignItems: 'center',
     marginRight: windowWidth(3),
     marginBottom: windowHeight(1.5),

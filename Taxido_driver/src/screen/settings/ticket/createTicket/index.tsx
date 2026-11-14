@@ -1,12 +1,8 @@
+import {CardHeading} from '../../../../design/CardHeading';
+import {ReferenceScreen} from '../../../../design/ReferenceChrome';
 import React, { useState, useCallback, useEffect } from 'react'
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-} from 'react-native'
+import {View, TouchableOpacity, Image, ScrollView} from 'react-native';
+import {Text, TextInput} from '../../../../design/Typography';
 import { useSelector, useDispatch } from 'react-redux'
 import { Input, Header, Button } from '../../../../commonComponents'
 import { fontSizes, windowWidth } from '../../../../theme/appConstant'
@@ -70,17 +66,19 @@ export function CreateTicket() {
   }, [])
 
   useEffect(() => {
-    if (priorityData?.data) {
+    const priorities = Array.isArray(priorityData) ? priorityData : priorityData?.data;
+    const departments = Array.isArray(departmentData) ? departmentData : departmentData?.data;
+    if (Array.isArray(priorities)) {
       setPriorityList(
-        priorityData.data.map((item: any) => ({
+        priorities.map((item: any) => ({
           label: item.name,
           value: item.id,
         })),
       )
     }
-    if (departmentData?.data) {
+    if (Array.isArray(departments)) {
       setDepartmentList(
-        departmentData.data.map((item: any) => ({
+        departments.map((item: any) => ({
           label: item.name,
           value: item.id,
         })),
@@ -169,7 +167,6 @@ export function CreateTicket() {
         method: 'POST',
         body: formData,
         headers: {
-          'Content-Type': 'multipart/form-data',
           Accept: 'application/json',
           Authorization: `Bearer ${token}`,
         },
@@ -198,10 +195,11 @@ export function CreateTicket() {
   const [isFocused, setIsFocused] = useState(false)
 
   return (
-    <View>
+    <ReferenceScreen><View style={{flex:1}}>
       <Header title={translateData.createTicket} />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={{paddingBottom:32}} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.inputContainer}>
+          <CardHeading icon="message-circle" title="How can we help?" subtitle="Tell our support team what happened"/>
           <View>
             <Input
               title={translateData.subject}
@@ -508,6 +506,6 @@ export function CreateTicket() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </View></ReferenceScreen>
   )
 }

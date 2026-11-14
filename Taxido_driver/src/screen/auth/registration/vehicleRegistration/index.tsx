@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, ScrollView } from 'react-native'
+import {Alert, View, ScrollView} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import styles from './styles'
 import appColors from '../../../../theme/appColors'
 import { CustomCheckbox, ProgressBar } from '../component'
@@ -24,6 +25,7 @@ import { URL } from '../../../../api/config'
 import appFonts from '../../../../theme/appFonts'
 import { AppDispatch } from '../../../../api/store'
 import DropDownPicker from 'react-native-dropdown-picker'
+import { validateVehicleNumber } from '../../../../utils/validation'
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>
 
@@ -40,6 +42,7 @@ export function VehicleRegistration() {
     setToken,
   } = useValues()
   const [showWarning, setShowWarning] = useState(false)
+  const [vehicleNumberError, setVehicleNumberError] = useState('')
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(
     null,
   )
@@ -58,12 +61,7 @@ export function VehicleRegistration() {
   const isFocused = useIsFocused()
   const { translateData } = useSelector((state: any) => state.setting)
   const { vehicleTypedata } = useSelector((state: any) => state.vehicleType)
-  const { preferenceList } = useSelector((state: any) => state.account)
   const dispatch = useDispatch<AppDispatch>()
-  const [selectedPrefs, setSelectedPrefs] = useState<string[]>([])
-  const preferences = preferenceList?.data as
-    | Array<{ id: string; name: string }>
-    | undefined
 
   const [formDatas, setFormData] = useState<any>({
     serviceName: '',
@@ -72,7 +70,8 @@ export function VehicleRegistration() {
     vehicleName: '',
     vehicleNumber: '',
     vehicleColor: '',
-    maximumSeats: '',
+    // Capacity is supplied by the selected vehicle type; it is not editable.
+    maximumSeats: '1',
     ambulanceName: '',
     ambulanceDescription: '',
     experience: '',
@@ -131,23 +130,6 @@ export function VehicleRegistration() {
 
     setFormData((prev: any) => ({ ...prev, [key]: value }))
 
-    if (key === 'maximumSeats' && selectedVehicleSeat) {
-      const seat = Number(value)
-      if (seat >= 1 && seat <= selectedVehicleSeat) {
-        setSeatError(false)
-      } else {
-        setSeatError(true)
-      }
-    }
-  }
-
-  const togglePreference = (slug: string) => {
-    setSelectedPrefs(
-      prev =>
-        prev.includes(slug)
-          ? prev.filter(item => item !== slug) // uncheck
-          : [...prev, slug], // check
-    )
   }
 
   const handleItemPress = (
@@ -157,6 +139,14 @@ export function VehicleRegistration() {
     name: string,
   ) => {
     setSelectedItemIndex(index)
+    if (selectedServiceID !== id) {
+      setSelectedCategory('')
+      setSelectedCategoryID(undefined)
+      setCategoryIndex(null)
+      setVehicleIndex(null)
+      setSelectedVehicle('')
+      setSelectedVehicleID(undefined)
+    }
     setSelectedServiceID(id)
     setSelectedService(slug)
     setShowServiceError(false)
@@ -168,6 +158,10 @@ export function VehicleRegistration() {
     categoryId: number,
   ) => {
     setCategoryIndex(index)
+    if (selectedCategoryID !== categoryId) {
+      setSelectedVehicle('')
+      setSelectedVehicleID(undefined)
+    }
     setSelectedCategory(categoryName)
     setSelectedCategoryID(categoryId)
     setShowCategoryError(false)
@@ -177,27 +171,31 @@ export function VehicleRegistration() {
     index: number,
     vehicleName: string,
     vehicleId: number,
+    details?: any,
   ) => {
     setVehicleIndex(index)
     setSelectedVehicle(vehicleName)
     setSelectedVehicleID(vehicleId)
     setShowVehicleError(false)
 
-    const selectedItem = vehicleTypedata?.data?.find(
+    const selectedItem = details || vehicleTypedata?.data?.find(
       (item: any) => item.id === vehicleId,
     )
-    if (selectedItem?.seat) {
-      setSelectedVehicleSeat(selectedItem.seat)
+    if (selectedItem) {
       setFormData((prev: any) => ({
         ...prev,
-        maximumSeats: selectedItem.seat.toString(),
+        maximumSeats: String(Number(selectedItem.seat)||1),
       }))
     }
   }
 
-  const [seatError, setSeatError] = useState(false)
-
   const gotoBankDetails = () => {
+    const plateError = validateVehicleNumber(formDatas.vehicleNumber)
+    setVehicleNumberError(plateError)
+    if (plateError) {
+      notificationHelper('', plateError, 'error')
+      return
+    }
     const isAmbulance = selectedService === 'ambulance'
     const serviceSlug = selectedService?.toLowerCase().replace(/[-_]/g, '')
     const isFindDriver = serviceSlug === 'finddriver'
@@ -240,7 +238,6 @@ export function VehicleRegistration() {
         'vehicleName',
         'vehicleNumber',
         'vehicleColor',
-        'maximumSeats',
       ].some(key => formDatas[key].trim() === '')
 
       if (!selectedService) {
@@ -265,13 +262,6 @@ export function VehicleRegistration() {
         setShowWarning(false)
       }
 
-      const seatValue = Number(formDatas.maximumSeats)
-      if (seatValue < 1 || seatValue > selectedVehicleSeat) {
-        setSeatError(true)
-        hasError = true
-      } else {
-        setSeatError(false)
-      }
     }
 
     if (selectedCategory === 'Rental') {
@@ -286,119 +276,10 @@ export function VehicleRegistration() {
   }
 
   const handleRegister = async () => {
-    setLoading(true)
-    try {
-      const formData = new FormData()
-
-      formData.append('username', accountDetail?.username || '')
-      formData.append('name', accountDetail?.name || '')
-      formData.append('email', accountDetail?.email || '')
-      formData.append(
-        'country_code',
-        accountDetail?.countryCode?.callingCode?.[0] || '',
-      )
-      formData.append('phone', accountDetail?.phoneNumber || '')
-      formData.append('password', accountDetail?.password || '')
-      formData.append(
-        'password_confirmation',
-        accountDetail?.confirmPassword || '',
-      )
-      formData.append('referral_code', accountDetail?.referral || '')
-      formData.append('country_name', accountDetail?.countryName || '')
-      formData.append('ambulance[name]', formDatas?.ambulanceName || '')
-      formData.append(
-        'ambulance[description]',
-        formDatas?.ambulanceDescription || '',
-      )
-      formData.append('service_id', formDatas?.serviceName || '')
-      formData.append('service_category_id', formDatas?.serviceCategory || '')
-      formData.append('vehicle[vehicle_type_id]', formDatas?.vehicleType || '')
-      formData.append('vehicle[model]', formDatas?.vehicleName || '')
-      formData.append('vehicle[plate_number]', formDatas?.vehicleNumber || '')
-      formData.append('vehicle[color]', formDatas?.vehicleColor || '')
-      formData.append('vehicle[seat]', formDatas?.maximumSeats || '')
-      formData.append('experience', formDatas?.experience || '')
-      formData.append('gear_type', formDatas?.gear_type || '')
-      formData.append('per_day_charge', formDatas?.price_per_day || '')
-      formData.append('per_hour_charge', formDatas?.price_per_hour || '')
-      formData.append('per_km_charge', formDatas?.price_per_km || '')
-      formData.append('vehicle_type_id', formDatas?.vehicleType || '')
-      selectedPriceTypes.forEach((type, index) => {
-        const chargeKey = `per_${type}_charge`
-        formData.append(`price_type[${index}]`, chargeKey)
-
-
-      });
-      formData.append('fcm_token', fcmToken)
-      selectedPrefs.forEach((item, index) => {
-        formData.append(`preferences[${index}]`, item)
-      })
-
-      Object.keys(documentDetail).forEach((key, index) => {
-        const doc = documentDetail[key]?.file
-        const expiryDate = documentDetail[key]?.expiryDate
-
-        if (doc) {
-          formData.append(`documents[${index}][file]`, {
-            uri: doc.uri,
-            type: doc.type,
-            name: doc.name,
-          })
-
-          formData.append(`documents[${index}][slug]`, key)
-
-          if (expiryDate) {
-            formData.append(`documents[${index}][expired_at]`, expiryDate)
-          }
-        }
-      })
-
-      const response = await fetch(`${URL}/api/driver/register`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Accept: 'application/json',
-        },
-      })
-      const data = await response.json()
-
-
-      if (response.ok && data?.success === true) {
-        await setValue('token', data.access_token)
-        setToken(data.access_token)
-        notificationHelper('', translateData.registerSuccessfully, 'success')
-        await dispatch(selfDriverData())
-
-        if (data?.is_verified == 1) {
-          navigation.replace('TabNav')
-        } else if (data?.is_verified == 0) {
-          navigation.navigate('Verification')
-        }
-      } else {
-        notificationHelper(
-          '',
-          data?.message ?? translateData.somethingwentwrong,
-          'error',
-        )
-      }
-    } catch (error) {
-      notificationHelper('', translateData.somethingwentwrong, 'error')
-    } finally {
-      setLoading(false)
-    }
-
-    if (!selectedVehicleID) {
-      setShowVehicleError(true)
-    } else {
-      setShowVehicleError(false)
-    }
-    setVehicleDetail(formDatas)
+    setVehicleDetail(formDatas);
+    navigation.navigate('UploadedDocument', {type:'driver'});
   }
 
-  const [selectedVehicleSeat, setSelectedVehicleSeat] = useState<
-    number | null | any
-  >(null)
   const [showCategoryError, setShowCategoryError] = useState<boolean>(false)
   const [showVehicleError, setShowVehicleError] = useState<boolean>(false)
   const [showServiceError, setShowServiceError] = useState<boolean>(false)
@@ -412,7 +293,7 @@ export function VehicleRegistration() {
   return (
     <View style={{ flex: 1 }}>
       <Header backgroundColor={isDark ? colors.card : appColors.white} />
-      <ProgressBar fill={3} />
+      <ProgressBar fill={2} />
       <ScrollView style={[styles.main]} showsVerticalScrollIndicator={false}>
         <View style={[styles.subView, { backgroundColor: colors.background }]}>
           <View style={styles.subContainer}>
@@ -516,9 +397,7 @@ export function VehicleRegistration() {
                       >
                         {translateData.selectVehicle}
                       </Text>
-                      <View style={{ flexDirection: viewRtlStyle }}>
-                        <View>
-                          <RenderVehicleList
+                      <View style={{ flexDirection: viewRtlStyle, width: "100%" }}><View style={{flex:1,minWidth:0}}><RenderVehicleList onSelectCategory={handleCategoryPress}
                             vehicleIndex={vehicleIndex}
                             handleItemPress={handleVehiclePress}
                             selectedCategory={selectedCategory}
@@ -706,9 +585,7 @@ export function VehicleRegistration() {
                         >
                           {translateData.selectVehicle}
                         </Text>
-                        <View style={{ flexDirection: viewRtlStyle }}>
-                          <View>
-                            <RenderVehicleList
+                        <View style={{ flexDirection: viewRtlStyle, width: "100%" }}><View style={{flex:1,minWidth:0}}><RenderVehicleList onSelectCategory={handleCategoryPress}
                               vehicleIndex={vehicleIndex}
                               handleItemPress={handleVehiclePress}
                               selectedCategory={selectedCategory}
@@ -755,12 +632,12 @@ export function VehicleRegistration() {
                           placeholder={translateData.rnterVehicleNo}
                           value={formDatas.vehicleNumber}
                           onChangeText={text =>
-                            handleChange('vehicleNumber', text)
+                            handleChange('vehicleNumber', text.toUpperCase())
                           }
                           showWarning={
-                            showWarning && formDatas.vehicleNumber === ''
+                            !!vehicleNumberError || (showWarning && formDatas.vehicleNumber === '')
                           }
-                          warning={translateData.pleaseEnterVehicleNo}
+                          warning={vehicleNumberError || translateData.pleaseEnterVehicleNo}
                           backgroundColor={
                             isDark ? appColors.darkThemeSub : appColors.white
                           }
@@ -799,62 +676,6 @@ export function VehicleRegistration() {
                               'Please select vehicle color'}
                           </Text>
                         )}
-                      </View>
-                      <View style={styles.maximumSeats}>
-                        <Input
-                          title={translateData.maximumSeats}
-                          titleShow={true}
-                          placeholder={
-                            selectedVehicleSeat
-                              ? `${translateData.enterMaximumSeats}`
-                              : translateData.enterMaximumSeats
-                          }
-                          value={formDatas.maximumSeats}
-                          onChangeText={text =>
-                            handleChange('maximumSeats', text)
-                          }
-                          showWarning={
-                            (showWarning && formDatas.maximumSeats === '') ||
-                            seatError
-                          }
-                          warning={
-                            seatError
-                              ? `${translateData?.Maximum} ${selectedVehicleSeat} ${translateData?.seatallow}`
-                              : translateData.enterYourmaximumSeats
-                          }
-                          keyboardType="numeric"
-                          editable={true}
-                          backgroundColor={
-                            isDark ? appColors.darkThemeSub : appColors.white
-                          }
-                        />
-                      </View>
-                      <View style={styles.maximumSeats}>
-                        <Text
-                          style={[
-                            styles.vehicleTitle,
-                            { textAlign: textRtlStyle },
-                            {
-                              color: isDark
-                                ? appColors.white
-                                : appColors.primaryFont,
-                            },
-                          ]}
-                        >
-                          {translateData.selectPreferences}
-                        </Text>
-                        {preferences &&
-                          preferences.map(
-                            (pref: { id: string; name: string }) => (
-                              <View key={pref.name} style={{ marginVertical: 5 }}>
-                                <CustomCheckbox
-                                  label={`   ${pref.name}`}
-                                  checked={selectedPrefs.includes(pref.id)}
-                                  onPress={() => togglePreference(pref.id)}
-                                />
-                              </View>
-                            ),
-                          )}
                       </View>
                     </>
                   )}

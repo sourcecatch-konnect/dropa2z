@@ -21,32 +21,32 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
     Route::group(['middleware' => ['demo']], function () {
 
       // Zones
-      Route::get('zone/destroy/{zone}', 'ZoneController@destroy')->name('zone.destroy')->middleware('can:zone.destroy');
-      Route::get('zone/restore/{id}', 'ZoneController@restore')->name('zone.restore')->middleware('can:zone.restore');
-      Route::get('zone/force-delete/{id}', 'ZoneController@forceDelete')->name('zone.forceDelete')->middleware('can:zone.forceDelete');
+      Route::delete('zone/destroy/{zone}', 'ZoneController@destroy')->name('zone.destroy')->middleware('can:zone.destroy');
+      Route::patch('zone/restore/{id}', 'ZoneController@restore')->name('zone.restore')->middleware('can:zone.restore');
+      Route::delete('zone/force-delete/{id}', 'ZoneController@forceDelete')->name('zone.forceDelete')->middleware('can:zone.forceDelete');
       Route::put('zone/status/{id}', 'ZoneController@status')->name('zone.status')->middleware('can:zone.edit');
 
       // Peak Zones
-      Route::get('peakZone/destroy/{zone}', 'PeakZoneController@destroy')->name('peakZone.destroy')->middleware('can:peak_zone.destroy');
-      Route::get('peakZone/restore/{id}', 'PeakZoneController@restore')->name('peakZone.restore')->middleware('can:peak_zone.restore');
-      Route::get('peakZone/force-delete/{id}', 'PeakZoneController@forceDelete')->name('peakZone.forceDelete')->middleware('can:peak_zone.forceDelete');
+      Route::delete('peakZone/destroy/{zone}', 'PeakZoneController@destroy')->name('peakZone.destroy')->middleware('can:peak_zone.destroy');
+      Route::patch('peakZone/restore/{id}', 'PeakZoneController@restore')->name('peakZone.restore')->middleware('can:peak_zone.restore');
+      Route::delete('peakZone/force-delete/{id}', 'PeakZoneController@forceDelete')->name('peakZone.forceDelete')->middleware('can:peak_zone.forceDelete');
       Route::put('peakZone/status/{id}', 'PeakZoneController@status')->name('peakZone.status')->middleware('can:peak_zone.edit');
 
       // Banner
-      Route::get('banner/destroy/{banner}', 'BannerController@destroy')->name('banner.destroy')->middleware('can:banner.destroy');
-      Route::get('banner/restore/{id}', 'BannerController@restore')->name('banner.restore')->middleware('can:banner.restore');
-      Route::get('banner/force-delete/{id}', 'BannerController@forceDelete')->name('banner.forceDelete')->middleware('can:banner.forceDelete');
+      Route::delete('banner/destroy/{banner}', 'BannerController@destroy')->name('banner.destroy')->middleware('can:banner.destroy');
+      Route::patch('banner/restore/{id}', 'BannerController@restore')->name('banner.restore')->middleware('can:banner.restore');
+      Route::delete('banner/force-delete/{id}', 'BannerController@forceDelete')->name('banner.forceDelete')->middleware('can:banner.forceDelete');
 
       // Preference
-      Route::get('preference/destroy/{preference}', 'PreferenceController@destroy')->name('preference.destroy')->middleware('can:preference.destroy');
-      Route::get('preference/restore/{id}', 'PreferenceController@restore')->name('preference.restore')->middleware('can:preference.restore');
-      Route::get('preference/force-delete/{id}', 'PreferenceController@forceDelete')->name('preference.forceDelete')->middleware('can:preference.forceDelete');
+      Route::delete('preference/destroy/{preference}', 'PreferenceController@destroy')->name('preference.destroy')->middleware('can:preference.destroy');
+      Route::patch('preference/restore/{id}', 'PreferenceController@restore')->name('preference.restore')->middleware('can:preference.restore');
+      Route::delete('preference/force-delete/{id}', 'PreferenceController@forceDelete')->name('preference.forceDelete')->middleware('can:preference.forceDelete');
 
       // Vehicle Type
       Route::put('vehicle-type/status/{id}', 'VehicleTypeController@status')->name('vehicle-type.status')->middleware('can:vehicle_type.edit');
-      Route::get('vehicle-type/destroy/{vehicle_type}', 'VehicleTypeController@destroy')->name('vehicle-type.destroy')->middleware('can:vehicle_type.destroy');
-      Route::get('vehicle-type/restore/{id}', 'VehicleTypeController@restore')->name('vehicle-type.restore')->middleware('can:vehicle_type.restore');
-      Route::get('vehicle-type/force-delete/{id}', 'VehicleTypeController@forceDelete')->name('vehicle-type.forceDelete')->middleware('can:vehicle_type.forceDelete');
+      Route::delete('vehicle-type/destroy/{vehicle_type}', 'VehicleTypeController@destroy')->name('vehicle-type.destroy')->middleware('can:vehicle_type.destroy');
+      Route::patch('vehicle-type/restore/{id}', 'VehicleTypeController@restore')->name('vehicle-type.restore')->middleware('can:vehicle_type.restore');
+      Route::delete('vehicle-type/force-delete/{id}', 'VehicleTypeController@forceDelete')->name('vehicle-type.forceDelete')->middleware('can:vehicle_type.forceDelete');
       Route::resource('vehicle-type', 'VehicleTypeController', ['except' => ['index','show', 'destroy', 'create','edit']]);
       Route::put('vehicle-type/status/{id}', 'VehicleTypeController@status')->name('vehicle-type.status')->middleware('can:vehicle_type.edit');
 
@@ -59,93 +59,93 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
           ->middleware('can:vehicle_type.edit');
 
       // Hourly Packages
-      Route::get('hourly-package/destroy/{hourly_package}', 'HourlyPackageController@destroy')->name('hourly-package.destroy')->middleware('can:hourly_package.destroy');
-      Route::get('hourly-package/restore/{id}', 'HourlyPackageController@restore')->name('hourly-package.restore')->middleware('can:hourly_package.restore');
-      Route::get('hourly-package/force-delete/{id}', 'HourlyPackageController@forceDelete')->name('hourly-package.forceDelete')->middleware('can:hourly_package.forceDelete');
+      Route::delete('hourly-package/destroy/{hourly_package}', 'HourlyPackageController@destroy')->name('hourly-package.destroy')->middleware('can:hourly_package.destroy');
+      Route::patch('hourly-package/restore/{id}', 'HourlyPackageController@restore')->name('hourly-package.restore')->middleware('can:hourly_package.restore');
+      Route::delete('hourly-package/force-delete/{id}', 'HourlyPackageController@forceDelete')->name('hourly-package.forceDelete')->middleware('can:hourly_package.forceDelete');
       Route::put('hourly-package/status/{id}', 'HourlyPackageController@status')->name('hourly-package.status')->middleware('can:hourly_package.edit');
 
       // Documents
-      Route::get('document/destroy/{document}', 'DocumentController@destroy')->name('document.destroy')->middleware('can:document.destroy');
-      Route::get('document/restore/{id}', 'DocumentController@restore')->name('document.restore')->middleware('can:document.restore');
-      Route::get('document/force-delete/{id}', 'DocumentController@forceDelete')->name('document.forceDelete')->middleware('can:document.forceDelete');
+      Route::delete('document/destroy/{document}', 'DocumentController@destroy')->name('document.destroy')->middleware('can:document.destroy');
+      Route::patch('document/restore/{id}', 'DocumentController@restore')->name('document.restore')->middleware('can:document.restore');
+      Route::delete('document/force-delete/{id}', 'DocumentController@forceDelete')->name('document.forceDelete')->middleware('can:document.forceDelete');
 
       // Coupons
-      Route::get('coupon/destroy/{coupon}', 'CouponController@destroy')->name('coupon.destroy')->middleware('can:coupon.destroy');
-      Route::get('coupon/restore/{id}', 'CouponController@restore')->name('coupon.restore')->middleware('can:coupon.restore');
-      Route::get('coupon/force-delete/{id}', 'CouponController@forceDelete')->name('coupon.forceDelete')->middleware('can:coupon.forceDelete');
+      Route::delete('coupon/destroy/{coupon}', 'CouponController@destroy')->name('coupon.destroy')->middleware('can:coupon.destroy');
+      Route::patch('coupon/restore/{id}', 'CouponController@restore')->name('coupon.restore')->middleware('can:coupon.restore');
+      Route::delete('coupon/force-delete/{id}', 'CouponController@forceDelete')->name('coupon.forceDelete')->middleware('can:coupon.forceDelete');
 
       // SOS
-      Route::get('sos/destroy/{sos}', 'SOSController@destroy')->name('sos.destroy')->middleware('can:sos.destroy');
-      Route::get('sos/restore/{id}', 'SOSController@restore')->name('sos.restore')->middleware('can:sos.restore');
-      Route::get('sos/force-delete/{id}', 'SOSController@forceDelete')->name('sos.forceDelete')->middleware('can:sos.edit');
+      Route::delete('sos/destroy/{sos}', 'SOSController@destroy')->name('sos.destroy')->middleware('can:sos.destroy');
+      Route::patch('sos/restore/{id}', 'SOSController@restore')->name('sos.restore')->middleware('can:sos.restore');
+      Route::delete('sos/force-delete/{id}', 'SOSController@forceDelete')->name('sos.forceDelete')->middleware('can:sos.edit');
 
       // Riders
-      Route::get('rider/destroy/{rider}', 'RiderController@destroy')->name('rider.destroy')->middleware('can:rider.destroy');
-      Route::get('rider/restore/{id}', 'RiderController@restore')->name('rider.restore')->middleware('can:rider.restore');
-      Route::get('rider/force-delete/{id}', 'RiderController@forceDelete')->name('rider.forceDelete')->middleware('can:rider.forceDelete');
+      Route::delete('rider/destroy/{rider}', 'RiderController@destroy')->name('rider.destroy')->middleware('can:rider.destroy');
+      Route::patch('rider/restore/{id}', 'RiderController@restore')->name('rider.restore')->middleware('can:rider.restore');
+      Route::delete('rider/force-delete/{id}', 'RiderController@forceDelete')->name('rider.forceDelete')->middleware('can:rider.forceDelete');
 
       // Dispatchers
-      Route::get('dispatcher/destroy/{dispatcher}', 'DispatcherController@destroy')->name('dispatcher.destroy')->middleware('can:dispatcher.destroy');
-      Route::get('dispatcher/restore/{id}', 'DispatcherController@restore')->name('dispatcher.restore')->middleware('can:dispatcher.restore');
-      Route::get('dispatcher/force-delete/{id}', 'DispatcherController@forceDelete')->name('dispatcher.forceDelete')->middleware('can:dispatcher.forceDelete');
+      Route::delete('dispatcher/destroy/{dispatcher}', 'DispatcherController@destroy')->name('dispatcher.destroy')->middleware('can:dispatcher.destroy');
+      Route::patch('dispatcher/restore/{id}', 'DispatcherController@restore')->name('dispatcher.restore')->middleware('can:dispatcher.restore');
+      Route::delete('dispatcher/force-delete/{id}', 'DispatcherController@forceDelete')->name('dispatcher.forceDelete')->middleware('can:dispatcher.forceDelete');
 
       // Driver Document
-      Route::get('driver-document/destroy/{driver_document}', 'DriverDocumentController@destroy')->name('driver-document.destroy')->middleware('can:driver_document.destroy');
-      Route::get('driver-document/restore/{id}', 'DriverDocumentController@restore')->name('driver-document.restore')->middleware('can:driver_document.restore');
-      Route::get('driver-document/force-delete/{id}', 'DriverDocumentController@forceDelete')->name('driver-document.forceDelete')->middleware('can:driver_document.forceDelete');
+      Route::delete('driver-document/destroy/{driver_document}', 'DriverDocumentController@destroy')->name('driver-document.destroy')->middleware('can:driver_document.destroy');
+      Route::patch('driver-document/restore/{id}', 'DriverDocumentController@restore')->name('driver-document.restore')->middleware('can:driver_document.restore');
+      Route::delete('driver-document/force-delete/{id}', 'DriverDocumentController@forceDelete')->name('driver-document.forceDelete')->middleware('can:driver_document.forceDelete');
 
       // Fleet Document
-      Route::get('fleet-document/destroy/{fleet_document}', 'FleetDocumentController@destroy')->name('fleet-document.destroy')->middleware('can:fleet_document.destroy');
-      Route::get('fleet-document/restore/{id}', 'FleetDocumentController@restore')->name('fleet-document.restore')->middleware('can:fleet_document.restore');
-      Route::get('fleet-document/force-delete/{id}', 'FleetDocumentController@forceDelete')->name('fleet-document.forceDelete')->middleware('can:fleet_document.forceDelete');
+      Route::delete('fleet-document/destroy/{fleet_document}', 'FleetDocumentController@destroy')->name('fleet-document.destroy')->middleware('can:fleet_document.destroy');
+      Route::patch('fleet-document/restore/{id}', 'FleetDocumentController@restore')->name('fleet-document.restore')->middleware('can:fleet_document.restore');
+      Route::delete('fleet-document/force-delete/{id}', 'FleetDocumentController@forceDelete')->name('fleet-document.forceDelete')->middleware('can:fleet_document.forceDelete');
 
       // Fleet Vehicle Document
-      Route::get('vehicleInfoDoc/destroy/{vehicleInfoDoc}', 'VehicleInfoDocController@destroy')->name('vehicleInfoDoc.destroy')->middleware('can:fleet_vehicle_document.destroy');
-      Route::get('vehicleInfoDoc/restore/{id}', 'VehicleInfoDocController@restore')->name('vehicleInfoDoc.restore')->middleware('can:fleet_vehicle_document.restore');
-      Route::get('vehicleInfoDoc/force-delete/{id}', 'VehicleInfoDocController@forceDelete')->name('vehicleInfoDoc.forceDelete')->middleware('can:fleet_vehicle_document.forceDelete');
+      Route::delete('vehicleInfoDoc/destroy/{vehicleInfoDoc}', 'VehicleInfoDocController@destroy')->name('vehicleInfoDoc.destroy')->middleware('can:fleet_vehicle_document.destroy');
+      Route::patch('vehicleInfoDoc/restore/{id}', 'VehicleInfoDocController@restore')->name('vehicleInfoDoc.restore')->middleware('can:fleet_vehicle_document.restore');
+      Route::delete('vehicleInfoDoc/force-delete/{id}', 'VehicleInfoDocController@forceDelete')->name('vehicleInfoDoc.forceDelete')->middleware('can:fleet_vehicle_document.forceDelete');
 
       // Driver Rules
-      Route::get('driver-rule/destroy/{driver_rule}', 'DriverRuleController@destroy')->name('driver-rule.destroy')->middleware('can:driver_rule.destroy');
-      Route::get('driver-rule/restore/{id}', 'DriverRuleController@restore')->name('driver-rule.restore')->middleware('can:driver_rule.restore');
-      Route::get('driver-rule/force-delete/{id}', 'DriverRuleController@forceDelete')->name('driver-rule.forceDelete')->middleware('can:driver_rule.forceDelete');
+      Route::delete('driver-rule/destroy/{driver_rule}', 'DriverRuleController@destroy')->name('driver-rule.destroy')->middleware('can:driver_rule.destroy');
+      Route::patch('driver-rule/restore/{id}', 'DriverRuleController@restore')->name('driver-rule.restore')->middleware('can:driver_rule.restore');
+      Route::delete('driver-rule/force-delete/{id}', 'DriverRuleController@forceDelete')->name('driver-rule.forceDelete')->middleware('can:driver_rule.forceDelete');
 
       // Plans
-      Route::get('plan/destroy/{plan}', 'PlanController@destroy')->name('plan.destroy')->middleware('can:plan.destroy');
-      Route::get('plan/restore/{id}', 'PlanController@restore')->name('plan.restore')->middleware('can:plan.restore');
-      Route::get('plan/force-delete/{id}', 'PlanController@forceDelete')->name('plan.forceDelete')->middleware('can:plan.forceDelete');
+      Route::delete('plan/destroy/{plan}', 'PlanController@destroy')->name('plan.destroy')->middleware('can:plan.destroy');
+      Route::patch('plan/restore/{id}', 'PlanController@restore')->name('plan.restore')->middleware('can:plan.restore');
+      Route::delete('plan/force-delete/{id}', 'PlanController@forceDelete')->name('plan.forceDelete')->middleware('can:plan.forceDelete');
 
       // Surge Price
-      Route::get('surge-price/destroy/{surge_price}', 'SurgePriceController@destroy')->name('surge-price.destroy')->middleware('can:surge_price.destroy');
-      Route::get('surge-price/restore/{id}', 'SurgePriceController@restore')->name('surge-price.restore')->middleware('can:surge_price.restore');
-      Route::get('surge-price/force-delete/{id}', 'SurgePriceController@forceDelete')->name('surge-price.forceDelete')->middleware('can:surge_price.forceDelete');
+      Route::delete('surge-price/destroy/{surge_price}', 'SurgePriceController@destroy')->name('surge-price.destroy')->middleware('can:surge_price.destroy');
+      Route::patch('surge-price/restore/{id}', 'SurgePriceController@restore')->name('surge-price.restore')->middleware('can:surge_price.restore');
+      Route::delete('surge-price/force-delete/{id}', 'SurgePriceController@forceDelete')->name('surge-price.forceDelete')->middleware('can:surge_price.forceDelete');
 
       // Airport
-      Route::get('airport/destroy/{airport}', 'AirportController@destroy')->name('airport.destroy')->middleware('can:airport.destroy');
-      Route::get('airport/restore/{id}', 'AirportController@restore')->name('airport.restore')->middleware('can:airport.restore');
-      Route::get('airport/force-delete/{id}', 'AirportController@forceDelete')->name('airport.forceDelete')->middleware('can:airport.forceDelete');
+      Route::delete('airport/destroy/{airport}', 'AirportController@destroy')->name('airport.destroy')->middleware('can:airport.destroy');
+      Route::patch('airport/restore/{id}', 'AirportController@restore')->name('airport.restore')->middleware('can:airport.restore');
+      Route::delete('airport/force-delete/{id}', 'AirportController@forceDelete')->name('airport.forceDelete')->middleware('can:airport.forceDelete');
 
       // Rental Vehicle
-      Route::get('rental-vehicle/destroy/{rental_vehicle}', 'RentalVehicleController@destroy')->name('rental-vehicle.destroy')->middleware('can:rental_vehicle.destroy');
-      Route::get('rental-vehicle/restore/{id}', 'RentalVehicleController@restore')->name('rental-vehicle.restore')->middleware('can:rental_vehicle.restore');
-      Route::get('rental-vehicle/force-delete/{id}', 'RentalVehicleController@forceDelete')->name('rental-vehicle.forceDelete')->middleware('can:rental_vehicle.forceDelete');
+      Route::delete('rental-vehicle/destroy/{rental_vehicle}', 'RentalVehicleController@destroy')->name('rental-vehicle.destroy')->middleware('can:rental_vehicle.destroy');
+      Route::patch('rental-vehicle/restore/{id}', 'RentalVehicleController@restore')->name('rental-vehicle.restore')->middleware('can:rental_vehicle.restore');
+      Route::delete('rental-vehicle/force-delete/{id}', 'RentalVehicleController@forceDelete')->name('rental-vehicle.forceDelete')->middleware('can:rental_vehicle.forceDelete');
 
       // Update Password
       Route::put('rider/{id}/password/update', 'RiderController@updatePassword')->name('rider.password.update');
 
       // Fleet Manager
-      Route::get('fleet-manager/destroy/{fleet_manager}', 'FleetManagerController@destroy')->name('fleet-manager.destroy')->middleware('can:fleet_manager.destroy');
-      Route::get('fleet-manager/restore/{id}', 'FleetManagerController@restore')->name('fleet-manager.restore')->middleware('can:fleet_manager.restore');
-      Route::get('fleet-manager/force-delete/{id}', 'FleetManagerController@forceDelete')->name('fleet-manager.forceDelete')->middleware('can:fleet_manager.forceDelete');
+      Route::delete('fleet-manager/destroy/{fleet_manager}', 'FleetManagerController@destroy')->name('fleet-manager.destroy')->middleware('can:fleet_manager.destroy');
+      Route::patch('fleet-manager/restore/{id}', 'FleetManagerController@restore')->name('fleet-manager.restore')->middleware('can:fleet_manager.restore');
+      Route::delete('fleet-manager/force-delete/{id}', 'FleetManagerController@forceDelete')->name('fleet-manager.forceDelete')->middleware('can:fleet_manager.forceDelete');
 
       // Driver
-      Route::get('driver/destroy/{driver}', 'DriverController@destroy')->name('driver.destroy')->middleware('can:driver.destroy');
-      Route::get('driver/restore/{id}', 'DriverController@restore')->name('driver.restore')->middleware('can:driver.restore');
-      Route::get('driver/force-delete/{id}', 'DriverController@forceDelete')->name('driver.forceDelete')->middleware('can:driver.forceDelete');
+      Route::delete('driver/destroy/{driver}', 'DriverController@destroy')->name('driver.destroy')->middleware('can:driver.destroy');
+      Route::patch('driver/restore/{id}', 'DriverController@restore')->name('driver.restore')->middleware('can:driver.restore');
+      Route::delete('driver/force-delete/{id}', 'DriverController@forceDelete')->name('driver.forceDelete')->middleware('can:driver.forceDelete');
 
       // Cancellation Reason
-      Route::get('cancellation-reason/destroy/{cancellation_reason}', 'CancellationReasonController@destroy')->name('cancellation-reason.destroy')->middleware('can:cancellation_reason.destroy');
-      Route::get('cancellation-reason/restore/{id}', 'CancellationReasonController@restore')->name('cancellation-reason.restore')->middleware('can:cancellation_reason.restore');
-      Route::get('cancellation-reason/force-delete/{id}', 'CancellationReasonController@forceDelete')->name('cancellation-reason.forceDelete')->middleware('can:cancellation_reason.forceDelete');
+      Route::delete('cancellation-reason/destroy/{cancellation_reason}', 'CancellationReasonController@destroy')->name('cancellation-reason.destroy')->middleware('can:cancellation_reason.destroy');
+      Route::patch('cancellation-reason/restore/{id}', 'CancellationReasonController@restore')->name('cancellation-reason.restore')->middleware('can:cancellation_reason.restore');
+      Route::delete('cancellation-reason/force-delete/{id}', 'CancellationReasonController@forceDelete')->name('cancellation-reason.forceDelete')->middleware('can:cancellation_reason.forceDelete');
 
       // Service
       Route::put('service/status/{id}', 'ServiceController@status')->name('service.status')->middleware('can:service.edit');
@@ -248,9 +248,9 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
     Route::put('sos/{sos}', 'SOSController@update')->name('sos.update');
     Route::get('sos/{sos}/edit', 'SOSController@edit')->name('sos.edit');
     Route::put('sos/status/{id}', 'SOSController@status')->name('sos.status')->middleware('can:sos.edit');
-    Route::get('sos/destroy/{sos}', 'SOSController@destroy')->name('sos.destroy')->middleware('can:sos.destroy');
-    Route::get('sos/restore/{id}', 'SOSController@restore')->name('sos.restore')->middleware('can:sos.restore');
-    Route::get('sos/force-delete/{id}', 'SOSController@forceDelete')->name('sos.forceDelete')->middleware('can:sos.edit');
+    Route::delete('sos/destroy/{sos}', 'SOSController@destroy')->name('sos.destroy')->middleware('can:sos.destroy');
+    Route::patch('sos/restore/{id}', 'SOSController@restore')->name('sos.restore')->middleware('can:sos.restore');
+    Route::delete('sos/force-delete/{id}', 'SOSController@forceDelete')->name('sos.forceDelete')->middleware('can:sos.edit');
 
     // SOS Alert
     Route::resource('sos-alerts', 'SOSAlertController');
@@ -258,6 +258,9 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
 
     // Setting
     Route::resource('taxido-setting', 'SettingController');
+
+    Route::get('rider-registration-unlock','RiderRegistrationUnlockController@index')->name('rider-registration-unlock.index')->middleware('can:rider.edit');
+    Route::post('rider-registration-unlock','RiderRegistrationUnlockController@unlock')->name('rider-registration-unlock.update')->middleware(['can:rider.edit','demo']);
 
     // Riders
     Route::resource('rider', 'RiderController', ['except' => ['destroy']]);
@@ -288,9 +291,9 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
 
     // Rider Reviews
     Route::apiResource('rider-review', 'RiderReviewController', ['except' => ['destroy']]);
-    Route::get('rider-review/destroy/{rider_review}', 'RiderReviewController@destroy')->name('rider-review.destroy')->middleware('can:rider_review.destroy');
-    Route::get('rider-review/restore/{id}', 'RiderReviewController@restore')->name('rider-review.restore')->middleware('can:rider_review.restore');
-    Route::get('rider-review/force-delete/{id}', 'RiderReviewController@forceDelete')->name('rider-review.forceDelete')->middleware('can:rider_review.forceDelete');
+    Route::delete('rider-review/destroy/{rider_review}', 'RiderReviewController@destroy')->name('rider-review.destroy')->middleware('can:rider_review.destroy');
+    Route::patch('rider-review/restore/{id}', 'RiderReviewController@restore')->name('rider-review.restore')->middleware('can:rider_review.restore');
+    Route::delete('rider-review/force-delete/{id}', 'RiderReviewController@forceDelete')->name('rider-review.forceDelete')->middleware('can:rider_review.forceDelete');
 
     // Drivers
     Route::get('driver/export', 'DriverController@export')->name('driver.export')->middleware('can:driver.index');
@@ -324,11 +327,11 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
 
     // Fleet Vehicles (Vehicle Info)
     Route::resource('vehicle-info', 'VehicleInfoController', ['except' => ['show', 'destroy']]);
-    Route::get('vehicle-info/destroy/{vehicle_info}', 'VehicleInfoController@destroy')->name('vehicle-info.destroy')->middleware('can:vehicle_info.destroy');
+    Route::delete('vehicle-info/destroy/{vehicle_info}', 'VehicleInfoController@destroy')->name('vehicle-info.destroy')->middleware('can:vehicle_info.destroy');
     Route::put('vehicle-info/verify/{id}', 'VehicleInfoController@verify')->name('vehicleInfo.verify');
     Route::get('vehicle-info/document/{id}', 'VehicleInfoController@vehicleInfoDocument')->name('vehicleInfo.document');
-    Route::get('vehicle-info/restore/{id}', 'VehicleInfoController@restore')->name('vehicle-info.restore')->middleware('can:vehicle_info.restore');
-    Route::get('vehicle-info/force-delete/{id}', 'VehicleInfoController@forceDelete')->name('vehicle-info.forceDelete')->middleware('can:vehicle_info.forceDelete');
+    Route::patch('vehicle-info/restore/{id}', 'VehicleInfoController@restore')->name('vehicle-info.restore')->middleware('can:vehicle_info.restore');
+    Route::delete('vehicle-info/force-delete/{id}', 'VehicleInfoController@forceDelete')->name('vehicle-info.forceDelete')->middleware('can:vehicle_info.forceDelete');
 
     Route::get('vehicle-info/verified', 'VehicleInfoController@index')->name('vehicle-info.verified')->middleware('can:vehicle_info.index');
     Route::get('vehicle-info/unverified', 'VehicleInfoController@getUnverifiedVehicles')->name('vehicle-info.unverified')->middleware('can:vehicle_info.index');
@@ -349,9 +352,9 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
     // Extra Charges
     Route::resource('extra-charge', 'ExtraChargeController', ['except' => ['show', 'destroy']]);
     Route::put('extra-charge/status/{id}', 'ExtraChargeController@status')->name('extra-charge.status')->middleware('can:extra_charge.edit');
-    Route::get('extra-charge/destroy/{extra_charge}', 'ExtraChargeController@destroy')->name('extra-charge.destroy')->middleware('can:extra_charge.destroy');
-    Route::get('extra-charge/restore/{id}', 'ExtraChargeController@restore')->name('extra-charge.restore')->middleware('can:extra_charge.restore');
-    Route::get('extra-charge/force-delete/{id}', 'ExtraChargeController@forceDelete')->name('extra-charge.forceDelete')->middleware('can:extra_charge.forceDelete');
+    Route::delete('extra-charge/destroy/{extra_charge}', 'ExtraChargeController@destroy')->name('extra-charge.destroy')->middleware('can:extra_charge.destroy');
+    Route::patch('extra-charge/restore/{id}', 'ExtraChargeController@restore')->name('extra-charge.restore')->middleware('can:extra_charge.restore');
+    Route::delete('extra-charge/force-delete/{id}', 'ExtraChargeController@forceDelete')->name('extra-charge.forceDelete')->middleware('can:extra_charge.forceDelete');
 
     // Driver Locations
     Route::get('driver-location', 'DriverController@driverLocation')->name('driver-location.index')->middleware('can:driver_location.index');
@@ -359,9 +362,9 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
     // Notice
     Route::resource('notice', 'NoticeController', ['except' => ['show', 'destroy']]);
     Route::put('notice/status/{id}', 'NoticeController@status')->name('notice.status')->middleware('can:notice.edit');
-    Route::get('notice/destroy/{notice}', 'NoticeController@destroy')->name('notice.destroy')->middleware('can:notice.destroy');
-    Route::get('notice/restore/{id}', 'NoticeController@restore')->name('notice.restore')->middleware('can:notice.restore');
-    Route::get('notice/force-delete/{id}', 'NoticeController@forceDelete')->name('notice.forceDelete')->middleware('can:notice.forceDelete');
+    Route::delete('notice/destroy/{notice}', 'NoticeController@destroy')->name('notice.destroy')->middleware('can:notice.destroy');
+    Route::patch('notice/restore/{id}', 'NoticeController@restore')->name('notice.restore')->middleware('can:notice.restore');
+    Route::delete('notice/force-delete/{id}', 'NoticeController@forceDelete')->name('notice.forceDelete')->middleware('can:notice.forceDelete');
 
     // Driver Wallet
     Route::resource('driver-wallet', 'DriverWalletController', ['except' => ['show', 'destroy']]);
@@ -371,18 +374,16 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
 
     // Driver Reviews
     Route::apiResource('driver-review', 'DriverReviewController', ['except' => ['destroy']]);
-    Route::get('driver-review/destroy/{driver_review}', 'DriverReviewController@destroy')->name('driver-review.destroy')->middleware('can:driver_review.destroy');
-    Route::get('driver-review/restore/{id}', 'DriverReviewController@restore')->name('driver-review.restore')->middleware('can:driver_review.restore');
-    Route::get('driver-review/force-delete/{id}', 'DriverReviewController@forceDelete')->name('driver-review.forceDelete')->middleware('can:driver_review.forceDelete');
+    Route::delete('driver-review/destroy/{driver_review}', 'DriverReviewController@destroy')->name('driver-review.destroy')->middleware('can:driver_review.destroy');
+    Route::patch('driver-review/restore/{id}', 'DriverReviewController@restore')->name('driver-review.restore')->middleware('can:driver_review.restore');
+    Route::delete('driver-review/force-delete/{id}', 'DriverReviewController@forceDelete')->name('driver-review.forceDelete')->middleware('can:driver_review.forceDelete');
 
     // Withdraw Requests
     Route::get('withdraw-request/export', 'WithdrawRequestController@export')->name('withdraw-request.export');
     Route::resource('withdraw-request', 'WithdrawRequestController', ['except' => ['destroy']]);
-    Route::get('withdraw-request/status/{id}', 'WithdrawRequestController@status')->name('withdraw-request.status');
 
     // Fleet Withdraw Requests
     Route::resource('fleet-withdraw-request', 'FleetWithdrawRequestController', ['except' => ['destroy']]);
-    Route::get('fleet-withdraw-request/status/{id}', 'FleetWithdrawRequestController@status')->name('fleet-withdraw-request.status');
 
     // Commission history
     Route::resource('cab-commission-history', 'CabCommissionHistoryController', ['only' => ['index']]);
@@ -390,11 +391,15 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
     // Rides
     Route::resource('ride', 'RideController', ['except' => ['show', 'destroy']]);
     Route::get('ride/details/{ride_number}', 'RideController@details')->name('ride.details')->middleware('can:ride.index');
+    Route::post('ride/{ride}/cancel', 'RideController@cancel')->name('ride.cancel')->middleware('can:ride.edit');
     Route::get('ride/status/{status}', 'RideController@getRidesByStatus')->name('ride.status.filter')->middleware('can:ride.index');
     Route::get('ride/export', 'RideController@export')->name('ride.export')->middleware('can:ride.index');
 
     // Ride Requests
     Route::resource('ride-request', 'RideRequestController', ['except' => ['show', 'destroy']]);
+    Route::get('ride-request/live-notifications', 'RideRequestNotificationController@index')->name('ride-request.live-notifications')->middleware('can:ride_request.index');
+    Route::post('ride-request/live-notifications/{rideRequestId}/assign', 'RideRequestNotificationController@assign')->name('ride-request.live-notifications.assign')->middleware('can:ride_request.edit');
+    Route::post('ride-request/live-notifications/{rideRequestId}/decline', 'RideRequestNotificationController@decline')->name('ride-request.live-notifications.decline')->middleware('can:ride_request.edit');
     Route::get('/fetch-drivers/{lat}/{lng}/{serviceId?}/{serviceCategoryId?}/{vehicleTypeId?}', 'RideRequestController@fetchDrivers')->name('fetch-drivers');
     Route::get('ride-request/details/{id}', 'RideRequestController@details')->name('ride-request.details')->middleware('can:ride_request.index');
 
@@ -439,8 +444,8 @@ Route::group(['middleware' => ['localization'], 'namespace' => 'Admin', 'as' => 
     // Push Notification
     Route::resource('push-notification', 'PushNotificationController');
     Route::post('send-notification', 'PushNotificationController@sendNotification')->name('send-notification');
-    Route::get('push-notification/force-delete/{push_notification}', 'PushNotificationController@forceDelete')->name('pushNotification.forceDelete')->middleware('can:push_notification.forceDelete');
-    Route::get('push-notification/destroy/{push_notification}', 'PushNotificationController@destroy')->name('pushNotification.destroy')->middleware('can:push_notification.destroy');
+    Route::delete('push-notification/force-delete/{push_notification}', 'PushNotificationController@forceDelete')->name('pushNotification.forceDelete')->middleware('can:push_notification.forceDelete');
+    Route::delete('push-notification/destroy/{push_notification}', 'PushNotificationController@destroy')->name('pushNotification.destroy')->middleware('can:push_notification.destroy');
 
     // Rental Vehicle
     Route::resource('rental-vehicle', 'RentalVehicleController', ['except' => ['destroy']]);

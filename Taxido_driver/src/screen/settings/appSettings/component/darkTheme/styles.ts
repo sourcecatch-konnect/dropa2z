@@ -7,7 +7,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginHorizontal: windowWidth(3.8),
-    marginVertical: windowHeight(1.6),
+    paddingVertical: 14,
+    minHeight: 76,
   },
   container: {
     alignItems: 'center',
@@ -18,15 +19,17 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   iconView: {
-    height: windowHeight(5.2),
-    width: windowWidth(11),
-    borderRadius: windowHeight(5),
+    height: 42,
+    width: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     marginHorizontal: windowWidth(3),
-    fontFamily: appFonts.regular,
+    fontFamily: appFonts.medium,
+    fontSize: 16,
+    flexShrink: 1,
   },
 })
 export default styles

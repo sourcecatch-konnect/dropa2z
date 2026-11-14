@@ -1,4 +1,6 @@
-import { View, Text, Image, TouchableOpacity } from 'react-native'
+import {VehicleGraphic} from '../../../../../design/VehicleGraphic';
+import {View, Image, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React from 'react'
 import styles from './styles'
 import images from '../../../../../utils/images/images'
@@ -34,14 +36,9 @@ export function TaxiDetails({ texiDetails }: any) {
         ]}
       >
         <View style={[styles.alignment, { flexDirection: viewRtlStyle }]}>
-          <Image
-            source={{
-              uri:
-                texiDetails?.service?.service_type === "ambulance"
-                  ? texiDetails?.ambulance_image_url
-                  : texiDetails?.vehicle_type?.vehicle_image_url,
-            }}
-            style={styles.carImage} />
+          <VehicleGraphic source={{
+  uri: texiDetails?.service?.service_type === "ambulance" ? texiDetails?.ambulance_image_url : texiDetails?.vehicle_type?.vehicle_image_url
+}} style={styles.carImage} vehicle={texiDetails?.vehicle_type} />
           <View style={styles.spaceHorizantal}>
             <Text
               style={[

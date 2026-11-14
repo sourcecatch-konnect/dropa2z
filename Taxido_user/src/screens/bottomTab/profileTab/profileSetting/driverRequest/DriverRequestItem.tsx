@@ -1,4 +1,6 @@
-import { Image, Text, View, TouchableOpacity, Linking } from "react-native";
+import {VehicleGraphic} from '../../../../../design/VehicleGraphic';
+import {Image, View, TouchableOpacity, Linking} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React from "react";
 import { styles } from "../../../myRide/rideContainer/style";
 import { commonStyles } from "../../../../../styles/commonStyle";
@@ -47,10 +49,9 @@ const DriverRequestItem = ({ item }: { item: any }) => {
       <View style={[styles.rideInfoContainer, { backgroundColor: bgFullStyle }]}>
         <View style={[styles.profileInfoContainer, { flexDirection: viewRTLStyle }]}>
           <View style={{ height: windowHeight(45), width: windowHeight(50), backgroundColor: isDark ? appColors.bgDark : appColors.lightGray, alignItems: 'center', justifyContent: 'center', borderRadius: windowHeight(5) }}>
-            <Image
-              style={styles.profileImage}
-              source={{ uri: item?.vehicle_type?.vehicle_image_url || item?.service?.image_url }}
-            />
+            <VehicleGraphic style={styles.profileImage} source={{
+  uri: item?.vehicle_type?.vehicle_image_url || item?.service?.image_url
+}} vehicle={item?.vehicle_type} />
           </View>
           <View style={[styles.profileTextContainer, { height: windowHeight(40), justifyContent: 'center' }]}>
             <Text style={[styles.profileName, { color: textColorStyle, textAlign: textRTLStyle }]}>
@@ -72,7 +73,7 @@ const DriverRequestItem = ({ item }: { item: any }) => {
 
         <View style={{ flexDirection: viewRTLStyle, alignItems: 'flex-start' }}>
           <View style={{ alignItems: 'center', }}>
-            <PickLocation color={"#00A88F"} />
+            <PickLocation color={"#A83E00"} />
             <View style={{
               height: windowHeight(10),
               width: 1,

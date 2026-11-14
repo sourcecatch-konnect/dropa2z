@@ -1,3 +1,4 @@
+import {referenceSurfaces} from '../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native'
 import appFonts from '../../../../../theme/appFonts'
 import { windowHeight, windowWidth, fontSizes } from '../../../../../theme/appConstant'
@@ -14,6 +15,8 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.medium,
     fontSize: fontSizes.FONT5,
     marginHorizontal: windowWidth(4),
+  
+    ...referenceSurfaces.title,
   },
   iconView: {
     height: windowHeight(5),
@@ -22,6 +25,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(0.8),
     alignItems: 'center',
     justifyContent: 'center',
+  
+    ...referenceSurfaces.icon,
   },
 })
 

@@ -1,5 +1,7 @@
+import {BrandLogo} from '../../../../design/BrandLogo';
 import React from 'react'
-import { View, Text, Image, TouchableOpacity } from 'react-native'
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import SwitchToggle from 'react-native-switch-toggle'
 import Icons from '../../../../utils/icons/icons'
 import appColors from '../../../../theme/appColors'
@@ -34,7 +36,7 @@ export function Header({ isOn, toggleSwitch, setDriverModal }: HeaderProps) {
       <View style={styles.headerMargin}>
         <View style={[styles.headerAlign, { flexDirection: viewRtlStyle }]}>
           <View style={[styles.headerTitle, { flexDirection: viewRtlStyle }]}>
-            <Image source={images.splash} style={styles.logo} />
+            <BrandLogo light size={28}/>
           </View>
           <View style={{ flexDirection: viewRtlStyle }}>
             {selfDriver?.fleet_manager?.name && (

@@ -1,4 +1,5 @@
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {TouchableOpacity, View} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useState } from 'react';
 import { Header, InputText, Button } from '@src/commonComponent';
 import { styles } from './styles';
@@ -36,7 +37,7 @@ export function AddNewRider() {
   React.useEffect(() => {
     const initializeCountry = () => {
       try {
-        const matches = getCountriesByCallingCode("1");
+        const matches = getCountriesByCallingCode("91");
         if (matches && matches?.length > 0) {
           setCountry(matches[0]);
         }
@@ -54,7 +55,7 @@ export function AddNewRider() {
   };
 
   const getPrimaryCallingCode = (): string => {
-    if (!country) return '+1';
+    if (!country) return '+91';
     const root = country.idd?.root || '+';
     return root;
   };
@@ -182,6 +183,7 @@ export function AddNewRider() {
           title={translateData?.addRider}
           onPress={() =>
             (replace as any)('BookRide', {
+                ...route.params,
               destination,
               stops,
               pickupLocation,
@@ -191,6 +193,12 @@ export function AddNewRider() {
               service_category_ID,
               otherContect: phoneNumber,
               otherName: name,
+              recipientMode: 'other',
+              receiverName: name,
+              phoneNumber,
+              countryCode: country?.idd?.root
+                ? `${country.idd.root}${country.idd.suffix || ''}`
+                : '+91',
             })
           }
         />

@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../design/RiderSurfaces';
 import { StyleSheet } from "react-native";
 import { windowHeight, fontSizes, appColors, appFonts, windowWidth } from "@src/themes";
 
@@ -5,7 +6,9 @@ const styles = StyleSheet.create({
     flexView: {
         flex: 1,
     },
-    scrollView: { backgroundColor: appColors.whiteColor, padding: windowHeight(10), borderRadius: windowHeight(5), borderWidth: windowHeight(1), borderColor: appColors.border, marginTop: windowHeight(16), width: '91%', alignSelf: 'center' },
+    scrollView: { backgroundColor: appColors.whiteColor, padding: windowHeight(10), borderRadius: windowHeight(5), borderWidth: windowHeight(1), borderColor: appColors.border, marginTop: windowHeight(16), width: '91%', alignSelf: 'center' ,
+    ...riderCardFinish,
+  },
     stepContainer: {
         flexDirection: "row",
         alignItems: "center",
@@ -74,7 +77,9 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOpacity: 0.1,
         shadowRadius: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     safetyCallView: {
         alignItems: "center",
         justifyContent: "center", height: windowHeight(30),
@@ -86,7 +91,9 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOpacity: 0.1,
         shadowRadius: 1,
-    },
+    
+    ...riderCardFinish,
+  },
     starContainer: { alignItems: "flex-end", justifyContent: "center" },
     dashedLine1: {
         height: 0.1,
@@ -133,7 +140,9 @@ const styles = StyleSheet.create({
         borderRadius: windowHeight(5),
         marginVertical: windowHeight(10),
         elevation: 0.5
-    },
+    ,
+    ...riderCardFinish,
+  },
     aboutText: { color: appColors.primaryText, fontFamily: appFonts.medium, marginTop: windowHeight(10) },
     reportRideText: {
         color: appColors.primaryText,
@@ -222,12 +231,16 @@ const styles = StyleSheet.create({
         marginTop: windowHeight(14),
         width: '91%',
         alignSelf: 'center'
-    },
+    ,
+    ...riderCardFinish,
+  },
     travelText: { color: appColors.gray, fontSize: fontSizes.FONT18, fontFamily: appFonts.regular, paddingHorizontal: windowHeight(5) },
     talkView: { flexDirection: "row", alignItems: "center", paddingHorizontal: windowHeight(7), marginTop: windowHeight(5), top: windowHeight(2) },
     dependingView: { flexDirection: "row", alignItems: "center", paddingHorizontal: windowHeight(7), marginTop: windowHeight(0) },
     noPetsTextView: { flexDirection: "row", alignItems: "center", paddingHorizontal: windowHeight(7) },
-    vieww: { backgroundColor: appColors.whiteColor, padding: windowHeight(10), borderRadius: windowHeight(5), borderWidth: windowHeight(1), borderColor: appColors.border, marginTop: windowHeight(16), width: '91%', alignSelf: 'center' },
+    vieww: { backgroundColor: appColors.whiteColor, padding: windowHeight(10), borderRadius: windowHeight(5), borderWidth: windowHeight(1), borderColor: appColors.border, marginTop: windowHeight(16), width: '91%', alignSelf: 'center' ,
+    ...riderCardFinish,
+  },
     report: { color: appColors.primary, fontFamily: appFonts.medium, fontSize: fontSizes.FONT19, marginHorizontal: windowHeight(8), top: windowHeight(1) }
 
 })

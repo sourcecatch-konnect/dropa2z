@@ -1,4 +1,5 @@
-import { Image, Text, View } from "react-native";
+import {Image, View} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React from "react";
 import { TaxiDetails } from "../../completeRideScreen/detailContainer/taxiDetails/index";
 import { BillDetails } from "../../completeRideScreen/detailContainer/billDetails/index";
@@ -11,6 +12,7 @@ import { appColors, appFonts } from "@src/themes";
 import { vehicleInterface } from "@src/api/interface/vehicleTypeInterface";
 import { rideDetailsInterface } from "@src/api/interface/rideRequestInterface";
 import { useSelector } from "react-redux";
+import {AssignedDriverCard} from '../../../../../components/assignedDriverCard';
 
 type pendingdetailsProps = {
   rideDetails: rideDetailsInterface,
@@ -23,6 +25,7 @@ export function PendingDetails({ rideDetails, vehicleData }: pendingdetailsProps
 
   return (
     < View>
+      <AssignedDriverCard ride={rideDetails}/>
       {rideDetails?.service?.slug !== "pending" && (
         <View
           style={[

@@ -1,11 +1,14 @@
-import { View, Text, TouchableOpacity, TouchableWithoutFeedback, FlatList, Image, RefreshControl } from "react-native";
+import {View, TouchableOpacity, TouchableWithoutFeedback, FlatList, Image, RefreshControl} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useCallback, useState } from "react";
+import {DesignIcon} from "../../../design/DesignIcon";
+import {CardHeading} from "../../../design/CardHeading";
 import { Back, Info } from "@src/utils/icons";
 import { Add } from "@src/utils/icons";
 import { appColors, appFonts, windowHeight } from "@src/themes";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import Images from "@src/utils/images";
+import {RiderEmptyState} from '../../../design/RiderEmptyState';
 import styles from "./styles";
 import { useValues } from "@src/utils/context/index";;
 import { external } from "@src/styles/externalStyle";
@@ -59,9 +62,10 @@ export function SupportTicket() {
             borderColor: isDark ? appColors.darkBorder : appColors.border,
           },]}>
             <View style={[styles.row, { flexDirection: viewRTLStyle }]}>
+              <View style={styles.ticketIcon}><DesignIcon name="message-circle" color="#A64B00" width={22} height={22}/></View>
               <View style={styles.formatDateView}>
                 <Text style={styles.ticketStyle}>#{item?.ticket_number}</Text>
-                <Text style={styles.createdAt}>
+                <Text style={[styles.createdAt, {color: isDark ? "#BBC1CA" : "#656C76"}]}>
                   {formatDate(item?.created_at)}
                 </Text>
               </View>
@@ -74,25 +78,25 @@ export function SupportTicket() {
               </View>
             </View>
             <Text style={[styles.subjectText, { color: isDark ? appColors.whiteColor : appColors.primaryText, }]}>{item?.subject}</Text>
-            <Text style={styles.desText}>
-              {item?.messages[0].message.length > 80
-                ? `${item?.messages[0].message.substring(0, 80)}...`
-                : item?.messages[0].message}
+            <Text style={[styles.desText, {color: isDark ? "#BBC1CA" : "#656C76"}]}>
+              {(item?.messages?.[0]?.message || "").length > 80
+                ? `${item.messages[0].message.substring(0, 80)}...`
+                : item?.messages?.[0]?.message || ""}
             </Text>
             <View style={[styles.departmentView, { borderColor: isDark ? appColors.darkBorder : appColors.border }]} />
             <View style={[{ flexDirection: viewRTLStyle }]}>
-              <View style={styles.departSubView}>
+              <View style={[styles.departSubView,{flexDirection:viewRTLStyle,gap:6,alignItems:"center"}]}><DesignIcon name="circle-help" color="#656C76" width={15} height={15}/>
                 <Text
                   style={{
                     color: appColors.darkPurpal,
                     fontFamily: appFonts.regular,
                   }}
                 >
-                  {item?.department.name}
+                  {item?.department?.name}
                 </Text>
               </View>
-              <View style={styles.priorityView}>
-                <Text style={styles.priorityText}>{item?.priority.name}</Text>
+              <View style={[styles.priorityView,{flexDirection:viewRTLStyle,gap:6,alignItems:"center"}]}><DesignIcon name="tag" color="#9A3412" width={15} height={15}/>
+                <Text style={styles.priorityText}>{item?.priority?.name}</Text>
               </View>
             </View>
           </View>
@@ -116,6 +120,7 @@ export function SupportTicket() {
               styles.backButton,
               { borderColor: isDark ? appColors.darkBorder : appColors.border },
             ]}
+            accessibilityRole="button" accessibilityLabel="Back from support tickets"
             onPress={() => goBack()}
           >
             <Back />
@@ -130,6 +135,7 @@ export function SupportTicket() {
               styles.addBtn,
               { borderColor: isDark ? appColors.darkBorder : appColors.border },
             ]}
+            accessibilityRole="button" accessibilityLabel="Create support ticket"
             onPress={gotoAdd}
           >
             <Add colors={textColorStyle} />
@@ -148,6 +154,8 @@ export function SupportTicket() {
           ))
         ) : ticketData?.data?.length > 0 ? (
           <FlatList
+            ListHeaderComponent={<CardHeading icon="circle-help" title={translateData.supportTicket || "Support Tickets"} subtitle="Follow your conversations with our support team"/>}
+            contentContainerStyle={{padding:16,paddingBottom:32}}
             data={ticketData?.data}
             renderItem={renderTicketItem}
             refreshControl={
@@ -171,19 +179,7 @@ export function SupportTicket() {
               },
             ]}
           >
-            <Image
-              source={isDark ? Images.noTicketDark : Images.noTicket}
-              style={styles.noImg}
-            />
-            <View style={[styles.emptyTicketView, { flexDirection: viewRTLStyle }]}>
-              <Text style={[styles.emptyTicket, { color: textColorStyle }]}>
-                {translateData.noTicket}
-              </Text>
-              <View style={styles.marginHr}>
-                <Info />
-              </View>
-            </View>
-            <Text style={styles.noTicketText}>{translateData.noTicketDes}</Text>
+            <RiderEmptyState icon="message-circle" title={translateData.noTicket || "No support tickets"} description={translateData.noTicketDes}/>
           </View>
         )}
       </View>

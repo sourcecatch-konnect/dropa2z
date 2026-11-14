@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../design/Typography';
 import React, { useEffect } from 'react'
 import { Switch } from '../'
 import styles from '../darkTheme/styles'

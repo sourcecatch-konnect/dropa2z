@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../design/ReferenceChrome';
 import { StyleSheet } from "react-native";
 import { appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes';
 
@@ -11,6 +13,8 @@ const styles = StyleSheet.create({
     marginHorizontal: windowWidth(20),
     fontFamily: appFonts.bold,
     fontSize: fontSizes.FONT21
+  ,
+    ...referenceSurfaces.section,
   },
   noDataContainer: {
     justifyContent: "center",
@@ -22,11 +26,13 @@ const styles = StyleSheet.create({
   dataView: {
     maxHeight: windowHeight(379),
     marginHorizontal: windowWidth(20),
-    borderRadius: windowHeight(7),
+    borderRadius: 16,
     marginTop: windowHeight(10),
     overflow: 'hidden',
     borderWidth: windowHeight(1),
     marginBottom: windowHeight(85),
+  
+    ...riderCardFinish,
   },
   skeltonAppPage: { paddingHorizontal: windowHeight(11), paddingVertical: windowHeight(7) },
 });

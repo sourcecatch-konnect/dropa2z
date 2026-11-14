@@ -52,13 +52,14 @@ export interface UserRegistrationPayload {
   username?: string;
   name?: string;
   email?: string;
-  country_code?: number | undefined | string;
+  country_code?: number | string | null;
   phone?: number | string | null;
   referral_code?: string;
   address?: AddressDataInterface;
   fcm_token?: string;
   password?: string | number
   password_confirmation?: string | number
+  verification_token?: string
 }
 
 export interface AddressDataInterface {

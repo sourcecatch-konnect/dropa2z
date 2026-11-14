@@ -1,3 +1,4 @@
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
 import React, { useRef, useState } from 'react'
 import { View } from 'react-native'
 import { AddTopUp } from './component/'
@@ -71,7 +72,7 @@ export function TopupWallet() {
 
 
   return (
-    <View style={styles.main}>
+    <ReferenceScreen><View style={[styles.main, {backgroundColor:'transparent'}]}>
       <Header title={translateData.topupWallet} />
 
       <View style={styles.listView}>
@@ -88,6 +89,6 @@ export function TopupWallet() {
           loading={loader}
         />
       </View>
-    </View>
+    </View></ReferenceScreen>
   )
 }

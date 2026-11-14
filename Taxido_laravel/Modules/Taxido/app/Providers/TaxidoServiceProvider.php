@@ -10,6 +10,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Modules\Taxido\Console\UpdateDateCommand;
 use Modules\Taxido\Console\ProcessNotificationsCommand;
 use Modules\Taxido\Console\SendPushNotificationCommand;
+use Modules\Taxido\Console\ExpireRideRequestsCommand;
 use Modules\Taxido\Listeners\SyncDriverStateListener;
 
 class TaxidoServiceProvider extends ServiceProvider
@@ -84,6 +85,7 @@ class TaxidoServiceProvider extends ServiceProvider
             UpdateDateCommand::class,
             ProcessNotificationsCommand::class,
             SendPushNotificationCommand::class,
+            ExpireRideRequestsCommand::class,
         ]);
     }
     /**
@@ -93,6 +95,7 @@ class TaxidoServiceProvider extends ServiceProvider
     {
         $this->app->booted(function () {
             $schedule = $this->app->make(Schedule::class);
+            $schedule->command('taxido:expire-ride-requests')->everyMinute()->withoutOverlapping();
             $schedule->call('Modules\Taxido\Http\Controllers\Api\RideController@fetchTodayScheduleRide');
             $schedule->call('Modules\Taxido\Http\Controllers\Api\RideController@offlineDrivers')->everyTwoHours();
             $schedule->call('Modules\Taxido\Http\Controllers\Api\PlanController@verifyIsExpiredSubscriptions')->everyTwoHours();

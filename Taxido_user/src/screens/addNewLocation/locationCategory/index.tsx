@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import {Pressable, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { locationCategory } from '../../../data/locationCategory/index';
 import { external } from '../../../styles/externalStyle';
 import { RadioButton } from '@src/commonComponent';

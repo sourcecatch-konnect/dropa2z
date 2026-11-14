@@ -1,3 +1,4 @@
+import {mapVehicleMarker} from '../../../design/mapVehicleMarkers';
 import React, {
   useRef,
   useEffect,
@@ -5,14 +6,8 @@ import React, {
   forwardRef,
   useState,
 } from "react";
-import {
-  View,
-  StyleSheet,
-  Platform,
-  PermissionsAndroid,
-  Alert,
-  Text,
-} from "react-native";
+import {View, StyleSheet, Platform, PermissionsAndroid, Alert} from 'react-native';
+import {Text} from '../../../design/Typography';
 import { WebView } from "react-native-webview";
 import Geolocation from "@react-native-community/geolocation";
 import { useValues } from "../../../utils/context";
@@ -47,7 +42,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
   const AmbulanceIcon =
     taxidoSettingData?.cabbooking_values?.general?.ambulance_image;
   const finalMarkerIcon =
-    selfDriver?.service_id == 4 ? AmbulanceIcon : markerIcon;
+    selfDriver?.service_id == 4 ? AmbulanceIcon : mapVehicleMarker(selfDriver,markerIcon);
 
   const webViewRef = useRef<WebView>(null);
   const { Google_Map_Key } = useValues();
@@ -208,13 +203,16 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
                 ? (speedInMetersPerSecond * 3.6).toFixed(0)
                 : 0;
             setSpeed(currentSpeed);
+            const markerHeading = Number(speedInMetersPerSecond) >= 1
+              ? (Number.isFinite(Number(heading)) ? heading : 0)
+              : 0;
 
             setInitialLat(prev => prev === null ? latitude : prev);
             setInitialLng(prev => prev === null ? longitude : prev);
 
             const jsCode = `
                             if (window.updateLocation) {
-                                window.updateLocation(${latitude}, ${longitude}, ${heading || 0
+                                window.updateLocation(${latitude}, ${longitude}, ${markerHeading || 0
               });
                             }
                             true;
@@ -269,16 +267,16 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
   const darkMapStyle = [
     { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
     { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#557468" }] },
     {
       featureType: "administrative.locality",
       elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
+      stylers: [{ color: "#63D5A7" }],
     },
     {
       featureType: "poi",
       elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
+      stylers: [{ color: "#63D5A7" }],
     },
     {
       featureType: "poi.park",
@@ -288,7 +286,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
     {
       featureType: "poi.park",
       elementType: "labels.text.fill",
-      stylers: [{ color: "#6b9a76" }],
+      stylers: [{ color: "#9A7C6B" }],
     },
     {
       featureType: "road",
@@ -308,7 +306,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
     {
       featureType: "road.highway",
       elementType: "geometry",
-      stylers: [{ color: "#746855" }],
+      stylers: [{ color: "#557468" }],
     },
     {
       featureType: "road.highway",
@@ -318,7 +316,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
     {
       featureType: "road.highway",
       elementType: "labels.text.fill",
-      stylers: [{ color: "#f3d19c" }],
+      stylers: [{ color: "#9CF3D0" }],
     },
     {
       featureType: "transit",
@@ -328,7 +326,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
     {
       featureType: "transit.station",
       elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
+      stylers: [{ color: "#63D5A7" }],
     },
     {
       featureType: "water",
@@ -395,8 +393,8 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
         <path fill="#1A73E8" d="M15.76.432a9.053 9.053 0 0 0-9.706 2.81l4.284 3.597L15.76.432Z"/>
         <path fill="#EA4335" d="M6.056 3.242A9.07 9.07 0 0 0 3.934 9.06c0 1.71.334 3.086.903 4.324l5.502-6.544-4.283-3.597Z"/>
         <path fill="#4285F4" d="M13.008 5.6a3.472 3.472 0 0 1 2.653 5.719s2.73-3.262 5.403-6.426A9.052 9.052 0 0 0 15.759.432l-5.423 6.406A3.524 3.524 0 0 1 13.008 5.6Z"/>
-        <path fill="#FBBC04" d="M13.01 12.539a3.472 3.472 0 0 1-3.478-3.478c0-.845.294-1.632.805-2.221l-5.501 6.544c.943 2.083 2.515 3.773 4.126 5.876l6.7-7.96a3.449 3.449 0 0 1-2.653 1.239Z"/>
-        <path fill="#34A853" d="M15.543 21.46c3.026-4.737 6.543-6.879 6.543-12.381a9.09 9.09 0 0 0-1.022-4.186L8.961 19.258c.51.669 1.041 1.435 1.552 2.221 1.847 2.85 1.336 4.54 2.515 4.54s.668-1.71 2.515-4.56Z"/>
+        <path fill="#04FB98" d="M13.01 12.539a3.472 3.472 0 0 1-3.478-3.478c0-.845.294-1.632.805-2.221l-5.501 6.544c.943 2.083 2.515 3.773 4.126 5.876l6.7-7.96a3.449 3.449 0 0 1-2.653 1.239Z"/>
+        <path fill="#A85F34" d="M15.543 21.46c3.026-4.737 6.543-6.879 6.543-12.381a9.09 9.09 0 0 0-1.022-4.186L8.961 19.258c.51.669 1.041 1.435 1.552 2.221 1.847 2.85 1.336 4.54 2.515 4.54s.668-1.71 2.515-4.56Z"/>
       </g>
       <defs>
         <clipPath id="a">
@@ -408,7 +406,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
           const petrolPumpIcon = \`<svg width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="#47A1E5" d="M17.779 20.02c-1.42 0-1.593-1.394-1.593-2.204v-6.299c0-.63.086-.72-.387-.72h-.345v9.313h1.292V22H2.5v-1.89h1.377V.9c0-.495.388-.9.861-.9h9.856c.473 0 .86.405.86.9V3.22c.353.252 2.79 2.016 3.228 2.358.474.36.818.54.818 1.934v10.483c0 .99-.301 2.024-1.721 2.024ZM14.034 2.474c0-.494-.387-.9-.86-.9H6.157c-.473 0-.86.406-.86.9v4.32c0 .494.387.9.86.9h7.015c.474 0 .861-.406.861-.9v-4.32Zm4.218 6.344c0-.72-.473-.63-.904-.63H16.23V5.264l-.775-.468v4.697h1.033c.689 0 .947.09.947 1.17v7.198c0 .72.086.81.387.81.302 0 .43-.225.43-.765V8.818Z"/></svg>\`;
 
           const evChargingIcon = \`     <Svg width={22} height={22} fill="none">
-                  <G fill="#FF8367" clipPath="url(#a)">
+                  <G fill="#67FFC2" clipPath="url(#a)">
                       <Path d="M3.586 4.755h4.123v2.172H3.586V4.755Z" />
                       <Path d="M11.284 1.576a.645.645 0 0 0-.378-.483 13.19 13.19 0 0 0-10.515 0 .645.645 0 0 0-.387.591v19.671c0 .356.289.645.645.645h10c.319 0 .583-.233.634-.538-.005-.035-.005-19.85 0-19.886ZM9 4.11v3.462a.645.645 0 0 1-.645.645H2.942a.645.645 0 0 1-.645-.645V4.11c0-.357.289-.645.645-.645h5.413c.356 0 .645.288.645.645ZM4.356 14.995a.644.644 0 0 1-.563-.958l1.432-2.578a.645.645 0 1 1 1.128.626l-.9 1.62H6.94a.646.646 0 0 1 .559.968l-1.573 2.718a.645.645 0 1 1-1.116-.646l1.012-1.75H4.356ZM21.35 3.217h-.159v-.983a.645.645 0 0 0-1.29 0v.983h-1.166v-.983a.645.645 0 1 0-1.29 0v.983h-.181a.645.645 0 0 0-.645.645v1.727c0 1.259.872 2.318 2.043 2.606v7.691a1.62 1.62 0 0 1-3.24 0v-3.7a2.91 2.91 0 0 0-2.859-2.904v1.29c.87.027 1.57.74 1.57 1.614v3.7a2.91 2.91 0 0 0 5.819 0V8.195a2.688 2.688 0 0 0 2.043-2.606V3.862a.645.645 0 0 0-.645-.645Z" />
                   </G>
@@ -420,7 +418,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
               </Svg>\`;
 
           const parkingIcon = \` <Svg width={22} height={22} fill="none">
-                  <G fill="#FF8367" clipPath="url(#a)">
+                  <G fill="#67FFC2" clipPath="url(#a)">
                       <Path d="M12.102 6.6h-2.2V11h2.2a2.2 2.2 0 0 0 2.2-2.2c0-1.215-.991-2.2-2.2-2.2Z" />
                       <Path d="M11 0C4.934 0 0 4.934 0 11s4.934 11 11 11 11-4.934 11-11S17.066 0 11 0Zm1.103 13.2h-2.2v4.08a.32.32 0 0 1-.32.32h-1.56a.32.32 0 0 1-.32-.32V4.72a.32.32 0 0 1 .32-.32h3.886c2.294 0 4.353 1.672 4.576 3.96.247 2.622-1.813 4.84-4.382 4.84Z" />
                   </G>
@@ -433,18 +431,18 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
 
               const carWashIcon = \` <Svg width={22} height={22} fill="none">
                           <Path
-                              fill="#ECB238"
+                              fill="#38ECA4"
                               d="M21.222 7.706h-1.18c-.37 0-.728.128-1.01.364a1.54 1.54 0 0 0-.534.924l-.597-1.704a2.685 2.685 0 0 0-.597.664l.46 1.304H4.248l1.285-3.652s.012-.03.016-.046a.785.785 0 0 1 .755-.567h7.4l.228-.124c.306-.167.573-.392.794-.652H6.304c-.708 0-1.325.465-1.513 1.137L3.509 8.998a1.568 1.568 0 0 0-1.544-1.289H.786A.783.783 0 0 0 0 8.486V9.65c0 .427.354.776.786.776h1.607a1.538 1.538 0 0 0-.534 1.056l-.244 3.989h18.77l-.244-3.99a1.545 1.545 0 0 0-.534-1.055h1.607c.432 0 .786-.35.786-.776V8.486a.783.783 0 0 0-.786-.777l.008-.003ZM5.109 14.69a1.562 1.562 0 0 1-1.572-1.552c0-.858.703-1.553 1.572-1.553.868 0 1.572.695 1.572 1.553 0 .857-.704 1.552-1.572 1.552Zm8.253-.388H8.646a.392.392 0 0 1-.393-.388c0-.214.177-.388.393-.388h4.716c.216 0 .393.174.393.388a.392.392 0 0 1-.393.388Zm0-1.553H8.646a.392.392 0 0 1-.393-.387c0-.214.177-.389.393-.389h4.716c.216 0 .393.175.393.389a.392.392 0 0 1-.393.388Zm3.537 1.94a1.562 1.562 0 0 1-1.572-1.551c0-.858.703-1.553 1.572-1.553.868 0 1.572.695 1.572 1.553 0 .857-.704 1.552-1.572 1.552ZM.786 17.02v.776c0 .426.354.776.786.776h.393v1.552c0 .427.354.776.786.776h2.358c.432 0 .786-.35.786-.776v-1.552h.786v-2.329H1.572a.783.783 0 0 0-.786.776Zm19.65-.777h-5.11v2.329h.787v1.552c0 .427.354.776.786.776h2.358c.432 0 .786-.35.786-.776v-1.552h.393c.432 0 .786-.35.786-.776v-.777a.783.783 0 0 0-.786-.776Zm-12.969 0h7.074v2.329H7.467v-2.329Z"
                           />
                           <Path
-                              fill="#ECB238"
+                              fill="#38ECA4"
                               d="m13.578 5.943.735.396c.593.318 1.08.799 1.403 1.385l.4.726.402-.726a3.473 3.473 0 0 1 1.403-1.385l.735-.396-.735-.396a3.473 3.473 0 0 1-1.403-1.385l-.401-.726-.401.726a3.471 3.471 0 0 1-1.403 1.385l-.735.396Zm5.616-1.875.28.501.278-.5c.224-.404.562-.738.97-.96l.508-.275-.507-.275a2.439 2.439 0 0 1-.97-.959l-.28-.5-.279.5a2.44 2.44 0 0 1-.97.959l-.508.275.507.276c.41.221.747.555.971.958Z"
                           />
                       </Svg>\`
 
               const garageIcon = \`    <Svg width={22} height={22} fill="none">
                       <Path
-                          fill="#F0A82F"
+                          fill="#2FF0A3"
                           d="M15.4 11H3.497L5.14 7.497a.443.443 0 0 1 .402-.247h9.532A4.64 4.64 0 0 1 14.128 6H5.543c-.695 0-1.326.388-1.609.99L3.226 8.5H.44a.453.453 0 0 0-.311.122.406.406 0 0 0-.129.294v.567c0 .193.07.38.2.529a.89.89 0 0 0 .508.288l1.537.291L.88 13.5v6.667c0 .22.093.433.258.589A.906.906 0 0 0 1.76 21H4.4a.906.906 0 0 0 .622-.244.812.812 0 0 0 .258-.59v-2.5H15.4V11Zm-11 4.583c-.173 0-.345-.032-.505-.095a1.327 1.327 0 0 1-.429-.271 1.248 1.248 0 0 1-.286-.406 1.194 1.194 0 0 1 0-.957c.067-.152.164-.29.287-.406a1.384 1.384 0 0 1 1.867 0c.248.235.387.553.387.885 0 .332-.14.65-.387.884a1.359 1.359 0 0 1-.934.366Zm7.92-.417H8.8a.906.906 0 0 1-.622-.244.812.812 0 0 1-.258-.589c0-.22.093-.433.258-.59A.906.906 0 0 1 8.8 13.5h3.52c.233 0 .457.088.622.244a.812.812 0 0 1 .258.59.812.812 0 0 1-.258.588.906.906 0 0 1-.622.244Zm6.16-10.693 1.32-.625V1.129c0-.091.104-.157.192-.117.6.27 1.108.695 1.463 1.227A3.2 3.2 0 0 1 22 4.017c0 1.23-.712 2.293-1.76 2.87v12.377c0 .442-.185.866-.515 1.179-.33.312-.778.488-1.245.488-.467 0-.914-.176-1.245-.488a1.623 1.623 0 0 1-.515-1.179V6.89c-1.048-.578-1.76-1.64-1.76-2.871 0-1.328.822-2.471 2.008-3.006.088-.04.192.026.192.118V3.85l1.32.624Z"
                       />
                   </Svg>\`
@@ -452,7 +450,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
 
         // --- Custom Car Marker ---
         class CustomMarker extends google.maps.OverlayView {
-          constructor(position) { super(); this.position = position; this.div = null; }
+          constructor(position) { super(); this.position = position; this.div = null; this.animationFrameId = null; }
           onAdd() {
             this.div = document.createElement("div");
             this.div.style.position = "absolute";
@@ -470,15 +468,18 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
           onRemove() { if(this.div){ this.div.remove(); this.div=null; } }
           rotate(angle){ if(this.div){ const img=this.div.querySelector("#car-icon"); if(img) img.style.transform=\`rotate(\${angle}deg)\`; } }
           updatePositionSmoothly(newPosition, heading){
-            const start=this.position; const end=newPosition; const steps=50; let step=0;
-            const deltaLat=(end.lat()-start.lat())/steps;
-            const deltaLng=(end.lng()-start.lng())/steps;
+            if(this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+            const start=this.position; const end=newPosition; const startedAt=performance.now(); const duration=650;
             const animate=()=>{
-              step++; const lat=start.lat()+deltaLat*step; const lng=start.lng()+deltaLng*step;
+              const progress=Math.min((performance.now()-startedAt)/duration,1);
+              const eased=progress*(2-progress);
+              const lat=start.lat()+(end.lat()-start.lat())*eased;
+              const lng=start.lng()+(end.lng()-start.lng())*eased;
               this.position=new google.maps.LatLng(lat,lng); this.draw();
-              if(step<steps) requestAnimationFrame(animate);
+              if(progress<1) this.animationFrameId=requestAnimationFrame(animate);
+              else this.animationFrameId=null;
             };
-            animate(); this.rotate(heading);
+            this.rotate(heading); this.animationFrameId=requestAnimationFrame(animate);
           }
         }
 
@@ -488,7 +489,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
           const midLat=(startLatLng.lat()+endLatLng.lat())/2+0.0005;
           const midLng=(startLatLng.lng()+endLatLng.lng())/2+0.0005;
           const curvedPath=[startLatLng,new google.maps.LatLng(midLat,midLng),endLatLng];
-          activeCurve=new google.maps.Polyline({path:curvedPath, geodesic:true, strokeColor:"#F0A82F", strokeOpacity:1.0, strokeWeight:2});
+          activeCurve=new google.maps.Polyline({path:curvedPath, geodesic:true, strokeColor:"#2FF0A3", strokeOpacity:1.0, strokeWeight:2});
           activeCurve.setMap(map);
         }
 
@@ -659,7 +660,8 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
           const newLatLng=new google.maps.LatLng(lat,lng);
           if(map && overlay){
             overlay.updatePositionSmoothly(newLatLng, heading||0);
-            map.panTo(newLatLng);
+            const visibleBounds=map.getBounds();
+            if(!visibleBounds || !visibleBounds.contains(newLatLng)) map.panTo(newLatLng);
             currentLatLng=newLatLng;
           }
         };
@@ -704,7 +706,7 @@ const MapScreenComponent = forwardRef<any, any>((props: any, ref) => {
 <body>
 <div id="map"></div>
 <script>
-let map, carMarker, currentLatLng;
+let map, carMarker, currentLatLng, markerAnimationFrame = null;
 let pickZones = ${JSON.stringify(pickZone.pickzone || [])};
 let activeCurve = null;
 let nearbyMarkers = {};
@@ -735,7 +737,7 @@ function initMap() {
       latlngs.forEach(p => { const d = currentLatLng.distanceTo(p); if(d < minDist){ minDist=d; nearest=p; } });
 
       // Draw curve
-      activeCurve = L.polyline([currentLatLng, nearest], { color:'#F0A82F', weight:2 }).addTo(map);
+      activeCurve = L.polyline([currentLatLng, nearest], { color:'#2FF0A3', weight:2 }).addTo(map);
 
       // Show popup
       fetch(\`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=\${nearest[0]}&lon=\${nearest[1]}\`)
@@ -763,24 +765,28 @@ function updatePositionSmoothly(newLat, newLng, heading) {
   const newLatLng = L.latLng(newLat, newLng);
   if (!carMarker) return;
 
+  if (markerAnimationFrame !== null) cancelAnimationFrame(markerAnimationFrame);
   const startLatLng = carMarker.getLatLng();
-  const steps = 50;
-  let step = 0;
-  const deltaLat = (newLatLng.lat - startLatLng.lat)/steps;
-  const deltaLng = (newLatLng.lng - startLatLng.lng)/steps;
+  const startedAt = performance.now();
+  const duration = 650;
 
-  function animate() {
-    step++;
-    const lat = startLatLng.lat + deltaLat*step;
-    const lng = startLatLng.lng + deltaLng*step;
+  function animate(now) {
+    const progress = Math.min((now - startedAt) / duration, 1);
+    const eased = progress * (2 - progress);
+    const lat = startLatLng.lat + (newLatLng.lat - startLatLng.lat) * eased;
+    const lng = startLatLng.lng + (newLatLng.lng - startLatLng.lng) * eased;
     carMarker.setLatLng([lat,lng]);
     const iconEl = document.getElementById('car-icon');
     if(iconEl) iconEl.style.transform = \`rotate(\${heading||0}deg)\`;
-    if(step < steps) requestAnimationFrame(animate);
+    if(progress < 1) markerAnimationFrame = requestAnimationFrame(animate);
+    else markerAnimationFrame = null;
   }
-  animate();
+  markerAnimationFrame = requestAnimationFrame(animate);
   currentLatLng = newLatLng;
-  map.panTo(newLatLng);
+  const visibleBounds = map.getBounds();
+  if (!visibleBounds || !visibleBounds.contains(newLatLng)) {
+    map.panTo(newLatLng, { animate: true, duration: 0.35 });
+  }
 }
 
 // --- Fetch Nearby Places using Overpass API ---
@@ -885,10 +891,13 @@ window.onload = initMap;
           <View>
             <FAB
               icon={fabOpen ? Icons.CloseAssist : Icons.OpenAssist}
+              accessibilityLabel={fabOpen?'Close nearby services':'Nearby services: fuel, charging, parking and repairs'}
+              label={fabOpen?'Close':'Nearby'}
+              color={isDark?'#FFFFFF':'#211C16'}
               style={{
                 position: "absolute",
                 left: windowHeight(2),
-                bottom: windowHeight(26.5),
+                bottom: 276,
                 borderRadius: windowHeight(7),
 
                 backgroundColor: isDark
@@ -914,7 +923,7 @@ window.onload = initMap;
             style={{
               position: "absolute",
               left: windowHeight(3),
-              bottom: windowHeight(34),
+              bottom: 348,
               backgroundColor: selectedTypes.includes("petrol")
                 ? "#D6E7FB"
                 : isDark
@@ -930,9 +939,9 @@ window.onload = initMap;
             style={{
               position: "absolute",
               left: windowHeight(3),
-              bottom: windowHeight(40),
+              bottom: 406,
               backgroundColor: selectedTypes.includes("ev")
-                ? "#FFE6E0"
+                ? "#E0FFF3"
                 : isDark
                   ? appColors.bgDark
                   : appColors.white,
@@ -946,9 +955,9 @@ window.onload = initMap;
             style={{
               position: "absolute",
               left: windowHeight(3),
-              bottom: windowHeight(46),
+              bottom: 464,
               backgroundColor: selectedTypes.includes("parking")
-                ? "#FFE6E0"
+                ? "#E0FFF3"
                 : isDark
                   ? appColors.bgDark
                   : appColors.white,
@@ -962,7 +971,7 @@ window.onload = initMap;
             style={{
               position: "absolute",
               left: windowHeight(3),
-              bottom: windowHeight(52),
+              bottom: 522,
               backgroundColor: selectedTypes.includes("carwash")
                 ? "#FFF8E0"
                 : isDark
@@ -978,9 +987,9 @@ window.onload = initMap;
             style={{
               position: "absolute",
               left: windowHeight(3),
-              bottom: windowHeight(58),
+              bottom: 580,
               backgroundColor: selectedTypes.includes("garage")
-                ? "#CCF5EB"
+                ? "#F5DBCC"
                 : isDark
                   ? appColors.bgDark
                   : appColors.white,
@@ -1042,7 +1051,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.white,
     position: "absolute",
     borderRadius: windowHeight(4),
-    bottom: windowHeight(18),
+    bottom: 196,
     left: windowHeight(2),
     justifyContent: "center",
     alignItems: "center",

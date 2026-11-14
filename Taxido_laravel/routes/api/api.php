@@ -36,6 +36,8 @@ Route::group(['middleware' => ['localization']], function () {
 
     // Settings
     Route::get('settings', 'SettingController@index');
+    Route::get('maps/reverse-geocode', [\App\Http\Controllers\Api\GeocodingController::class, 'reverse'])
+        ->middleware('throttle:30,1');
 
     // Currencies
     Route::apiResource('currency', 'CurrencyController', ['only' => ['index', 'show']]);
@@ -76,6 +78,7 @@ Route::group(['middleware' => ['localization']], function () {
         Route::get('payment-methods', 'PaymentMethodController@index');
 
         // Chat
+        Route::get('chat/support', 'ChatController@support')->name('chat.support');
         Route::post('chat/send', 'ChatController@send')->name('chat.send');
         Route::get('chat/messages', 'ChatController@messages')->name('chat.messages');
         Route::post('chat/clear', 'ChatController@clear')->name('chat.clear');

@@ -1,5 +1,7 @@
+import {DesignIcon} from '../../design/DesignIcon';
 import React, { useCallback } from 'react'
-import { Image, Text, View } from 'react-native'
+import {Image, View} from 'react-native';
+import {Text} from '../../design/Typography';
 import styles from './styles'
 import { useValues } from '../../utils/context'
 import appColors from '../../theme/appColors'
@@ -42,11 +44,7 @@ export function LowBalance({ setLowBalance, low }: any) {
           { backgroundColor: isDark ? appColors.primaryFont : appColors.white },
         ]}
       >
-        <Image
-          source={Images.lowBalance}
-          style={styles.image}
-          tintColor={appColors.primary}
-        />
+        <View style={{width:72,height:72,borderRadius:24,backgroundColor:isDark?"#3B2B19":"#FFF2DF",alignItems:"center",justifyContent:"center",marginBottom:16}}><DesignIcon name="wallet" color={isDark?"#FFBE60":"#A64B00"} width={34} height={34}/></View>
         <Text
           style={[
             styles.title,
@@ -60,10 +58,10 @@ export function LowBalance({ setLowBalance, low }: any) {
             ? translateData?.lowBalance
             : translateData?.insufficientWalletBalance}
         </Text>
-        <Text style={styles.subText}>
+        <Text style={[styles.subText,{color:isDark?"#BBC1CA":"#656C76",lineHeight:22,textAlign:"center"}]}>
           {low
             ? translateData?.balanceNote
-            : `A minimum account balance of ${zoneValue?.currency_symbol} ${taxidoSettingData?.cabbooking_values?.wallet?.driver_min_wallet_balance} is required.`}
+            : `A minimum account balance of ${zoneValue?.currency_symbol || '?'} ${taxidoSettingData?.cabbooking_values?.wallet?.driver_min_wallet_balance ?? 10} is required.`}
         </Text>
 
         <View
@@ -71,10 +69,11 @@ export function LowBalance({ setLowBalance, low }: any) {
             flexDirection: viewRtlStyle,
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: 12,
             marginTop: windowHeight(2),
           }}
         >
-          <View style={{ width: '51%' }}>
+          <View style={{ flex: 1 }}>
             <Button
               title={translateData?.cancel}
               backgroundColor={isDark ? appColors.bgDark : appColors.lightGray}
@@ -82,7 +81,7 @@ export function LowBalance({ setLowBalance, low }: any) {
               color={isDark ? appColors.white : appColors.black}
             />
           </View>
-          <View style={{ width: '51%' }}>
+          <View style={{ flex: 1 }}>
             <Button
               title={translateData?.topUp}
               backgroundColor={appColors.primary}

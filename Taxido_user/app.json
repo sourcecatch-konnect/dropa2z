@@ -1,14 +1,14 @@
 {
-  "name": "TaxidoUserApp",
-  "displayName": "TaxidoUserApp",
+  "name": "Dropa2zRider",
+  "displayName": "DropA2Z Rider",
   "android": {
-    "package": "com.taxidouser.webiots",
+    "package": "com.dropa2z.rider",
     "permissions": [
       "INTERNET"
     ]
   },
   "react-native-google-mobile-ads": {
-    "android_app_id": "enter your android app id here",
+    "android_app_id": "ca-app-pub-3940256099942544~3347511713",
     "ios_app_id": "enter your ios app id here"
   }
 }

@@ -1,4 +1,5 @@
-import { FlatList, Text, View } from 'react-native';
+import {FlatList, View} from 'react-native';
+import {Text} from '../../design/Typography';
 import React, { useState, useEffect } from 'react';
 import { commonStyles } from '../../styles/commonStyle';
 import { HeaderContainer, CommonModal, Button } from '@src/commonComponent';

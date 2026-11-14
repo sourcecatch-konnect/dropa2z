@@ -42,7 +42,7 @@ const rideSlice = createSlice({
     })
 
     builder.addCase(rideDataGets.pending, state => {
-      state.loading = true
+      state.loading = !(state.rideGets as any)?.data
     })
     builder.addCase(
       rideDataGets.fulfilled,

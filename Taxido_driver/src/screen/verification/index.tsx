@@ -1,11 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react'
-import {
-  BackHandler,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native'
+import {BackHandler, TouchableOpacity, TouchableWithoutFeedback, View} from 'react-native';
+import {Text} from '../../design/Typography';
 import LottieView from 'lottie-react-native'
 import Icons from '../../utils/icons/icons'
 import appColors from '../../theme/appColors'
@@ -237,7 +232,7 @@ export function Verification() {
           backgroundColor: appColors.primary,
           width: '13%',
         }}
-      >
+       android_keyboardInputMode="adjustResize" >
         <BottomSheetView style={{ paddingHorizontal: windowHeight(2) }}>
           <TouchableWithoutFeedback>
             <TouchableOpacity

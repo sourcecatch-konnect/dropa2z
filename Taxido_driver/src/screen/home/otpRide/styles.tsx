@@ -23,13 +23,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   additionalSection: {
-    marginBottom: windowHeight(10),
-    alignItems: 'center',
-    height: windowHeight(29),
-    marginHorizontal: windowWidth(4),
-    borderRadius: 5,
-    borderWidth: windowHeight(0.1),
-    marginTop: windowHeight(2),
+    flexGrow: 1,
+    padding: 16,
+    paddingBottom: 28,
+    gap: 16,
   },
   date: {
     height: windowHeight(3.8),
@@ -100,7 +97,7 @@ const styles = StyleSheet.create({
   },
   otpContainer: {
     justifyContent: 'space-between',
-    width: '95%',
+    width: '100%',
     alignSelf: 'center',
   },
   inputContainer: {
@@ -109,11 +106,11 @@ const styles = StyleSheet.create({
     marginBottom: windowHeight(0.5),
   },
   otpInputs: {
-    width: windowHeight(7),
-    height: windowHeight(7),
+    width: 54,
+    height: 58,
     borderWidth: windowHeight(0.2),
     borderRadius: windowHeight(1.3),
-    marginTop: windowHeight(2),
+    marginTop: 0,
     fontSize: fontSizes.FONT4HALF,
     borderBottomWidth: windowHeight(0.2)
   },

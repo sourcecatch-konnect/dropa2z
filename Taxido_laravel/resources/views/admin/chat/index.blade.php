@@ -52,7 +52,7 @@
                                                                         <h6>{{ strtoupper($chat['name'][0]) }}</h6>
                                                                     </div>
                                                                 @endif
-                                                                <span class="badge bg-danger unread-badge {{ $chat['unread_count'] > 0 ? '' : 'd-none' }}" id="unread-{{ $chat['user_id'] }}">{{ $chat['unread_count'] }}</span>
+                                                                <span class="badge bg-danger unread-badge {{ $chat['unread_count'] > 0 ? '' : 'd-none' }}" id="unread-{{ preg_replace('/[^A-Za-z0-9]/', '', $chat['chat_id']) }}">{{ $chat['unread_count'] }}</span>
                                                             </div>
                                                     <div class="name-chat">
                                                                 <div class="w-100">
@@ -218,6 +218,8 @@
     let currentChatRoomId = null;
     let previousChatRoomId = null;
     let currentReceiverId = null;
+    let activeMessagePoller = null;
+    let lastLoadedMessageId = 0;
 
     $(document).ready(function() {
         initSocket();
@@ -229,46 +231,29 @@
         console.log('[Chat] Socket Active');
         echo.private(`user.notifications.${MY_USER_ID}`)
             .listen('.unread.count.updated', (e) => {
-                console.log("[Global] Notification Received", e);
                 refreshUnreadCount();
-
-                // Update Sidebar
-                if (e.roomId) {
-                    const userId = currentChatRoomId === e.roomId ? currentReceiverId : e.roomId.split('_').find(id => id !== MY_USER_ID);
-                    console.log("[Global] Notification for Room:", e.roomId, "Calculated User ID:", userId);
-
-                    // Diagnostic: Log all IDs in sidebar
-                    let sidebarIds = [];
-                    $(`#recentChatsList li.chat-item`).each(function() {
-                        sidebarIds.push($(this).attr('data-user-id'));
-                    });
-                    console.log("[Global] Sidebar IDs present:", sidebarIds);
-
-                    const chatItem = $(`#recentChatsList li[data-user-id="${userId}"]`);
-
-                    if (chatItem.length) {
-                        console.log("[Global] Found sidebar item for user", userId);
-                        // Update unread badge
-                        if (e.roomUnread !== undefined) {
-                            const badge = $(`#unread-${userId}`);
-                            badge.text(e.roomUnread).toggleClass('d-none', e.roomUnread === 0);
-                        }
-
-                        // Move to top only if it's a new message (contains lastMessage content)
-                        if (e.lastMessage) {
-                            console.log("[Global] Updating last message text to:", e.lastMessage);
-                            chatItem.find('.last-message-text').text(e.lastMessage);
-                            chatItem.find('.chat-time').text('Just now');
-                            chatItem.prependTo('#recentChatsList');
-                        }
-                    } else {
-                        console.log("[Global] Sidebar item NOT found for user", userId);
-                        if (e.lastMessage) {
-                            refreshRecentChatsList();
-                        }
-                    }
+                if (e.roomId && e.lastMessage) {
+                    refreshRecentChatsList();
                 }
             });
+
+        // Rider/Driver messages broadcast to their own notification channels.
+        // Refreshing here keeps Admin's recent-conversation list current even
+        // when those app users are the only sender and receiver in an old room.
+        setInterval(() => {
+            refreshRecentChatsList();
+            refreshUnreadCount();
+        }, 4000);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[character]));
     }
 
     function initUI() {
@@ -307,6 +292,7 @@
             $(this).addClass('active');
 
             openChat(userId, name, role, image, roomId);
+            $(this).find('.unread-badge').addClass('d-none').text('0');
         });
 
         $('#sendBtn').on('click', sendMessage);
@@ -340,22 +326,24 @@
             let html = '';
             if (res.data.length > 0) {
                 res.data.forEach(user => {
-                    const avatar = user.profile_image ? `<img class="img-fluid rounded-circle" src="${user.profile_image.original_url}">`
-                                                      : `<div class="user-round"><h6>${user.name[0].toUpperCase()}</h6></div>`;
+                    const safeName = escapeHtml(user.name);
+                    const safeRole = escapeHtml(user.role?.name || '');
+                    const avatar = user.profile_image ? `<img class="img-fluid rounded-circle" src="${escapeHtml(user.profile_image.original_url)}">`
+                                                      : `<div class="user-round"><h6>${escapeHtml(user.name?.[0]?.toUpperCase() || '?')}</h6></div>`;
 
                     const time = user.last_interaction ? formatJSDate(user.last_interaction) : '';
 
                     html += `
-                        <li class="chat-item" data-user-id="${user.id}" data-user-name="${user.name}" data-user-role="${user.role?.name || ''}" data-user-image="${user.profile_image?.original_url || ''}">
+                        <li class="chat-item" data-user-id="${user.id}" data-user-name="${safeName}" data-user-role="${safeRole}" data-user-image="${escapeHtml(user.profile_image?.original_url || '')}">
                             <div class="chat-box">
                                 <div class="active-profile">${avatar}</div>
                                 <div class="name-chat">
                                     <div class="w-100">
                                         <div class="d-flex justify-content-between">
-                                            <h5 class="chat-user-name">${user.name}</h5>
+                                            <h5 class="chat-user-name">${safeName}</h5>
                                             <small class="text-muted chat-time">${time}</small>
                                         </div>
-                                        <h6>${user.role?.name || ''}</h6>
+                                        <h6>${safeRole}</h6>
                                     </div>
                                 </div>
                             </div>
@@ -369,13 +357,19 @@
     }
 
     function openChat(userId, name, role, image, roomId = null) {
+        if (activeMessagePoller) {
+            clearInterval(activeMessagePoller);
+            activeMessagePoller = null;
+        }
+
         currentReceiverId = userId;
         currentChatRoomId = roomId || generateRoomId(MY_USER_ID, userId);
+        lastLoadedMessageId = 0;
         $('#activeChatName').text(name);
         $('.receiverRole').text(role);
         $('#receiverAvatarContainer').html(
             image ? `<img class="img-fluid rounded-circle" src="${image}">`
-                  : `<div class="user-round"><h6>${name[0].toUpperCase()}</h6></div>`
+                  : `<div class="user-round"><h6>${escapeHtml(name?.[0]?.toUpperCase() || '?')}</h6></div>`
         );
 
         $('#noDataContainer').addClass('d-none');
@@ -386,7 +380,13 @@
         // Join Echo room
         listenToRoom(currentChatRoomId);
         loadMessages(currentChatRoomId);
-        $(`#unread-${userId}`).addClass('d-none').text('0');
+        const selectedRoomId = currentChatRoomId;
+        activeMessagePoller = setInterval(() => {
+            if (currentChatRoomId === selectedRoomId) {
+                loadMessages(selectedRoomId, true);
+            }
+        }, 3000);
+        $(`#recentChatsList li[data-room-id="${currentChatRoomId}"] .unread-badge`).addClass('d-none').text('0');
     }
 
     function generateRoomId(id1, id2) {
@@ -422,19 +422,29 @@
         });
     }
 
-    function loadMessages(roomId) {
-        fetch(`${BASE_URL}/api/chat/messages?room_id=${roomId}`, {
+    function loadMessages(roomId, incremental = false) {
+        const params = new URLSearchParams({ room_id: String(roomId) });
+        if (incremental) params.set('after_id', String(lastLoadedMessageId));
+
+        fetch(`${BASE_URL}/api/chat/messages?${params.toString()}`, {
             headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Accept': 'application/json' }
         })
         .then(res => res.json())
         .then(res => {
-            $('#loading').hide();
-            $('#messages').empty();
+            if (currentChatRoomId !== String(roomId)) return;
+
+            if (!incremental) {
+                $('#loading').hide();
+                $('#messages').empty();
+                lastLoadedMessageId = 0;
+            }
+
+            const messageCountBefore = $('#messages [data-msg-id]').length;
             if (res.data && res.data.length > 0) {
                 $('#noMessages').addClass('d-none');
                 res.data.forEach(msg => appendMessage(msg));
-                scrollToBottom();
-            } else {
+                if ($('#messages [data-msg-id]').length > messageCountBefore) scrollToBottom();
+            } else if (!incremental) {
                 $('#noMessages').removeClass('d-none');
             }
             refreshUnreadCount();
@@ -465,7 +475,7 @@
                 scrollToBottom();
 
                 // Move recipient to top of sidebar
-                const chatItem = $(`#recentChatsList li[data-user-id="${currentReceiverId}"]`);
+                const chatItem = $(`#recentChatsList li[data-room-id="${currentChatRoomId}"]`);
                 if (chatItem.length) {
                     chatItem.find('.last-message-text').text(text);
                     chatItem.find('.chat-time').text('Just now');
@@ -481,15 +491,18 @@
 
     function appendMessage(msg) {
         if ($(`#messages`).find(`[data-msg-id="${msg.id}"]`).length > 0) return;
+
+        const messageId = Number(msg.id) || 0;
+        lastLoadedMessageId = Math.max(lastLoadedMessageId, messageId);
         
         console.log("[Chat] Appending message:", msg);
         const isMe = String(msg.sender_id) === MY_USER_ID;
         const bubbleClass = isMe ? 'admin-reply' : 'user-reply';
         console.log("[Chat] Is Me?", isMe, "Bubble Class:", bubbleClass);
-        let content = msg.message ? `<p>${msg.message}</p>` : '';
+        let content = msg.message ? `<p>${escapeHtml(msg.message)}</p>` : '';
 
         if (msg.images && msg.images.length > 0) {
-            content += msg.images.map(img => `<img src="${img}" class="img-fluid rounded mt-2" style="max-width: 200px;">`).join('');
+            content += msg.images.map(img => `<img src="${escapeHtml(img)}" class="img-fluid rounded mt-2" style="max-width: 200px;">`).join('');
         }
 
         const html = `
@@ -535,7 +548,7 @@
                 scrollToBottom();
 
                 // Move recipient to top of sidebar
-                const chatItem = $(`#recentChatsList li[data-user-id="${currentReceiverId}"]`);
+                const chatItem = $(`#recentChatsList li[data-room-id="${currentChatRoomId}"]`);
                 if (chatItem.length) {
                     chatItem.find('.last-message-text').text('Sent an image');
                     chatItem.find('.chat-time').text('Just now');
@@ -589,27 +602,30 @@
                 const chats = Object.values(res.data);
                 if (chats.length > 0) {
                     chats.forEach(chat => {
-                        const avatar = chat.image ? `<img class="img-fluid rounded-circle" src="${chat.image}">`
-                                                  : `<div class="user-round"><h6>${chat.name[0].toUpperCase()}</h6></div>`;
+                        const safeName = escapeHtml(chat.name);
+                        const safeRole = escapeHtml(chat.role);
+                        const safeImage = escapeHtml(chat.image || '');
+                        const avatar = chat.image ? `<img class="img-fluid rounded-circle" src="${safeImage}">`
+                                                  : `<div class="user-round"><h6>${escapeHtml(chat.name?.[0]?.toUpperCase() || '?')}</h6></div>`;
 
                         const time = chat.updated_at ? formatJSDate(chat.updated_at) : '';
-                        const isActive = currentReceiverId === String(chat.user_id) ? 'active' : '';
-                        const snippet = chat.last_message?.message || (chat.last_message?.images?.length > 0 ? 'Sent an image' : '');
+                        const isActive = currentChatRoomId === String(chat.chat_id) ? 'active' : '';
+                        const snippet = escapeHtml(chat.last_message?.message || (chat.last_message?.images?.length > 0 ? 'Sent an image' : ''));
 
                         html += `
-                            <li class="chat-item ${isActive}" data-room-id="${chat.chat_id}" data-user-id="${chat.user_id}" data-user-name="${chat.name}" data-user-role="${chat.role}" data-user-image="${chat.image || ''}">
+                            <li class="chat-item ${isActive}" data-room-id="${escapeHtml(chat.chat_id)}" data-user-id="${chat.user_id}" data-user-name="${safeName}" data-user-role="${safeRole}" data-user-image="${safeImage}">
                                 <div class="chat-box">
                                     <div class="active-profile">
                                         ${avatar}
-                                        <span class="badge bg-danger unread-badge ${chat.unread_count > 0 ? '' : 'd-none'}" id="unread-${chat.user_id}">${chat.unread_count}</span>
+                                        <span class="badge bg-danger unread-badge ${chat.unread_count > 0 ? '' : 'd-none'}" id="unread-${String(chat.chat_id).replace(/[^a-zA-Z0-9]/g, '')}">${Number(chat.unread_count) || 0}</span>
                                     </div>
                                     <div class="name-chat">
                                         <div class="w-100">
                                             <div class="d-flex justify-content-between">
-                                                <h5 class="chat-user-name">${chat.name}</h5>
+                                                <h5 class="chat-user-name">${safeName}</h5>
                                                 <small class="text-muted chat-time">${time}</small>
                                             </div>
-                                            <h6 class="chat-role">${chat.role}</h6>
+                                            <h6 class="chat-role">${safeRole}</h6>
                                             <p class="last-message-text text-truncate" style="max-width: 150px; font-size: 12px; margin: 0;">${snippet}</p>
                                         </div>
                                     </div>

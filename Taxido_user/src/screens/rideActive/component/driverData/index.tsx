@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Image, Share } from 'react-native';
+import {View, TouchableOpacity, Image, Share} from 'react-native';
+import {Text} from '../../../../design/Typography';
 import React from 'react';
 import { useValues } from '@src/utils/context/index';
 import styles from '../../styles';
@@ -6,6 +7,7 @@ import { LiveShare, Star, Verification } from '@utils/icons';
 import { external } from '@src/styles/externalStyle';
 import { appColors, windowWidth } from '@src/themes';
 import { URL } from '@src/api/config';
+import {bookingPhoto} from '../../../../utils/bookingPeople';
 
 interface DriverDataProps {
   driverData: () => void;
@@ -20,7 +22,7 @@ export function DriverData({ driverData, driverDetail, rideData }: DriverDataPro
 const handleShare = async () => {
   try {
     const message = 
-`🚖 Taxido Ride Details
+`🚖 DropA2Z Ride Details
 
 👨‍✈️ Driver Name : ${rideData?.driver?.name ?? "N/A"}
 🚗 Vehicle Model : ${rideData?.vehicle_model ?? "N/A"}
@@ -47,9 +49,9 @@ const handleShare = async () => {
         style={{ flexDirection: viewRTLStyle }}
         onPress={driverData}
         activeOpacity={0.7}>
-        {driverDetail?.profile_image_url ? (
+        {bookingPhoto(driverDetail) ? (
           <Image
-            source={{ uri: driverDetail.profile_image_url }}
+            source={{ uri: bookingPhoto(driverDetail) }}
             style={styles.userImage}
           />
         ) : (
@@ -72,9 +74,9 @@ const handleShare = async () => {
             </View>
 
             <Text style={[styles.rating, { color: textColorStyle }]}>
-              {Number(driverDetail?.rating_count).toFixed(1)}
+              {Number(driverDetail?.rating_count || 0).toFixed(1)}
             </Text>
-            <Text style={styles.review}>({driverDetail?.review_count})</Text>
+            <Text style={styles.review}>({driverDetail?.review_count || 0})</Text>
           </View>
         </View>
       </TouchableOpacity>

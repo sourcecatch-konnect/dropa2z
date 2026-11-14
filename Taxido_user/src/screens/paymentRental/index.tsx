@@ -1,4 +1,6 @@
-import { View, Text, Image, TouchableOpacity, Modal, TextInput, ActivityIndicator } from "react-native";
+import {BrandLoader} from '../../design/BrandLogo';
+import {View, Image, TouchableOpacity, Modal, ActivityIndicator} from 'react-native';
+import {Text, TextInput} from '../../design/Typography';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button, notificationHelper } from "@src/commonComponent";
 import styles from "./styles";
@@ -408,7 +410,7 @@ export function PaymentRental() {
           />
         ) : (
           <View style={[external.ai_center, external.js_center, external.main]}>
-            <ActivityIndicator size="large" color={appColors.primary} />
+            <BrandLoader size="large" color={appColors.primary} />
           </View>
 
         )}

@@ -1,4 +1,5 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import {TouchableOpacity, View} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React from 'react';
 import styles from './style';
 import { useValues } from '@src/utils/context/index';

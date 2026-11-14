@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../design/Typography';
 import React, { useState } from 'react'
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from '@src/themes'
 import { Add, Minus, RightArrowSmall } from '@src/utils/icons'

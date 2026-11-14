@@ -1,3 +1,4 @@
+import {riderCardFinish} from '../../../../design/RiderSurfaces';
 import { Platform, StyleSheet } from "react-native";
 import { appColors, appFonts, fontSizes, windowHeight, windowWidth } from "@src/themes";
 
@@ -10,11 +11,16 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: windowHeight(1),
     marginBottom: windowHeight(85),
+  
+    ...riderCardFinish,
   },
   list: {
     justifyContent: "space-between",
     marginHorizontal: windowWidth(20),
     marginVertical: windowHeight(10),
+    alignItems: 'center',
+    minHeight: 60,
+    gap: 12,
   },
   receiptView: {
     height: windowHeight(35),
@@ -24,17 +30,19 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(9),
   },
   detailView: {
+    flex: 1,
+    minWidth: 0,
     marginHorizontal: windowWidth(10),
     justifyContent: "space-around",
   },
   description: {
     fontSize: fontSizes.FONT16,
     fontFamily: appFonts.medium,
-    width: windowWidth(200),
+    flexShrink: 1,
   },
   amountView: {
     height: windowHeight(35),
-    width: windowWidth(100),
+    flexShrink: 0,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: windowHeight(9),

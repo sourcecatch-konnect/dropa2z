@@ -1,0 +1,52 @@
+// Shared Rider/Driver production signing. Secrets belong in the environment or
+// the user's private Gradle properties, never in this repository.
+def appRole = android.defaultConfig.applicationId.endsWith('.rider') ? 'RIDER' : 'DRIVER'
+// Explicit compatibility build requested by the owner for the existing Google
+// OAuth Android certificate. The release variant still bundles JS and uses HTTPS.
+def useExistingRiderSigning = appRole == 'RIDER' && project.findProperty('dropa2zUseExistingRiderSigning')?.toString() == 'true'
+def setting = { suffix ->
+    def name = "DROPA2Z_${appRole}_${suffix}"
+    System.getenv(name) ?: project.findProperty(name)
+}
+def productionValues = [store: setting('STORE_FILE'), password: setting('STORE_PASSWORD'), alias: setting('KEY_ALIAS'), keyPassword: setting('KEY_PASSWORD')]
+def productionSigning = android.signingConfigs.maybeCreate('dropa2zProduction')
+if (productionValues.values().every { it != null && it.toString().trim() }) {
+    productionSigning.storeFile = file(productionValues.store)
+    productionSigning.storePassword = productionValues.password
+    productionSigning.keyAlias = productionValues.alias
+    productionSigning.keyPassword = productionValues.keyPassword
+    productionSigning.storeType = 'PKCS12'
+}
+android.buildTypes.named('release') {
+    signingConfig = useExistingRiderSigning ? android.signingConfigs.debug : productionSigning
+    manifestPlaceholders['usesCleartextTraffic'] = 'false'
+}
+android.buildTypes.named('debug') {
+    manifestPlaceholders['usesCleartextTraffic'] = 'true'
+}
+def signingValidation = tasks.register('validateDropa2zReleaseSigning') {
+    doLast {
+        if (useExistingRiderSigning) {
+            def existing = android.signingConfigs.debug
+            def keyStore = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType())
+            existing.storeFile.withInputStream { keyStore.load(it, existing.storePassword.toCharArray()) }
+            def certificate = keyStore.getCertificate(existing.keyAlias)
+            def fingerprint = java.security.MessageDigest.getInstance('SHA-1').digest(certificate.encoded).encodeHex().toString()
+            if (fingerprint != '5e8f16062ea3cd2c4a0d547876baa6f38cabf625') {
+                throw new GradleException('Existing Rider certificate does not match the Google OAuth fingerprint; refusing to switch signing keys.')
+            }
+            logger.lifecycle('RIDER standalone release uses the owner-requested existing Google OAuth certificate; release traffic uses HTTPS.')
+            return
+        }
+        if (!productionValues.values().every { it != null && it.toString().trim() }) {
+            throw new GradleException('Production signing is not loaded. Run scripts/Load-ReleaseSigning.ps1 in this terminal, then retry. No debug-signed release will be produced.')
+        }
+        if (!productionSigning.storeFile.isFile() || productionSigning.keyAlias == 'androiddebugkey' || productionSigning.storeFile.name == 'debug.keystore') {
+            throw new GradleException('A valid Dropa2z production keystore is required for release builds.')
+        }
+        logger.lifecycle("${appRole} production signing is configured; release traffic uses HTTPS.")
+    }
+}
+tasks.matching { it.name == 'preReleaseBuild' || it.name == 'validateSigningRelease' }.configureEach {
+    dependsOn(signingValidation)
+}

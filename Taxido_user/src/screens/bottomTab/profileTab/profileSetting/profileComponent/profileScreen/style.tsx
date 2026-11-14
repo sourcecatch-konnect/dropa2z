@@ -1,3 +1,5 @@
+import {riderCardFinish} from '../../../../../../design/RiderSurfaces';
+import {referenceSurfaces} from '../../../../../../design/ReferenceChrome';
 import { StyleSheet } from 'react-native';
 import { external } from '../../../../../../styles/externalStyle';
 import { commonStyles } from '../../../../../../styles/commonStyle';
@@ -7,10 +9,12 @@ import { appColors } from '@src/themes';
 const styles = StyleSheet.create({
   sectionTitle: {
     ...commonStyles.mediumTextBlack12,
-    marginTop: windowHeight(17),
+    marginTop: 24,
     fontSize: fontSizes.FONT20,
     marginHorizontal: windowHeight(2),
-    marginBottom: windowHeight(3),
+    marginBottom: 12,
+  
+    ...referenceSurfaces.section,
   },
   itemContainer: {
     alignItems: 'center',
@@ -19,10 +23,11 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(35),
     backgroundColor: appColors.lightGray,
     justifyContent: 'center',
+  
+    ...riderCardFinish,
   },
   lineHeight: {
-    marginVertical: windowHeight(5),
-    top: windowHeight(2.5),
+    marginVertical: 12,
   },
   titleText: {
     ...commonStyles.regularText,
@@ -33,22 +38,30 @@ const styles = StyleSheet.create({
   },
   container: {
     backgroundColor: appColors.whiteColor,
-    borderRadius: windowHeight(5.5),
+    borderRadius: 16,
     paddingHorizontal: windowWidth(15),
     marginTop: windowHeight(9),
     paddingVertical: windowHeight(9),
     width: '98.5%',
     alignSelf: 'center',
     borderWidth: 1,
+  
+    ...referenceSurfaces.card,
+  
+    ...riderCardFinish,
   },
   alertManu: {
     height: windowHeight(55),
     marginVertical: windowHeight(8),
-    borderRadius: windowHeight(5.5),
+    borderRadius: 16,
     alignSelf: "center",
     width: '98%',
     justifyContent: 'center',
     borderWidth: 1,
+  
+    ...referenceSurfaces.card,
+  
+    ...riderCardFinish,
   },
   alertTitle: {
     marginHorizontal: windowWidth(17),
@@ -57,6 +70,8 @@ const styles = StyleSheet.create({
   listView: {
     alignItems: 'center',
     marginHorizontal: windowWidth(17),
+    minHeight: 54,
+    justifyContent: 'center',
   },
   icon: {
     height: windowHeight(35),
@@ -65,6 +80,8 @@ const styles = StyleSheet.create({
     borderRadius: windowHeight(23),
     alignItems: 'center',
     justifyContent: 'center',
+  
+    ...referenceSurfaces.icon,
   },
   listTitle: {
     color: appColors.alertRed,
@@ -95,7 +112,8 @@ const styles = StyleSheet.create({
     marginVertical: windowHeight(10),
   },
   pressableView: {
-    marginVertical: windowHeight(2),
+    paddingVertical: 8,
+    minHeight: 56,
   },
   SkeletonProfiletTittle: {
     marginTop: windowHeight(3),

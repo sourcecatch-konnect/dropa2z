@@ -1,5 +1,6 @@
 import React, { useEffect, useContext } from "react";
-import { TextInput, View, TouchableOpacity, Text } from "react-native";
+import {View, TouchableOpacity} from 'react-native';
+import {TextInput, Text} from '../../design/Typography';
 import { Add, Minus, Gps, PickLocation, Close } from "@utils/icons";
 import { styles } from "./styles";
 import { PickUpDetailProps } from "./types";

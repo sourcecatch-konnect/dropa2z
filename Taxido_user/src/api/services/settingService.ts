@@ -1,3 +1,4 @@
+import {requireApiSuccess} from '../responseError';
 import {
   currency,
   address,
@@ -60,13 +61,7 @@ export const languageDataGet = async () => {
 };
 
 export const translateDataGet = async () => {
-  return GET_API(translate)
-    .then(res => {
-      return res;
-    })
-    .catch(e => {
-      return e?.response;
-    });
+  return requireApiSuccess(await GET_API(translate), 'Unable to load this language.');
 };
 
 const settingServices = {

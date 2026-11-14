@@ -1,13 +1,7 @@
-import {
-  View,
-  Text,
-  ImageBackground,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  Platform,
-} from "react-native";
+import {View, ImageBackground, TouchableOpacity, Image, StyleSheet, Platform} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import React from "react";
+import {DesignIcon} from "../../../../../../design/DesignIcon";
 import {styles} from "../../style";
 import Images from "@src/utils/images";
 import {useValues} from "@src/utils/context/index";
@@ -97,17 +91,15 @@ export function Coupons({couponsList, route}: any) {
             key={index}
             onPress={() => gotoDetails(item)}
             activeOpacity={0.7}
-            style={styles.mainContainer}>
-            <ImageBackground
-              resizeMode="stretch"
-              style={styles.promoCodeImageBackground}
-              source={bgImage}>
+            style={[styles.mainContainer, premium.card, {backgroundColor: isDark ? "#202422" : "#FFFFFF",borderColor:isDark ? "#3B403D" : "#E5E7EB"}]}
+            accessibilityRole="button" accessibilityLabel={`View offer ${item?.code || ""}`}>
+            <View style={premium.content}>
               <View
                 style={[
                   styles.promoCodeValidityContainer,
                   {flexDirection: viewRTLStyle},
                 ]}>
-                <View>
+                <View style={{flex:1,minWidth:0}}>
                   <Text
                     style={[
                       styles.promoCodeText,
@@ -118,7 +110,7 @@ export function Coupons({couponsList, route}: any) {
                   </Text>
                   <Text
                     style={[
-                      styles.promoCodeSubtitle,
+                      styles.promoCodeSubtitle, {width: "auto", lineHeight: 20, color: isDark ? "#BDC5C0" : "#656C76"},
                       {textAlign: textRTLStyle},
                     ]}>
                     {item?.description?.length > 30
@@ -147,12 +139,7 @@ export function Coupons({couponsList, route}: any) {
                     </Text>
                   )}
                 </View>
-                <View>
-                  <Image
-                    source={Images.discount}
-                    style={styles.discountImage}
-                  />
-                </View>
+                <View style={premium.offerIcon}><DesignIcon name="tag" color="#A64B00" width={30} height={30}/></View>
               </View>
 
               <View
@@ -185,8 +172,9 @@ export function Coupons({couponsList, route}: any) {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => copyToClipboard(item)}
-                  style={[styles.copyView, {flexDirection: viewRTLStyle}]}>
-                  <Copied />
+                  accessibilityRole="button" accessibilityLabel={`Copy coupon ${item?.code}`}
+                  style={[styles.copyView, premium.copy, {flexDirection: viewRTLStyle}]}>
+                  <DesignIcon name="file-text" color={appColors.primary} width={19} height={19}/>
                   <Text
                     style={[
                       styles.promoCodeUseNow,
@@ -196,7 +184,7 @@ export function Coupons({couponsList, route}: any) {
                   </Text>
                 </TouchableOpacity>
               </View>
-            </ImageBackground>
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -213,3 +201,5 @@ const expireSoonStyles = StyleSheet.create({
     color: appColors.alertRed,
   },
 });
+
+const premium=StyleSheet.create({card:{borderWidth:1,borderRadius:22,marginBottom:16,shadowColor:"#17191C",shadowOpacity:.04,shadowRadius:10,shadowOffset:{width:0,height:4}},content:{padding:18},offerIcon:{height:58,width:58,borderRadius:18,backgroundColor:"#FFF2DF",alignItems:"center",justifyContent:"center",marginLeft:12},copy:{minHeight:44,paddingHorizontal:10,gap:4}});

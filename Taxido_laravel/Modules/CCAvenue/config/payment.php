@@ -9,10 +9,10 @@ return array (
   'subscription' => 0,
   'configs' => 
   array (
-    'ccavenue_merchant_id' => '3081908',
-    'ccavenue_access_code' => 'AVHM38KL58AO28MHOA',
-    'ccavenue_working_key' => '0DDE2196A43E8E3837BE167196B03683',
-    'ccavenue_sandbox_mode' => '1',
+    'ccavenue_merchant_id' => env('CCAVENUE_MERCHANT_ID', ''),
+    'ccavenue_access_code' => env('CCAVENUE_ACCESS_CODE', ''),
+    'ccavenue_working_key' => env('CCAVENUE_WORKING_KEY', ''),
+    'ccavenue_sandbox_mode' => env('CCAVENUE_SANDBOX_MODE', '1'),
   ),
   'fields' => 
   array (

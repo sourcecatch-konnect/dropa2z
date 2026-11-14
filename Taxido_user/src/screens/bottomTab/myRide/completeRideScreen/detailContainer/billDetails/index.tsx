@@ -1,5 +1,7 @@
-import {Text, View} from "react-native";
+import {View} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import React from "react";
+import {CardHeading} from "../../../../../../design/CardHeading";
 import {DetailContainer} from "@src/commonComponent";
 import {external} from "../../../../../../styles/externalStyle";
 import {styles} from "./styles";
@@ -20,13 +22,7 @@ export function BillDetails({billDetail}: BillDetailsProps) {
   return (
     <View>
       <View style={styles.viewHeder}>
-        <Text
-          style={[
-            styles.billSummary,
-            {color: textColorStyle, textAlign: textRTLStyle},
-          ]}>
-          {translateData.billSummary}
-        </Text>
+        <CardHeading icon="wallet" title={translateData.billSummary || "Fare Summary"}/>
         <View
           style={{
             width: "100%",
@@ -162,7 +158,7 @@ export function BillDetails({billDetail}: BillDetailsProps) {
               external.mt_5,
               {flexDirection: viewRTLStyle},
             ]}>
-            <Text style={[commonStyles.regularText, {textAlign: textRTLStyle}]}>
+            <Text style={[commonStyles.regularText, {textAlign: textRTLStyle,color:isDark?"#BBC1CA":"#656C76"}]}>
               {translateData.platformFees}
             </Text>
             <Text

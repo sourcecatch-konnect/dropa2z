@@ -1,4 +1,5 @@
-import { Text, View, TouchableOpacity } from 'react-native';
+import {View, TouchableOpacity} from 'react-native';
+import {Text} from '../../../../../../design/Typography';
 import React from 'react';
 import { external } from '../../../../../../styles/externalStyle';
 import { commonStyles } from '../../../../../../styles/commonStyle';

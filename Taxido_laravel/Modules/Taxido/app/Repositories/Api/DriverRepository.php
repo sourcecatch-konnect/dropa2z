@@ -59,6 +59,9 @@ class DriverRepository extends BaseRepository
 
             $locate = $request->location;
             $is_online = $request->input('is_online');
+            if (filter_var($is_online, FILTER_VALIDATE_BOOLEAN)) {
+                \Modules\Taxido\Services\DriverTrainingService::assertCanGoOnline($driver);
+            }
             $statusChanged = false;
             if (isset($is_online)) {
                 $statusChanged = $driver->is_online != $is_online;

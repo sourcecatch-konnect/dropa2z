@@ -1,11 +1,6 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native'
+import {ReferenceScreen} from '../../../design/ReferenceChrome';
+import {View, TouchableOpacity, KeyboardAvoidingView, Platform} from 'react-native';
+import {Text, TextInput} from '../../../design/Typography';
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import { styles } from './styles'
@@ -39,6 +34,7 @@ import {
 } from '../../../api/store/action'
 import { UpdateProfileInterface } from '../../../api/interface/accountInterface'
 import { AppDispatch } from '../../../api/store'
+import { validateEmail, ValidatePhoneNumber } from '../../../utils/validation'
 
 export function EditDetails() {
   const route = useRoute()
@@ -54,6 +50,8 @@ export function EditDetails() {
   const [selectedCountry, setSelectedCountry] = useState<ICountry | null>(null)
   const [countryPickerVisible, setCountryPickerVisible] = useState(false)
   const [otp, setOtp] = useState('')
+  const [fieldError, setFieldError] = useState('')
+  const [otpError, setOtpError] = useState('')
   const [isOtpSheetOpen, setIsOtpSheetOpen] = useState(false)
   const [verifyLoading, setVerifyLoading] = useState(false)
   const [otpVerifyLoading, setOtpVerifyLoading] = useState(false)
@@ -74,7 +72,7 @@ export function EditDetails() {
 
   const getPrimaryCallingCode = useCallback(
     (country: ICountry | null): string => {
-      if (!country) return '+1'
+      if (!country) return '+91'
       const root = country.idd?.root || '+'
       const suffix = country.idd?.suffixes?.[0] || ''
       return root + suffix
@@ -88,50 +86,59 @@ export function EditDetails() {
   }, [])
 
   const handleVerify = useCallback(() => {
-    setVerifyLoading(true)
-
     const isMobile = field === 'mobile'
+    const callingCode = selectedCountry ? getPrimaryCallingCode(selectedCountry) : formData?.countryCode || '+91'
+    const validationError = isMobile
+      ? ValidatePhoneNumber(phoneNumber, undefined, callingCode)
+      : validateEmail(email.trim())
+    setFieldError(validationError)
+    if (validationError || verifyLoading) return
+    setVerifyLoading(true)
 
     const payload: UpdateProfileInterface = isMobile
       ? {
           phone: phoneNumber,
-          country_code: (selectedCountry?.idd?.root || '1').replace('+', ''),
+          country_code: callingCode.replace('+', ''),
         }
       : {
-          email: email,
+          email: email.trim().toLowerCase(),
         }
 
     dispatch(updateMobileEmail(payload) as any)
       .unwrap()
       .then(() => {
+        setOtp(''); setOtpError(''); otpInputRef.current?.clear()
         setVerifyLoading(false)
         setIsOtpSheetOpen(true)
         otpBottomSheetRef.current?.present()
       })
-      .catch(() => {
+      .catch((error: any) => {
         setVerifyLoading(false)
-        notificationHelper('', translateData.somethingWrong, 'error')
+        setFieldError(error?.message || 'Could not send the verification code.')
       })
-  }, [field, email, phoneNumber, selectedCountry])
+  }, [field, email, phoneNumber, selectedCountry, formData?.countryCode, verifyLoading, getPrimaryCallingCode])
 
   const handleOtpVerify = useCallback(() => {
+    if (otpVerifyLoading) return
+    if (!/^\d{6}$/.test(otp)) { setOtpError('Enter the 6-digit code.'); return }
+    setOtpError('')
     setOtpVerifyLoading(true)
 
     const isMobile = field === 'mobile'
 
     const payload = {
       token: otp,
-      email_or_phone: isMobile ? phoneNumber : email,
+      email_or_phone: isMobile ? phoneNumber.trim() : email.trim().toLowerCase(),
       ...(isMobile && {
-        country_code: (selectedCountry?.idd?.root || '1').replace('+', ''),
+        country_code: (selectedCountry ? getPrimaryCallingCode(selectedCountry) : formData?.countryCode || '+91').replace('+', ''),
       }),
     }
 
     dispatch(verifyMobileEmail(payload) as any)
       .unwrap()
       .then(res => {
-        if (res?.status === 200) {
-          dispatch(selfDriverData())
+        if (res?.status >= 200 && res?.status < 300) {
+          return dispatch(selfDriverData())
             .unwrap()
             .then(res => {
               navigation.goBack()
@@ -140,11 +147,11 @@ export function EditDetails() {
             })
         }
       })
-      .catch(() => {
-        setOtpVerifyLoading(false)
-        notificationHelper('', translateData.somethingWrong, 'error')
+      .catch((error: any) => {
+        setOtpError(error?.message || 'The code is invalid or expired.')
       })
-  }, [otp, field, phoneNumber, email, selectedCountry])
+      .finally(() => setOtpVerifyLoading(false))
+  }, [otp, field, phoneNumber, email, selectedCountry, formData?.countryCode, otpVerifyLoading, getPrimaryCallingCode])
 
   const handleOpenCountryPicker = useCallback(() => {
     setCountryPickerVisible(true)
@@ -169,7 +176,7 @@ export function EditDetails() {
   const [isFocused, setIsFocused] = useState(false)
 
   return (
-    <BottomSheetModalProvider>
+    <ReferenceScreen><BottomSheetModalProvider>
       <View
         style={{
           flex: 1,
@@ -300,6 +307,8 @@ export function EditDetails() {
                   isDark ? appColors.darkThemeSub : appColors.lightGray
                 }
                 placeholder={translateData.enternewEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
                 style={styles.input}
@@ -307,7 +316,8 @@ export function EditDetails() {
             </View>
           )}
 
-          <View
+          {!!fieldError && <Text accessibilityRole="alert" style={styles.warningText}>{fieldError}</Text>}
+          {!isOtpSheetOpen && <View
             style={{
               marginTop: windowHeight(3),
               marginBottom: windowHeight(2),
@@ -321,7 +331,7 @@ export function EditDetails() {
               color={appColors.white}
               loading={verifyLoading}
             />
-          </View>
+          </View>}
 
           {countryPickerVisible && (
             <CountrySelect
@@ -336,7 +346,10 @@ export function EditDetails() {
 
           <BottomSheetModal
             ref={otpBottomSheetRef}
-            snapPoints={['28%']}
+            snapPoints={['55%']}
+            keyboardBehavior="interactive"
+            keyboardBlurBehavior="restore"
+            android_keyboardInputMode="adjustResize"
             onChange={index => {
               if (index >= 0) setIsOtpSheetOpen(true)
               else setIsOtpSheetOpen(false)
@@ -352,7 +365,7 @@ export function EditDetails() {
             <KeyboardAvoidingView
               style={{ flex: 1 }}
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            >
+             enabled={false} >
               <BottomSheetView
                 style={{
                   padding: windowWidth(2),
@@ -366,7 +379,7 @@ export function EditDetails() {
                     fontFamily: appFonts.regular,
                   }}
                 >
-                  OTP sent to{' '}
+                  Enter the 6-digit code sent to{' '}
                   {field === 'mobile'
                     ? `${formatPhoneNumber()} ${phoneNumber}`
                     : email}
@@ -384,9 +397,11 @@ export function EditDetails() {
                     inputCount={6}
                     handleTextChange={value => {
                       setOtp(value)
+                      setOtpError('')
                     }}
                     textInputStyle={{
                       width: windowHeight(6),
+                      color: isDark ? appColors.white : appColors.primaryFont,
                       height: windowHeight(6),
                       borderWidth: windowWidth(0.45),
                       borderColor: isDark
@@ -407,6 +422,7 @@ export function EditDetails() {
                   />
                 </View>
 
+                {!!otpError && <Text accessibilityRole="alert" style={styles.warningText}>{otpError}</Text>}
                 <Button
                   title={translateData.verify}
                   onPress={handleOtpVerify}
@@ -419,6 +435,6 @@ export function EditDetails() {
           </BottomSheetModal>
         </View>
       </View>
-    </BottomSheetModalProvider>
+    </BottomSheetModalProvider></ReferenceScreen>
   )
 }

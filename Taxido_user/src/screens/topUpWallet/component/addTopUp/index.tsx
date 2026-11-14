@@ -1,4 +1,5 @@
-import { View, Text, TextInput } from "react-native";
+import {View} from 'react-native';
+import {Text, TextInput} from '../../../../design/Typography';
 import React from "react";
 import { Button } from "@src/commonComponent";
 import { appColors } from "@src/themes";
